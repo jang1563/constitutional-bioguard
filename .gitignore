@@ -1,0 +1,33 @@
+# Python
+__pycache__/
+*.py[cod]
+*.egg-info/
+dist/
+build/
+.eggs/
+
+# Data (generated, not committed)
+data/raw/*.jsonl
+data/augmented/*.jsonl
+data/processed/*.jsonl
+data/external/
+
+# Models (too large for git)
+models/
+
+# Results (regenerable)
+results/figures/*.png
+results/metrics/*.json
+results/reports/*.md
+
+# Environment
+.env
+.venv/
+venv/
+
+# IDE
+.vscode/
+.idea/
+
+# OS
+.DS_Store

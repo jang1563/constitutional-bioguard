@@ -1,0 +1,70 @@
+[build-system]
+requires = ["setuptools>=68.0", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "constitutional-bioguard"
+version = "0.1.0"
+description = "Constitutional Classifiers methodology applied to biological dual-use content safety"
+readme = "README.md"
+license = {text = "MIT"}
+requires-python = ">=3.10"
+authors = [{name = "JangKeun Kim", email = "jak4013@med.cornell.edu"}]
+keywords = [
+    "biosafety", "content-safety", "content-moderation",
+    "constitutional-classifiers", "deberta", "dual-use",
+    "ai-safety", "text-classification", "nsabb",
+]
+classifiers = [
+    "Development Status :: 4 - Beta",
+    "Intended Audience :: Science/Research",
+    "License :: OSI Approved :: MIT License",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: 3.11",
+    "Topic :: Scientific/Engineering :: Artificial Intelligence",
+    "Topic :: Security",
+]
+
+dependencies = [
+    "pydantic>=2.0,<3.0",
+    "python-dotenv>=1.0",
+    "pyyaml>=6.0",
+    "anthropic>=0.25",
+    "transformers>=4.40",
+    "datasets>=2.19",
+    "torch>=2.2",
+    "scikit-learn>=1.4",
+    "accelerate>=0.30",
+    "numpy>=1.26",
+    "scipy>=1.12",
+    "matplotlib>=3.8",
+    "seaborn>=0.13",
+    "tqdm>=4.66",
+]
+
+[project.urls]
+Homepage = "https://github.com/jang1563/constitutional-bioguard"
+Repository = "https://github.com/jang1563/constitutional-bioguard"
+Issues = "https://github.com/jang1563/constitutional-bioguard/issues"
+
+[project.optional-dependencies]
+llamaguard = [
+    "peft>=0.10",
+    "bitsandbytes>=0.43",
+    "trl>=0.9",
+]
+dev = [
+    "pytest>=8.0",
+    "ruff>=0.4",
+]
+
+[tool.ruff]
+line-length = 100
+target-version = "py310"
+
+[tool.ruff.lint]
+select = ["E", "F", "I", "W"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]

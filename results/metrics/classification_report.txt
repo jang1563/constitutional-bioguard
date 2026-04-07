@@ -1,0 +1,8 @@
+              precision    recall  f1-score   support
+
+        SAFE       0.95      0.97      0.96       213
+      UNSAFE       0.98      0.98      0.98       451
+
+    accuracy                           0.97       664
+   macro avg       0.97      0.97      0.97       664
+weighted avg       0.97      0.97      0.97       664

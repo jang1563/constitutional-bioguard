@@ -1,0 +1,57 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "Bio-Safety Constitution",
+  "description": "Schema for the Constitutional BioGuard bio-safety constitution YAML file",
+  "type": "object",
+  "required": ["name", "version", "author", "rules"],
+  "properties": {
+    "name": {"type": "string"},
+    "version": {"type": "string", "pattern": "^\\d+\\.\\d+\\.\\d+$"},
+    "author": {"type": "string"},
+    "rules": {
+      "type": "array",
+      "minItems": 42,
+      "items": {
+        "type": "object",
+        "required": ["rule_id", "category", "title", "permitted", "restricted", "rationale", "threat_level_boundary", "examples"],
+        "properties": {
+          "rule_id": {
+            "type": "string",
+            "pattern": "^[A-Z]{2,3}-\\d{3}$",
+            "description": "Unique identifier, e.g. EH-001, DI-002"
+          },
+          "category": {
+            "type": "string",
+            "enum": [
+              "enhance_harm",
+              "disrupt_immunity",
+              "confer_resistance",
+              "increase_stability",
+              "alter_host_range",
+              "enhance_susceptibility",
+              "generate_reconstruct"
+            ]
+          },
+          "title": {"type": "string", "minLength": 5},
+          "permitted": {"type": "string", "minLength": 20},
+          "restricted": {"type": "string", "minLength": 20},
+          "rationale": {"type": "string", "minLength": 20},
+          "threat_level_boundary": {
+            "type": "integer",
+            "minimum": 1,
+            "maximum": 5,
+            "description": "Permitted up to this threat level; restricted above it"
+          },
+          "examples": {
+            "type": "object",
+            "required": ["permitted_example", "restricted_example"],
+            "properties": {
+              "permitted_example": {"type": "string", "minLength": 10},
+              "restricted_example": {"type": "string", "minLength": 10}
+            }
+          }
+        }
+      }
+    }
+  }
+}

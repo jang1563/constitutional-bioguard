@@ -1,0 +1,36 @@
+# DeBERTa-v3-base fine-tuning configuration for bio-safety classification
+
+model:
+  name: "microsoft/deberta-v3-base"
+  max_seq_length: 512
+
+training:
+  num_train_epochs: 5
+  per_device_train_batch_size: 16
+  gradient_accumulation_steps: 2
+  learning_rate: 2.0e-5
+  lr_scheduler_type: "cosine"
+  warmup_ratio: 0.1
+  weight_decay: 0.01
+  bf16: false
+  seed: 42
+  logging_steps: 50
+  eval_strategy: "epoch"
+  save_strategy: "epoch"
+  save_total_limit: 3
+  load_best_model_at_end: true
+  metric_for_best_model: "f1"
+  early_stopping_patience: 2
+  optim: "adamw_torch"
+
+data:
+  train_file: "data/processed/train.jsonl"
+  val_file: "data/processed/val.jsonl"
+  test_file: "data/processed/test.jsonl"
+  class_weights: true  # compute from training distribution
+  text_column: "text"
+  label_column: "label"
+
+output:
+  model_dir: "models/deberta_bioguard_v1"
+  log_dir: "results/training_logs"

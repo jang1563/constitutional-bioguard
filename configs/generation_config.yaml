@@ -1,0 +1,31 @@
+# Synthetic data generation configuration
+
+generation:
+  model: "claude-sonnet-4-20250514"
+  temperature: 0.8
+  max_tokens: 6000
+  requests_per_minute: 40
+
+  per_rule:
+    permitted: 15
+    restricted: 15
+    boundary: 5
+
+augmentation:
+  languages: ["es", "fr", "zh", "ar", "ru"]
+  jailbreak_templates: 10
+  formality_levels: ["casual", "technical", "formal"]
+  # Applied to a stratified sample of restricted + boundary examples
+  restricted_sample_size: 400
+  boundary_sample_size: 200
+
+benign:
+  total: 500
+  sources:
+    pubmed: 200
+    textbook: 100
+    clinical: 100
+    biotech: 100
+
+adversarial:
+  attacks_per_type: 50  # number of examples to attack per attack type
