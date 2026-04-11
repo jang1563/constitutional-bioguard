@@ -57,13 +57,24 @@ def predict_batch(
     max_length: int = 512,
     batch_size: int = 32,
     device: Optional[str] = None,
+    normalize: bool = True,
 ) -> list[tuple[int, float, float]]:
     """Run inference on a batch of texts.
+
+    Args:
+        texts: Input strings in "[CLS] query [SEP] response [SEP]" format.
+        normalize: If True, apply encoding normalization before tokenization.
+            Mitigates ROT13, base64, URL-encode, hex, homoglyph attacks.
+            Default: True.
 
     Returns:
         List of (predicted_label, confidence, prob_unsafe) tuples.
         prob_unsafe is the class-1 (UNSAFE) probability, used for AUROC.
     """
+    if normalize:
+        from constitutional_bioguard.preprocessing import normalize_text
+        texts = [normalize_text(t) for t in texts]
+
     if device is None:
         device = "cuda" if torch.cuda.is_available() else "cpu"
     model = model.to(device)
