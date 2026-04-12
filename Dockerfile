@@ -15,8 +15,8 @@ COPY pyproject.toml ./
 # Copy source package (no extras — skip dev/llamaguard)
 COPY constitutional_bioguard/ ./constitutional_bioguard/
 
-# Install the package and its runtime dependencies (no dev extras)
-RUN pip install --no-cache-dir .
+# Install the package with server extras (fastapi + uvicorn for serving)
+RUN pip install --no-cache-dir ".[server]"
 
 # Copy scripts
 COPY scripts/ ./scripts/

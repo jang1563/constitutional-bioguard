@@ -49,6 +49,13 @@ Repository = "https://github.com/jang1563/constitutional-bioguard"
 Issues = "https://github.com/jang1563/constitutional-bioguard/issues"
 
 [project.optional-dependencies]
+server = [
+    "fastapi>=0.100",
+    "uvicorn>=0.20",
+]
+onnx = [
+    "onnxruntime>=1.16",
+]
 llamaguard = [
     "peft>=0.10",
     "bitsandbytes>=0.43",
@@ -58,6 +65,9 @@ dev = [
     "pytest>=8.0",
     "ruff>=0.4",
 ]
+
+[tool.setuptools.packages.find]
+include = ["constitutional_bioguard*"]
 
 [tool.ruff]
 line-length = 100
