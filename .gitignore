@@ -29,5 +29,8 @@ venv/
 .vscode/
 .idea/
 
+# Lock files
+uv.lock
+
 # OS
 .DS_Store

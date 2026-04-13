@@ -147,6 +147,7 @@ def generate_benign(
     source: str,
     n: int,
     model: str = AUGMENT_MODEL,
+    max_batch_failures: int = 3,
 ) -> list[SyntheticExample]:
     """Generate benign examples for one source category.
 
@@ -155,6 +156,7 @@ def generate_benign(
     prompt_template = BENIGN_PROMPTS[source]
     examples = []
     generated = 0
+    consecutive_failures = 0
 
     while generated < n:
         batch_n = min(BATCH_SIZE, n - generated)
@@ -187,16 +189,23 @@ def generate_benign(
                 examples.append(example)
 
             generated += len(raw_examples[:batch_n])
+            consecutive_failures = 0
 
         except Exception as e:
+            consecutive_failures += 1
             logger.warning(
-                "Benign generation batch failed for %s (batch at %d): %s",
+                "Benign generation batch failed for %s (batch at %d, failure %d/%d): %s",
                 source,
                 generated,
+                consecutive_failures,
+                max_batch_failures,
                 e,
             )
-            # Continue with next batch rather than failing completely
-            generated += batch_n  # Skip this batch
+            if consecutive_failures >= max_batch_failures:
+                raise RuntimeError(
+                    f"Benign generation failed {consecutive_failures} times in a row "
+                    f"for source '{source}' at batch offset {generated}"
+                ) from e
 
     return examples
 

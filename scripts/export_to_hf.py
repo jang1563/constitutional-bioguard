@@ -148,13 +148,13 @@ MIT
     with open(card_path, "w") as f:
         f.write(model_card)
 
-    # Upload
+    # Create repo if needed, then upload
+    api.create_repo(repo_id=repo_id, repo_type="model", exist_ok=True, private=private)
     url = api.upload_folder(
         folder_path=str(model_dir),
         repo_id=repo_id,
         repo_type="model",
         create_pr=False,
-        private=private,
     )
 
     logger.info("Model uploaded to: https://huggingface.co/%s", repo_id)

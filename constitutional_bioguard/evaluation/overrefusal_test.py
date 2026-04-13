@@ -25,12 +25,37 @@ logger = logging.getLogger(__name__)
 def load_benign_examples(
     test_file: Optional[Path] = None,
     benign_file: Optional[Path] = None,
+    holdout_file: Optional[Path] = None,
 ) -> list[dict]:
     """Load benign examples from test set and raw benign queries.
 
     Returns:
         List of dicts with 'text' and 'source' keys.
     """
+    holdout_file = holdout_file or DATA_PROCESSED / "overrefusal_holdout.jsonl"
+    if holdout_file.exists():
+        examples = []
+        with open(holdout_file) as f:
+            for line in f:
+                if not line.strip():
+                    continue
+                record = json.loads(line.strip())
+                examples.append({
+                    "text": record["text"],
+                    "source": "overrefusal_holdout",
+                })
+        logger.info(
+            "Loaded %d benign holdout examples for over-refusal testing from %s",
+            len(examples),
+            holdout_file,
+        )
+        return examples
+
+    logger.warning(
+        "No dedicated over-refusal holdout found at %s; falling back to legacy benign sources",
+        holdout_file,
+    )
+
     examples = []
 
     # 1. Benign examples from test split (already in classifier format)

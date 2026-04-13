@@ -22,6 +22,7 @@ from constitutional_bioguard.config import (
     DATA_AUGMENTED,
     DATA_PROCESSED,
     DATA_RAW,
+    OVERREFUSAL_HOLDOUT_RATIO,
     RANDOM_SEED,
     TEST_SPLIT,
     TRAIN_SPLIT,
@@ -196,6 +197,27 @@ def compute_class_weights(examples: list[dict]) -> dict[int, float]:
     return weights
 
 
+def split_benign_holdout(
+    examples: list[SyntheticExample],
+    holdout_ratio: float = OVERREFUSAL_HOLDOUT_RATIO,
+    seed: int = RANDOM_SEED,
+) -> tuple[list[SyntheticExample], list[SyntheticExample]]:
+    """Reserve a benign-only holdout set for over-refusal evaluation."""
+    benign = [ex for ex in examples if ex.fine_label == FineLabel.BENIGN]
+    non_benign = [ex for ex in examples if ex.fine_label != FineLabel.BENIGN]
+
+    if not benign:
+        return examples, []
+
+    rng = random.Random(seed)
+    benign = benign.copy()
+    rng.shuffle(benign)
+    n_holdout = max(1, int(len(benign) * holdout_ratio))
+    holdout = benign[:n_holdout]
+    retained = benign[n_holdout:]
+    return non_benign + retained, holdout
+
+
 def save_jsonl(examples: list[dict], filepath: Path) -> None:
     """Save examples as JSONL."""
     filepath.parent.mkdir(parents=True, exist_ok=True)
@@ -223,26 +245,39 @@ def prepare_data(
     all_examples = load_all_examples(raw_dir, augmented_dir)
     logger.info("Total examples loaded: %d", len(all_examples))
 
-    # 2. Format for classifier
-    formatted = [format_for_classifier(ex) for ex in all_examples]
+    # 2. Reserve benign-only over-refusal holdout before splitting.
+    trainable_examples, overrefusal_holdout = split_benign_holdout(all_examples)
+    logger.info(
+        "Reserved %d benign examples for over-refusal holdout; %d examples remain for splits",
+        len(overrefusal_holdout),
+        len(trainable_examples),
+    )
 
-    # 3. Stratified split
+    # 3. Format for classifier
+    formatted = [format_for_classifier(ex) for ex in trainable_examples]
+    overrefusal_formatted = [
+        format_for_classifier(ex) for ex in overrefusal_holdout
+    ]
+
+    # 4. Stratified split
     logger.info("Creating stratified splits (%.0f/%.0f/%.0f)...",
                 TRAIN_SPLIT * 100, VAL_SPLIT * 100, TEST_SPLIT * 100)
     train, val, test = stratified_split(formatted)
 
-    # 4. Compute class weights
+    # 5. Compute class weights
     weights = compute_class_weights(train)
     logger.info("Class weights: %s", weights)
 
-    # 5. Save
+    # 6. Save
     train_file = output_dir / "train.jsonl"
     val_file = output_dir / "val.jsonl"
     test_file = output_dir / "test.jsonl"
+    overrefusal_file = output_dir / "overrefusal_holdout.jsonl"
 
     save_jsonl(train, train_file)
     save_jsonl(val, val_file)
     save_jsonl(test, test_file)
+    save_jsonl(overrefusal_formatted, overrefusal_file)
 
     # Save class weights
     weights_file = output_dir / "class_weights.json"
@@ -251,20 +286,24 @@ def prepare_data(
 
     # Summary
     summary = {
-        "total": len(formatted),
+        "total": len(all_examples),
+        "total_for_splits": len(formatted),
         "train": len(train),
         "val": len(val),
         "test": len(test),
+        "overrefusal_holdout": len(overrefusal_formatted),
         "class_weights": weights,
         "label_distribution": {
             "train": dict(Counter(ex["label"] for ex in train)),
             "val": dict(Counter(ex["label"] for ex in val)),
             "test": dict(Counter(ex["label"] for ex in test)),
+            "overrefusal_holdout": dict(Counter(ex["label"] for ex in overrefusal_formatted)),
         },
         "files": {
             "train": str(train_file),
             "val": str(val_file),
             "test": str(test_file),
+            "overrefusal_holdout": str(overrefusal_file),
             "weights": str(weights_file),
         },
     }
