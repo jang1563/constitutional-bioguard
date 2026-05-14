@@ -1,20 +1,31 @@
 cff-version: 1.2.0
-message: "If you use this software or dataset, please cite it as below."
-title: "Constitutional BioGuard: A Biological Dual-Use Content Classifier using Constitutional Classifiers Methodology"
+message: "If you use Constitutional BioGuard in academic work, please cite as below."
+type: software
+title: "Constitutional BioGuard: A Biosafety Content Classifier"
 authors:
-  - family-names: "Kim"
-    given-names: "JangKeun"
+  - family-names: Kim
+    given-names: JangKeun
     orcid: "https://orcid.org/0000-0002-8733-9925"
     affiliation: "Weill Cornell Medicine"
-    email: "jak4013@med.cornell.edu"
-abstract: >-
-  DeBERTa-v3-base classifier trained on 4,500 synthetic examples across 7 NSABB biosecurity categories. F1=0.980, AUROC=0.998, 0/325 over-refusal FPR. Domain-extension prototype, not production-equivalent.
-url: "https://github.com/jang1563/constitutional-bioguard"
-repository-code: "https://github.com/jang1563/constitutional-bioguard"
-date-released: "2026-04-13"
+    email: jak4013@med.cornell.edu
 version: "0.1.0"
-license: "MIT"
+date-released: "2026-04-12"
+license: MIT
+repository-code: "https://github.com/jang1563/constitutional-bioguard"
+url: "https://huggingface.co/jang1563/constitutional-bioguard-deberta-v1"
 keywords:
   - ai-safety
   - biosafety
-  - biosecurity
+  - constitutional-classifiers
+  - dual-use
+  - nsabb
+  - deberta
+  - content-moderation
+abstract: >-
+  A prototype biological dual-use content classifier built using Anthropic's
+  Constitutional Classifiers methodology. Defines a 56-rule biosafety
+  constitution across 7 NSABB categories, generates ~4,500 synthetic training
+  examples via Claude API, and fine-tunes DeBERTa-v3-base for binary safe/unsafe
+  classification. Held-out F1 = 0.980, AUROC = 0.998, 0/325 over-refusal FPR;
+  9.79% mean adversarial ASR across 20 attack types. Intended as a research
+  artifact, not a production safeguard.

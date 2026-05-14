@@ -1,34 +1,27 @@
 # Constitutional BioGuard
 
-[![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](https://opensource.org/licenses/MIT)
-[![Python](https://img.shields.io/badge/Python-3.10+-blue.svg)](https://www.python.org/)
-[![HuggingFace Model](https://img.shields.io/badge/🤗%20Model-DeBERTa--v3--base-yellow)](https://huggingface.co/jang1563/constitutional-bioguard-deberta-v1)
-[![F1=0.980](https://img.shields.io/badge/F1-0.980-brightgreen)](#results)
-[![Version 0.1.0](https://img.shields.io/badge/version-0.1.0-orange)](CITATION.cff)
+[![License: MIT](https://img.shields.io/badge/License-MIT-green.svg)](LICENSE)
+[![Python 3.10+](https://img.shields.io/badge/python-3.10%2B-blue)](pyproject.toml)
+[![HF Model](https://img.shields.io/badge/%F0%9F%A4%97%20Hugging%20Face-Model-yellow)](https://huggingface.co/jang1563/constitutional-bioguard-deberta-v1)
 
-A biological dual-use content classifier built using Anthropic's [Constitutional Classifiers](https://arxiv.org/abs/2501.18837) methodology. Defines a biosafety constitution (56 rules across 7 NSABB categories), generates synthetic training data via Claude API, and trains a DeBERTa-v3-base binary classifier to detect unsafe biological content.
+> **TL;DR.** Prototype biological dual-use content classifier built using Anthropic's [Constitutional Classifiers](https://arxiv.org/abs/2501.18837) methodology. 56 biosafety rules across 7 NSABB categories drive synthetic data generation; DeBERTa-v3-base is fine-tuned to flag unsafe biological queries. Held-out F1 = 0.980, AUROC = 0.998, 0/325 over-refusal FPR; 9.79% mean adversarial ASR. This is a domain-extension prototype, not a production-equivalent safeguard.
 
 **Author:** JangKeun Kim, Weill Cornell Medicine (jak4013@med.cornell.edu)
-**Status:** Domain-extension prototype, not production-equivalent. See [Limitations](#limitations).
 
-## Try It in 30 Seconds
+## Release Status
 
-The trained classifier is published on HuggingFace and can be used directly without cloning this repo or running any pipeline.
+| Surface | Status |
+|---------|--------|
+| Code | v0.1.0 prototype, MIT-licensed, public on GitHub |
+| Model | `jang1563/constitutional-bioguard-deberta-v1` on Hugging Face |
+| Constitution | 56 rules / 7 NSABB categories (`constitution/biosafety_constitution.yaml`) |
+| External validation | BioThreat-Eval cross-walk reported in `results/`; kappa-gap explained in Limitations |
+| Internal review | Solo author; expert circulation pending |
+| Responsible-use scope | [`SAFETY.md`](SAFETY.md) |
 
-```python
-from transformers import AutoModelForSequenceClassification, AutoTokenizer
+## Reviewer Framing
 
-model = AutoModelForSequenceClassification.from_pretrained("jang1563/constitutional-bioguard-deberta-v1")
-tokenizer = AutoTokenizer.from_pretrained("jang1563/constitutional-bioguard-deberta-v1")
-
-text = "How does CRISPR-Cas9 work? [SEP] CRISPR uses guide RNA to target specific DNA sequences..."
-inputs = tokenizer(text, return_tensors="pt", truncation=True, max_length=512)
-outputs = model(**inputs)
-label = outputs.logits.argmax(dim=-1).item()
-print("UNSAFE" if label == 1 else "SAFE")
-```
-
-Inference is local (no API cost), ~5ms/query on CPU. ONNX export available for production deployment.
+This repository is a **prototype** showing one concrete instantiation of the Constitutional Classifiers methodology applied to the biosafety domain. It is intended as a research artifact demonstrating: (a) how a domain constitution can be machine-readable, (b) how synthetic data can be generated against that constitution, (c) what calibration-vs-evasion trade-offs a small classifier exhibits when fine-tuned on this data. It is **not** equivalent to any production safety system, including Anthropic's deployed Constitutional Classifier pipeline.
 
 ## Results
 
@@ -49,13 +42,13 @@ The external kappa gap is a known artifact: the classifier correctly flags dange
 
 **External kappa (0.414) falls short of the 0.80 target.** This is the most important limitation and warrants transparency:
 
-The BioThreat-Eval external benchmark scores LLM *responses* on four dimensions (refusal rate, information completeness, operational specificity, safety awareness). Constitutional BioGuard classifies *queries* (it flags whether a question is dangerous regardless of how the downstream LLM responds). When the same dangerous query is sent to GPT-4 and Claude (which both refuse), BioThreat-Eval labels those responses as safe; our classifier labels the query as unsafe. This architectural mismatch accounts for the kappa gap.
+The BioThreat-Eval external benchmark scores LLM *responses* on four dimensions (refusal rate, information completeness, operational specificity, safety awareness). Constitutional BioGuard classifies *queries* — it flags whether a question is dangerous regardless of how the downstream LLM responds. When the same dangerous query is sent to GPT-4 and Claude (which both refuse), BioThreat-Eval labels those responses as safe; our classifier labels the query as unsafe. This architectural mismatch accounts for the kappa gap.
 
 Three validation strategies were tested: (1) `threat_level >= 4` with refusal correction (kappa = 0.414, best alignment), (2) `threat_level >= 3` (kappa = 0.310), and (3) response-based (kappa = 0.244). All are reported in `results/` for transparency. The internal metrics (F1 = 0.980 on held-out test set, 0.00% over-refusal FPR on 325 benign queries) reflect the classifier's performance on its intended task.
 
 Additional limitations:
 - Trained on Claude-generated synthetic data; real-world distribution shift is uncharacterized
-- Encoding attacks (ROT13, URL-encode) achieve >30% ASR; text that evades tokenization is a fundamental weakness for any embedding-based classifier
+- Encoding attacks (ROT13, URL-encode) achieve >30% ASR — text that evades tokenization is a fundamental weakness for any embedding-based classifier
 - English-centric; multilingual coverage is limited to code-switching augmentation
 
 ## Responsible Use
@@ -66,14 +59,6 @@ This tool is designed to **detect** potentially dangerous biological content, no
 - Biosafety policy and compliance tooling
 
 Do not use this project to develop evasion strategies for biosafety systems, to identify gaps in existing safety tools for malicious purposes, or in contexts where a false negative could enable serious harm without appropriate human oversight. The 9.79% mean adversarial ASR means the classifier is not a complete defense on its own.
-
-## What This Is Not
-
-- Not a replacement for institutional biosafety review or BSL-2/3 oversight
-- Not a wet-lab risk assessment tool
-- Not a complete safeguard on its own (recommended as one layer in a defense-in-depth design alongside upstream policy, downstream model refusal training, and human review)
-- Not validated on languages other than English (multilingual coverage limited to code-switching augmentation)
-- Not a substitute for the Anthropic Constitutional Classifiers production pipeline; this is a domain-extension prototype demonstrating the methodology applied to biology
 
 ## Architecture
 
@@ -98,36 +83,65 @@ DeBERTa-v3-base binary classifier
 
 The constitution covers all 7 categories from the [National Science Advisory Board for Biosecurity](https://osp.od.nih.gov/biotechnology/nsabb/):
 
-1. **Enhance Harm** (EH): Enhance the harmful consequences of a biological agent or toxin
-2. **Disrupt Immunity** (DI): Disrupt immunity or the effectiveness of an immunization
-3. **Confer Resistance** (CR): Confer resistance to clinically/agriculturally useful antimicrobials
-4. **Increase Stability** (IS): Increase the stability, transmissibility, or dissemination
-5. **Alter Host Range** (AH): Alter the host range or tropism
-6. **Enhance Susceptibility** (ES): Enhance the susceptibility of a host population
-7. **Generate/Reconstruct** (GR): Generate or reconstitute an eradicated or extinct agent
+1. **Enhance Harm** (EH) -- Enhance the harmful consequences of a biological agent or toxin
+2. **Disrupt Immunity** (DI) -- Disrupt immunity or the effectiveness of an immunization
+3. **Confer Resistance** (CR) -- Confer resistance to clinically/agriculturally useful antimicrobials
+4. **Increase Stability** (IS) -- Increase the stability, transmissibility, or dissemination
+5. **Alter Host Range** (AH) -- Alter the host range or tropism
+6. **Enhance Susceptibility** (ES) -- Enhance the susceptibility of a host population
+7. **Generate/Reconstruct** (GR) -- Generate or reconstitute an eradicated or extinct agent
 
 ## Quick Start
 
-### Inference Only (no training, no API key)
+### Prerequisites
 
-See [Try It in 30 Seconds](#try-it-in-30-seconds) above. Just `pip install transformers torch` and load from HuggingFace.
-
-### Full Reproducibility Pipeline
-
-If you want to regenerate the training data or retrain from scratch:
-
-**Prerequisites:**
 - Python >= 3.10
-- Anthropic API key (for synthetic data generation only; inference is local)
+- (Full pipeline only) Anthropic API key for synthetic data generation; inference is local
 
-**Installation:**
+### Installation
+
 ```bash
-git clone https://github.com/jang1563/constitutional-bioguard
-cd constitutional-bioguard
 pip install -e ".[dev]"
 ```
 
-**Run the full pipeline:**
+### No-API Smoke Test (~30 sec)
+
+Validates constitution schema, taxonomy mappings, and Pydantic models. No network, no API keys, no model load required.
+
+```bash
+make validate
+pytest tests/ -v
+```
+
+### Inference-Only Quickstart
+
+Pull the trained classifier from Hugging Face and run a single batch. No Anthropic API key needed; no training pipeline needed.
+
+```python
+from transformers import AutoTokenizer, AutoModelForSequenceClassification
+import torch
+
+tokenizer = AutoTokenizer.from_pretrained("jang1563/constitutional-bioguard-deberta-v1")
+model = AutoModelForSequenceClassification.from_pretrained("jang1563/constitutional-bioguard-deberta-v1").eval()
+
+# Inputs are "[CLS] query [SEP] response [SEP]". For real test cases see
+# `tests/fixtures/`; do not paste operational language into demo code.
+texts = [
+    "How does CRISPR-Cas9 work? [SEP] CRISPR uses guide RNA to target specific DNA sequences...",
+    "<NSABB-flagged dual-use query placeholder> [SEP] <model response>",
+]
+
+with torch.no_grad():
+    enc = tokenizer(texts, padding=True, truncation=True, return_tensors="pt")
+    logits = model(**enc).logits
+    probs = torch.softmax(logits, dim=-1)
+for text, p in zip(texts, probs):
+    label = "UNSAFE" if p[1] > 0.5 else "SAFE"
+    print(f"{label} (p={p[1]:.3f}): {text[:60]}...")
+```
+
+### Run the Full Pipeline
+
 ```bash
 # 1. Validate constitution coverage
 make validate
@@ -187,7 +201,7 @@ constitutional_bioguard/
 ├── scripts/
 │   ├── run_pipeline.py               # CLI orchestrator
 │   ├── validate_constitution.py      # Constitution coverage checker
-│   └── export_to_hf.py               # HuggingFace Hub upload
+│   └── export_to_hf.py              # HuggingFace Hub upload
 └── tests/
 ```
 
@@ -204,29 +218,48 @@ The classifier is tested against 20 attack types across 4 categories:
 
 Encoding attacks (especially ROT13 at 47.9%) are the primary weakness, which is expected since encoded text is fundamentally different from natural language. All semantic and multilingual attacks achieve 0% ASR.
 
+## What This Is Not
+
+- Not a replacement for institutional biosafety review or BSL-2/3 oversight
+- Not a wet-lab risk assessment tool
+- Not a complete safeguard on its own (recommended as one layer in a defense-in-depth design alongside upstream policy, downstream model refusal training, and human review)
+- Not validated on languages other than English (multilingual coverage limited to code-switching augmentation)
+- Not a substitute for any vendor's production constitutional-classifier pipeline; this is a domain-extension prototype demonstrating the methodology applied to biology
+
+## How This Maps to AI Safety Practice
+
+This prototype illustrates **one** point in the safeguards stack: a domain-specific output classifier trained on a machine-readable constitution. It complements rather than replaces:
+
+- **Capability evaluations** (e.g. WMDP, biothreat-eval): measure what a base model could enable. This classifier sits downstream of those, on the response path.
+- **Over-refusal calibration** (e.g. [bio-overrefusal-v0.1](https://github.com/jang1563/bio-overrefusal-v0.1)): measures whether a deployed safeguard blocks legitimate research. This repository's `make overrefusal` target reports the same metric on the included benign set (0/325).
+- **Boundary-case adjudication** (e.g. [ambiguity-casebook](https://github.com/jang1563/ambiguity-casebook)): documents where reasonable experts disagree. The 9.79% mean adversarial ASR here is one signal that boundary cases need human-in-the-loop, not classifier-only routing.
+
+The 0.414 external kappa against BioThreat-Eval is **not** a "the classifier failed" finding; it is an architectural mismatch (query-level vs response-level labels) that surfaces a real design choice every safeguard team has to make. See Limitations for the full discussion.
+
 ## Cross-Project Integration
 
-This classifier serves as the output safety filter in [AgentShield](https://github.com/jang1563/agentshield), providing real-time content classification at ~5ms/query with no API cost. See AgentShield's `output_classifier.py` for integration details.
+This classifier serves as the output safety filter in [AgentShield](../agentshield/), providing real-time content classification at ~5ms/query with no API cost. See AgentShield's `output_classifier.py` for integration details.
 
-Related projects:
-- [bio-overrefusal-v0.1](https://github.com/jang1563/bio-overrefusal-v0.1): 201-query expert-annotated dataset measuring legitimate-biology FPR for frontier models
-- [ambiguity-casebook](https://github.com/jang1563/ambiguity-casebook): 36 dual-use boundary cases for classifier stress-testing
-- [bio-constitution-rules](https://github.com/jang1563/bio-constitution-rules): 30 rules library covering 6 bio domains, validated by 5-fold CV
+## Responsible Use Scope
+
+See [`SAFETY.md`](SAFETY.md) for the public responsible-use scope, what is withheld, and how to report concerns.
 
 ## Citation
 
-See [CITATION.cff](CITATION.cff) for the structured citation, or use:
+If you use this work, please cite:
 
-```
+```bibtex
 @software{kim2026bioguard,
   author = {Kim, JangKeun},
   title  = {Constitutional BioGuard: A Biosafety Content Classifier},
   year   = {2026},
   url    = {https://github.com/jang1563/constitutional-bioguard},
-  version = {0.1.0},
+  version = {v0.1.0},
 }
 ```
 
+A machine-readable [`CITATION.cff`](CITATION.cff) is also provided.
+
 ## License
 
-MIT (see [LICENSE](LICENSE)).
+MIT
