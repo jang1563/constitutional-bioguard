@@ -140,33 +140,68 @@ for text, p in zip(texts, probs):
     print(f"{label} (p={p[1]:.3f}): {text[:60]}...")
 ```
 
-### Run the Full Pipeline
+### Full Pipeline: Data Regeneration & Variant Experiments
+
+Regenerate all synthetic training data and compare model architectures across 5 variants (deberta-base, deberta-large, mdeberta, biomedbert, biolinkbert).
+
+**Step 1: Run the complete pipeline** (2–4 hours)
 
 ```bash
-# 1. Validate constitution coverage
-make validate
-
-# 2. Generate synthetic data (~$15 API cost)
-make generate
-make augment
-make benign
-
-# 3. Prepare train/val/test splits
-make prepare
-
-# 4. Train DeBERTa classifier (GPU recommended)
-make train
-
-# 5. Evaluate
-make evaluate      # Internal metrics (F1, AUROC)
-make external      # External validation against BioThreat-Eval
-make adversarial   # 20-attack robustness suite
-make overrefusal   # FPR on benign queries
-make figures       # Generate all visualizations
-
-# Or run everything:
-make all
+source ~/.api_keys && nohup bash scripts/run_full_pipeline.sh > pipeline.log 2>&1 &
 ```
+
+This runs all 6 steps automatically:
+1. Generate synthetic data (1960+ examples from 56 rules)
+2. Augment restricted/boundary examples
+3. Generate benign queries
+4. Prepare stratified train/val/test splits
+5. Calibrate threshold on validation set
+6. Evaluate baseline model
+
+**Monitor progress:**
+```bash
+python scripts/monitor_pipeline.py --watch
+```
+
+**Step 2: Compare model variants** (2–3 hours, after pipeline completes)
+
+```bash
+python scripts/run_variant_experiment.py --all
+```
+
+See [`docs/VARIANT_EXPERIMENTS.md`](docs/VARIANT_EXPERIMENTS.md) for:
+- Which variants to use and when
+- Interpreting comparison results
+- Troubleshooting tips
+
+**Step 3: Post-pipeline workflow**
+
+After completion, follow [`docs/POST_PIPELINE_CHECKLIST.md`](docs/POST_PIPELINE_CHECKLIST.md) to:
+- Verify data integrity
+- Review calibration results
+- Run variant experiments
+- Compare and select best model
+- Export to HuggingFace (optional)
+
+**Legacy: step-by-step commands**
+
+If you prefer to run steps individually (not recommended):
+```bash
+# Validate
+pytest tests/ -v
+
+# Generate (steps 1-4 from full pipeline)
+python scripts/run_pipeline.py --step generate-synthetic -v
+python scripts/run_pipeline.py --step augment -v
+python scripts/run_pipeline.py --step benign -v
+python scripts/run_pipeline.py --step prepare -v
+
+# Calibrate & evaluate (steps 5-6)
+python scripts/run_pipeline.py --step calibrate -v
+python scripts/run_pipeline.py --step evaluate -v
+```
+
+For complete variant infrastructure details, see [`docs/VARIANT_EXPERIMENTS.md`](docs/VARIANT_EXPERIMENTS.md).
 
 ## Project Structure
 
