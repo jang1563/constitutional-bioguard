@@ -51,44 +51,66 @@ def load_model_and_tokenizer(model_dir: Optional[Path] = None):
 
 
 def predict_batch(
-    texts: list[str],
-    model,
-    tokenizer,
+    texts: list[str] | None = None,
+    model=None,
+    tokenizer=None,
     max_length: int = 512,
     batch_size: int = 32,
     device: Optional[str] = None,
     normalize: bool = True,
+    *,
+    queries: list[str] | None = None,
+    responses: list[str] | None = None,
 ) -> list[tuple[int, float, float]]:
-    """Run inference on a batch of texts.
+    """Run inference on a batch of texts or query/response pairs.
 
-    Args:
-        texts: Input strings in "[CLS] query [SEP] response [SEP]" format.
-        normalize: If True, apply encoding normalization before tokenization.
-            Mitigates ROT13, base64, URL-encode, hex, homoglyph attacks.
-            Default: True.
+    Accepts either ``texts`` (single-string mode) or ``queries`` +
+    ``responses`` (sentence-pair mode).  Sentence-pair mode uses the
+    tokenizer's native pair encoding which inserts proper [SEP] tokens
+    and allows smarter truncation.
 
     Returns:
         List of (predicted_label, confidence, prob_unsafe) tuples.
-        prob_unsafe is the class-1 (UNSAFE) probability, used for AUROC.
     """
+    use_pairs = queries is not None and responses is not None
+    if not use_pairs and texts is None:
+        raise ValueError("Provide either 'texts' or 'queries'+'responses'")
+    n = len(queries) if use_pairs else len(texts)
+
     if normalize:
         from constitutional_bioguard.preprocessing import normalize_text
-        texts = [normalize_text(t) for t in texts]
+        if use_pairs:
+            queries = [normalize_text(q) for q in queries]
+            responses = [normalize_text(r) for r in responses]
+        else:
+            texts = [normalize_text(t) for t in texts]
 
     if device is None:
         device = "cuda" if torch.cuda.is_available() else "cpu"
     model = model.to(device)
 
     predictions = []
-    for i in range(0, len(texts), batch_size):
-        batch_texts = texts[i : i + batch_size]
-        inputs = tokenizer(
-            batch_texts,
-            padding=True,
-            truncation=True,
-            max_length=max_length,
-            return_tensors="pt",
-        ).to(device)
+    for i in range(0, n, batch_size):
+        if use_pairs:
+            batch_q = queries[i : i + batch_size]
+            batch_r = responses[i : i + batch_size]
+            inputs = tokenizer(
+                batch_q,
+                batch_r,
+                padding=True,
+                truncation=True,
+                max_length=max_length,
+                return_tensors="pt",
+            ).to(device)
+        else:
+            batch_texts = texts[i : i + batch_size]
+            inputs = tokenizer(
+                batch_texts,
+                padding=True,
+                truncation=True,
+                max_length=max_length,
+                return_tensors="pt",
+            ).to(device)
 
         with torch.no_grad():
             outputs = model(**inputs)
@@ -126,16 +148,24 @@ def evaluate_test_set(
             if line:
                 records.append(json.loads(line))
 
-    texts = [r["text"] for r in records]
     true_labels = np.array([r["label"] for r in records])
     categories = [r.get("category", "") for r in records]
     fine_labels = [r.get("fine_label", "") for r in records]
 
-    logger.info("Evaluating on %d test examples...", len(texts))
+    logger.info("Evaluating on %d test examples...", len(records))
 
-    # Predict (single pass returns labels, confidences, and class-1 probs)
     model, tokenizer = load_model_and_tokenizer(model_dir)
-    preds_and_confs = predict_batch(texts, model, tokenizer)
+    has_pairs = "query" in records[0] and "response" in records[0]
+    if has_pairs:
+        preds_and_confs = predict_batch(
+            model=model, tokenizer=tokenizer,
+            queries=[r["query"] for r in records],
+            responses=[r["response"] for r in records],
+        )
+    else:
+        preds_and_confs = predict_batch(
+            [r["text"] for r in records], model, tokenizer,
+        )
     pred_labels = np.array([p[0] for p in preds_and_confs])
     confidences = np.array([p[1] for p in preds_and_confs])
     probs_unsafe = np.array([p[2] for p in preds_and_confs])
@@ -218,6 +248,89 @@ def _compute_metrics(
         n_positive=int((true_labels == 1).sum()),
         n_negative=int((true_labels == 0).sum()),
     )
+
+
+def calibrate_threshold(
+    val_file: Optional[Path] = None,
+    model_dir: Optional[Path] = None,
+    target_metric: str = "f1",
+) -> dict:
+    """Find the optimal classification threshold on the validation set.
+
+    Sweeps thresholds from 0.1 to 0.9 and picks the one that maximises
+    ``target_metric`` (default: F1).  Saves ``calibration.json`` in the
+    model directory.
+
+    Returns:
+        Dict with optimal threshold, metric curve, and target_metric value.
+    """
+    val_file = val_file or DATA_PROCESSED / "val.jsonl"
+    model_dir_path = model_dir or (MODELS_DIR / "deberta_bioguard_v1")
+
+    records = []
+    with open(val_file) as f:
+        for line in f:
+            if line.strip():
+                records.append(json.loads(line.strip()))
+
+    true_labels = np.array([r["label"] for r in records])
+
+    model, tokenizer = load_model_and_tokenizer(model_dir)
+    has_pairs = records and "query" in records[0] and "response" in records[0]
+    if has_pairs:
+        preds_and_confs = predict_batch(
+            model=model, tokenizer=tokenizer,
+            queries=[r["query"] for r in records],
+            responses=[r["response"] for r in records],
+        )
+    else:
+        preds_and_confs = predict_batch(
+            [r["text"] for r in records], model, tokenizer,
+        )
+    probs_unsafe = np.array([p[2] for p in preds_and_confs])
+
+    thresholds = np.arange(0.10, 0.91, 0.01)
+    best_threshold = 0.5
+    best_score = -1.0
+    curve = []
+
+    for t in thresholds:
+        preds = (probs_unsafe >= t).astype(int)
+        f1 = float(f1_score(true_labels, preds, zero_division=0))
+        prec = float(precision_score(true_labels, preds, zero_division=0))
+        rec = float(recall_score(true_labels, preds, zero_division=0))
+        safe_mask = true_labels == 0
+        fpr_val = float(preds[safe_mask].mean()) if safe_mask.sum() > 0 else 0.0
+
+        score = {"f1": f1, "precision": prec, "recall": rec}[target_metric]
+        curve.append({
+            "threshold": round(float(t), 2),
+            "f1": round(f1, 4),
+            "precision": round(prec, 4),
+            "recall": round(rec, 4),
+            "fpr": round(fpr_val, 4),
+        })
+        if score > best_score:
+            best_score = score
+            best_threshold = round(float(t), 2)
+
+    result = {
+        "optimal_threshold": best_threshold,
+        "target_metric": target_metric,
+        "best_score": round(best_score, 4),
+        "default_threshold": 0.5,
+        "n_val_samples": len(true_labels),
+        "curve": curve,
+    }
+
+    cal_file = model_dir_path / "calibration.json"
+    with open(cal_file, "w") as f:
+        json.dump(result, f, indent=2)
+    logger.info(
+        "Calibration: optimal threshold=%.2f (%s=%.4f) saved to %s",
+        best_threshold, target_metric, best_score, cal_file,
+    )
+    return result
 
 
 if __name__ == "__main__":

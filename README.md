@@ -211,12 +211,12 @@ The classifier is tested against 20 attack types across 4 categories:
 
 | Category | Attacks | Mean ASR |
 |----------|---------|----------|
-| Character-level | homoglyphs, invisible chars, leetspeak, case swap, whitespace, typos, unicode norm | 5.1% |
-| Encoding | base64, ROT13, hex, URL encode, backspace | 21.5% |
-| Semantic | passive voice, euphemism, hypothetical, negation, question flip, context dilution | 0.0% |
-| Multilingual | code-switching, mixed script | 0.0% |
+| Character-level | homoglyphs, invisible chars, leetspeak, case swap, whitespace, typos, unicode norm | 8.9% |
+| Encoding | base64, ROT13, hex, URL encode, backspace | 17.9% |
+| Semantic | passive voice, euphemism, hypothetical, negation, question flip, context dilution | 6.9% |
+| Multilingual | code-switching, mixed script | 1.0% |
 
-Encoding attacks (especially ROT13 at 47.9%) are the primary weakness, which is expected since encoded text is fundamentally different from natural language. All semantic and multilingual attacks achieve 0% ASR.
+Encoding attacks (especially ROT13 at 47.9%, URL-encode at 29.2%) and character-level perturbations (leetspeak 35.4%, case swap 27.1%) are the primary weaknesses. Semantic rewriting also shows vulnerability (passive voice and negation flip each at 20.8% ASR), indicating the classifier is partially sensitive to phrasing changes that preserve dual-use intent.
 
 ## What This Is Not
 

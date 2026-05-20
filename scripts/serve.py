@@ -46,6 +46,12 @@ class ClassifyRequest(BaseModel):
             raise ValueError("Provide either 'text' or 'query' (+ optional 'response')")
         return self
 
+    def to_pair(self) -> tuple[str, str] | None:
+        """Return (query, response) if both are available, else None."""
+        if self.query is not None:
+            return (self.query or "", self.response or "")
+        return None
+
     def to_text(self) -> str:
         if self.text is not None:
             return self.text
@@ -128,16 +134,28 @@ def _build_app(model_dir: Optional[Path] = None):
 
     # ── Helper ────────────────────────────────────────────────────────────────
 
-    def _classify_texts(texts: list[str], do_normalize: bool) -> list[ClassifyResponse]:
+    def _classify(
+        texts: list[str] | None = None,
+        do_normalize: bool = True,
+        *,
+        queries: list[str] | None = None,
+        responses: list[str] | None = None,
+    ) -> list[ClassifyResponse]:
         if do_normalize:
-            texts = [normalize_text(t) for t in texts]
+            if queries is not None:
+                queries = [normalize_text(q) for q in queries]
+                responses = [normalize_text(r) for r in responses]
+            elif texts is not None:
+                texts = [normalize_text(t) for t in texts]
 
         results = predict_batch(
-            texts,
-            _STATE["model"],
-            _STATE["tokenizer"],
+            texts=texts,
+            model=_STATE["model"],
+            tokenizer=_STATE["tokenizer"],
             device=_STATE["device"],
-            normalize=False,  # normalization already applied above if requested
+            normalize=False,
+            queries=queries,
+            responses=responses,
         )
         responses = []
         for _label, _conf, p_unsafe in results:
@@ -163,8 +181,13 @@ def _build_app(model_dir: Optional[Path] = None):
         normalize: bool = Query(default=True, description="Apply text normalization"),
     ) -> ClassifyResponse:
         t0 = time.perf_counter()
-        text = req.to_text()
-        results = _classify_texts([text], do_normalize=normalize)
+        pair = req.to_pair()
+        if pair:
+            results = _classify(
+                do_normalize=normalize, queries=[pair[0]], responses=[pair[1]],
+            )
+        else:
+            results = _classify([req.to_text()], do_normalize=normalize)
         latency_ms = (time.perf_counter() - t0) * 1000
         result = results[0]
         return ClassifyResponse(
@@ -179,7 +202,7 @@ def _build_app(model_dir: Optional[Path] = None):
         normalize: bool = Query(default=True, description="Apply text normalization"),
     ) -> BatchClassifyResponse:
         t0 = time.perf_counter()
-        results = _classify_texts(req.texts, do_normalize=normalize)
+        results = _classify(req.texts, do_normalize=normalize)
         total_ms = (time.perf_counter() - t0) * 1000
         per_ms = total_ms / max(len(req.texts), 1)
         enriched = [

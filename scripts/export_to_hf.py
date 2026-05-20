@@ -112,7 +112,7 @@ Anthropic's Constitutional Classifiers methodology.
 | Precision | {internal.get('precision', 'N/A')} |
 | Recall | {internal.get('recall', 'N/A')} |
 | Over-refusal FPR | 0.00% (325 benign queries) |
-| Adversarial mean ASR | 9.79% (20 attack types) |
+| Adversarial mean ASR | 9.79% (20 attack types; encoding 17.9%, character 8.9%, semantic 6.9%) |
 
 ## NSABB Categories
 
@@ -129,8 +129,9 @@ import torch
 tokenizer = AutoTokenizer.from_pretrained("{repo_id}")
 model = AutoModelForSequenceClassification.from_pretrained("{repo_id}")
 
-text = "How does CRISPR work? [SEP] CRISPR uses guide RNA..."
-inputs = tokenizer(text, return_tensors="pt", truncation=True, max_length=512)
+query = "How does CRISPR work?"
+response = "CRISPR uses guide RNA..."
+inputs = tokenizer(query, response, return_tensors="pt", truncation=True, max_length=512)
 with torch.no_grad():
     logits = model(**inputs).logits
     probs = torch.softmax(logits, dim=-1)

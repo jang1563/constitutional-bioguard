@@ -1,10 +1,8 @@
 """DeBERTa-v3-base fine-tuning for binary bio-safety classification.
 
-Input:  "[CLS] query [SEP] response [SEP]"
-Output: Binary classification (0=SAFE, 1=UNSAFE)
-
-Category labels are stored as metadata for per-category evaluation,
-NOT as a second classification head.
+Uses sentence-pair tokenization: tokenizer(query, response) when
+query/response fields are available, falling back to single-text mode.
+Output: Binary classification (0=SAFE, 1=UNSAFE).
 """
 
 from __future__ import annotations
@@ -149,8 +147,18 @@ def train(
     logger.info("Train: %d examples, Val: %d examples",
                 len(train_dataset), len(val_dataset))
 
-    # Tokenize
+    # Tokenize — prefer sentence-pair mode when query/response fields exist
+    has_pairs = "query" in train_dataset.column_names and "response" in train_dataset.column_names
+
     def tokenize_fn(batch):
+        if has_pairs:
+            return tokenizer(
+                batch["query"],
+                batch["response"],
+                padding="max_length",
+                truncation=True,
+                max_length=max_seq_length,
+            )
         return tokenizer(
             batch["text"],
             padding="max_length",
@@ -158,8 +166,11 @@ def train(
             max_length=max_seq_length,
         )
 
-    train_dataset = train_dataset.map(tokenize_fn, batched=True, remove_columns=["text"])
-    val_dataset = val_dataset.map(tokenize_fn, batched=True, remove_columns=["text"])
+    cols_to_remove = ["text"]
+    if has_pairs:
+        cols_to_remove.extend(["query", "response"])
+    train_dataset = train_dataset.map(tokenize_fn, batched=True, remove_columns=cols_to_remove)
+    val_dataset = val_dataset.map(tokenize_fn, batched=True, remove_columns=cols_to_remove)
 
     # Remove metadata columns (keep only input_ids, attention_mask, label)
     metadata_cols = [
@@ -177,6 +188,8 @@ def train(
     model = AutoModelForSequenceClassification.from_pretrained(
         model_name,
         num_labels=2,
+        id2label={0: "SAFE", 1: "UNSAFE"},
+        label2id={"SAFE": 0, "UNSAFE": 1},
         problem_type="single_label_classification",
         torch_dtype=torch.float32,
     )

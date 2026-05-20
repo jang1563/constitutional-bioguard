@@ -46,7 +46,7 @@ def test_split_benign_holdout_reserves_only_benign_examples():
 
 def test_load_benign_examples_prefers_dedicated_holdout(tmp_path):
     holdout_file = tmp_path / "overrefusal_holdout.jsonl"
-    record = {"text": "safe query [SEP] safe response", "label": 0}
+    record = {"text": "safe query [SEP] safe response", "query": "safe query", "response": "safe response", "label": 0}
     with open(holdout_file, "w") as f:
         f.write(json.dumps(record) + "\n")
 
@@ -66,6 +66,8 @@ def test_load_benign_examples_prefers_dedicated_holdout(tmp_path):
 
     assert examples == [
         {
+            "query": "safe query",
+            "response": "safe response",
             "text": "safe query [SEP] safe response",
             "source": "overrefusal_holdout",
         }

@@ -100,16 +100,12 @@ def derive_ground_truth_label(entry: dict, strategy: str = "threat_level_4") -> 
         raise ValueError(f"Unknown strategy: {strategy}")
 
 
-def format_for_classifier(entry: dict, query_bank: dict) -> str:
-    """Format a BioThreat-Eval entry as classifier input text.
-
-    Format: "{query} [SEP] {response}"
-    Query text is looked up from query_bank by query_id.
-    """
+def format_for_classifier(entry: dict, query_bank: dict) -> tuple[str, str]:
+    """Extract (query, response) pair from a BioThreat-Eval entry."""
     query_id = entry.get("query_id", "")
     query = query_bank.get(query_id, {}).get("query_text", "")
     response = entry.get("raw_response", entry.get("response", entry.get("model_response", "")))
-    return f"{query} [SEP] {response}"
+    return query, response
 
 
 def run_external_validation(
@@ -131,19 +127,22 @@ def run_external_validation(
     query_bank_list = load_query_bank()
     query_bank = {q["query_id"]: q for q in query_bank_list}
 
-    # Build texts and metadata (labels computed per strategy below)
     valid_entries = []
     for entry in eval_results:
-        text = format_for_classifier(entry, query_bank)
-        if not text.strip() or text.strip() == "[SEP]":
+        q, r = format_for_classifier(entry, query_bank)
+        if not q.strip() and not r.strip():
             continue
         valid_entries.append(entry)
 
-    texts = [format_for_classifier(e, query_bank) for e in valid_entries]
+    pairs = [format_for_classifier(e, query_bank) for e in valid_entries]
+    queries = [p[0] for p in pairs]
+    responses = [p[1] for p in pairs]
 
-    # Predict once (shared across strategies)
     model, tokenizer = load_model_and_tokenizer(model_dir)
-    preds_and_confs = predict_batch(texts, model, tokenizer)
+    preds_and_confs = predict_batch(
+        model=model, tokenizer=tokenizer,
+        queries=queries, responses=responses,
+    )
     pred_labels = np.array([p[0] for p in preds_and_confs])
 
     # Evaluate across all label strategies

@@ -41,9 +41,8 @@ def build_inputs(
     """
     pairs = []
     for i, choice in enumerate(choices):
-        text = f"{question} [SEP] {choice}"
         label = 1 if i == answer else 0
-        pairs.append((text, label))
+        pairs.append((question, choice, label))
     return pairs
 
 
@@ -67,19 +66,21 @@ def evaluate_wmdp(model_dir: Path, limit: int | None = None) -> dict:
         print(f"Loaded {len(dataset)} examples.")
 
     # ── Build inputs ──────────────────────────────────────────────────────────
-    all_texts: list[str] = []
+    all_queries: list[str] = []
+    all_responses: list[str] = []
     all_labels: list[int] = []
 
     for item in dataset:
         question: str = item["question"]
         choices: list[str] = item["choices"]
         answer: int = int(item["answer"])
-        pairs = build_inputs(question, choices, answer)
-        for text, label in pairs:
-            all_texts.append(text)
+        triples = build_inputs(question, choices, answer)
+        for q, r, label in triples:
+            all_queries.append(q)
+            all_responses.append(r)
             all_labels.append(label)
 
-    print(f"Total inputs (question × choices): {len(all_texts)}")
+    print(f"Total inputs (question × choices): {len(all_queries)}")
     print(f"  Expected UNSAFE (correct answers): {sum(all_labels)}")
     print(f"  Expected SAFE   (wrong answers)  : {len(all_labels) - sum(all_labels)}")
 
@@ -89,9 +90,10 @@ def evaluate_wmdp(model_dir: Path, limit: int | None = None) -> dict:
 
     print("Running inference …")
     preds_and_probs = predict_batch(
-        all_texts,
-        model,
-        tokenizer,
+        model=model,
+        tokenizer=tokenizer,
+        queries=all_queries,
+        responses=all_responses,
         normalize=True,
     )
 

@@ -6,7 +6,7 @@ Combines:
   - Benign queries from data/raw/
 
 Outputs stratified train/val/test splits as JSONL in data/processed/.
-Format: {"text": "[CLS] query [SEP] response [SEP]", "label": 0|1, "category": "...", ...}
+Format: {"text": "...", "query": "...", "response": "...", "label": 0|1, "category": "...", ...}
 """
 
 from __future__ import annotations
@@ -97,15 +97,15 @@ def load_all_examples(
 def format_for_classifier(example: SyntheticExample) -> dict:
     """Format a single example for DeBERTa classifier input.
 
-    Format: "[CLS] {query} [SEP] {response} [SEP]"
-    The tokenizer will handle the actual special tokens; we concatenate
-    query and response with a separator for the model.
+    Stores query and response as separate fields for sentence-pair
+    tokenization, plus a legacy ``text`` field for backward compatibility.
     """
-    # Combine query + response as classifier input
     text = f"{example.query} [SEP] {example.response}"
 
     return {
         "text": text,
+        "query": example.query,
+        "response": example.response,
         "label": LABEL_MAP[example.safety_label],
         "example_id": example.example_id,
         "rule_id": example.rule_id,

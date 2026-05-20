@@ -41,7 +41,9 @@ def load_benign_examples(
                     continue
                 record = json.loads(line.strip())
                 examples.append({
-                    "text": record["text"],
+                    "query": record.get("query", ""),
+                    "response": record.get("response", ""),
+                    "text": record.get("text", ""),
                     "source": "overrefusal_holdout",
                 })
         logger.info(
@@ -58,7 +60,6 @@ def load_benign_examples(
 
     examples = []
 
-    # 1. Benign examples from test split (already in classifier format)
     test_file = test_file or DATA_PROCESSED / "test.jsonl"
     if test_file.exists():
         with open(test_file) as f:
@@ -68,26 +69,30 @@ def load_benign_examples(
                 record = json.loads(line.strip())
                 if record.get("fine_label") == "benign":
                     examples.append({
-                        "text": record["text"],
+                        "query": record.get("query", ""),
+                        "response": record.get("response", ""),
+                        "text": record.get("text", ""),
                         "source": "test_benign",
                     })
 
-    # 2. Full benign query set (may overlap with test, but we want coverage)
     benign_file = benign_file or DATA_RAW / "benign_queries.jsonl"
     if benign_file.exists():
-        seen_texts = {e["text"] for e in examples}
+        seen = {(e["query"], e["response"]) for e in examples}
         with open(benign_file) as f:
             for line in f:
                 if not line.strip():
                     continue
                 record = json.loads(line.strip())
-                text = f"{record.get('query', '')} [SEP] {record.get('response', '')}"
-                if text not in seen_texts:
+                q = record.get("query", "")
+                r = record.get("response", "")
+                if (q, r) not in seen:
                     examples.append({
-                        "text": text,
+                        "query": q,
+                        "response": r,
+                        "text": f"{q} [SEP] {r}",
                         "source": "generated_benign",
                     })
-                    seen_texts.add(text)
+                    seen.add((q, r))
 
     logger.info("Loaded %d benign examples for over-refusal testing", len(examples))
     return examples
@@ -111,12 +116,20 @@ def run_overrefusal_test(
         logger.warning("No benign examples found for over-refusal testing")
         return {"fpr": 0.0, "n_tested": 0, "n_false_positives": 0}
 
-    texts = [ex["text"] for ex in benign_examples]
     sources = [ex["source"] for ex in benign_examples]
 
-    # Predict
     model, tokenizer = load_model_and_tokenizer(model_dir)
-    preds_and_confs = predict_batch(texts, model, tokenizer)
+    has_pairs = benign_examples and benign_examples[0].get("query") is not None
+    if has_pairs:
+        preds_and_confs = predict_batch(
+            model=model, tokenizer=tokenizer,
+            queries=[ex["query"] for ex in benign_examples],
+            responses=[ex["response"] for ex in benign_examples],
+        )
+    else:
+        preds_and_confs = predict_batch(
+            [ex["text"] for ex in benign_examples], model, tokenizer,
+        )
     pred_labels = np.array([p[0] for p in preds_and_confs])
     confidences = np.array([p[1] for p in preds_and_confs])
 
@@ -148,9 +161,11 @@ def run_overrefusal_test(
     # Collect false positive details
     false_positives = []
     for i, (pred, conf, *_) in enumerate(preds_and_confs):
-        if pred == 1:  # False positive
+        if pred == 1:
+            ex = benign_examples[i]
+            display = ex.get("text") or f"{ex.get('query', '')} [SEP] {ex.get('response', '')}"
             false_positives.append({
-                "text": texts[i][:200],  # Truncate for readability
+                "text": display[:200],
                 "confidence": float(conf),
                 "source": sources[i],
             })

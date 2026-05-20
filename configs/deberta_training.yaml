@@ -29,6 +29,8 @@ data:
   test_file: "data/processed/test.jsonl"
   class_weights: true  # compute from training distribution
   text_column: "text"
+  query_column: "query"
+  response_column: "response"
   label_column: "label"
 
 output:
