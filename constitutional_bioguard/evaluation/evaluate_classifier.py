@@ -129,6 +129,134 @@ def predict_batch(
     return predictions
 
 
+# ---------------------------------------------------------------------------
+# Sliding-window inference for long inputs
+# ---------------------------------------------------------------------------
+
+def _tokenize_length(tokenizer, text: str) -> int:
+    """Return the number of tokens for *text* (no special tokens)."""
+    return len(tokenizer.encode(text, add_special_tokens=False))
+
+
+def predict_sliding(
+    model,
+    tokenizer,
+    query: str,
+    response: str,
+    max_length: int = 512,
+    stride: int = 256,
+    device: Optional[str] = None,
+    normalize: bool = True,
+    aggregation: str = "max",
+    threshold: float = 0.5,
+) -> tuple[int, float, float, int]:
+    """Classify a single query/response pair with sliding-window inference.
+
+    When the combined input exceeds *max_length* tokens the response is
+    split into overlapping windows (with *stride* token overlap).  The
+    query is prepended to every window so local context is always present.
+
+    Aggregation:
+        ``"max"``  — use ``max(p_unsafe)`` across windows.
+                     Conservative; suited for safety classifiers.
+        ``"mean"`` — use ``mean(p_unsafe)``.
+
+    Returns:
+        ``(label, confidence, p_unsafe, n_windows)``
+    """
+    if normalize:
+        from constitutional_bioguard.preprocessing import normalize_text
+        query = normalize_text(query)
+        response = normalize_text(response)
+
+    # How many tokens does the query consume?  Reserve 3 for [CLS] + 2×[SEP].
+    q_ids = tokenizer.encode(query, add_special_tokens=False)
+    r_ids = tokenizer.encode(response, add_special_tokens=False)
+    special_budget = 3  # [CLS] … [SEP] … [SEP]
+    r_budget = max_length - len(q_ids) - special_budget
+
+    if r_budget < 1:
+        # Query alone exceeds limit — fall back to simple truncation
+        preds = predict_batch(
+            model=model, tokenizer=tokenizer,
+            queries=[query], responses=[response],
+            max_length=max_length, normalize=False, device=device,
+        )
+        return (*preds[0], 1)
+
+    if len(r_ids) <= r_budget:
+        # Fits in a single window
+        preds = predict_batch(
+            model=model, tokenizer=tokenizer,
+            queries=[query], responses=[response],
+            max_length=max_length, normalize=False, device=device,
+        )
+        return (*preds[0], 1)
+
+    # --- multiple windows needed ---
+    if device is None:
+        device = "cuda" if torch.cuda.is_available() else "cpu"
+    model = model.to(device)
+
+    window_probs: list[float] = []
+    start = 0
+    while start < len(r_ids):
+        end = start + r_budget
+        chunk_ids = r_ids[start:end]
+        chunk_text = tokenizer.decode(chunk_ids, skip_special_tokens=True)
+
+        inputs = tokenizer(
+            query, chunk_text,
+            padding=True, truncation=True,
+            max_length=max_length, return_tensors="pt",
+        ).to(device)
+
+        with torch.no_grad():
+            probs = torch.softmax(model(**inputs).logits, dim=-1)
+            window_probs.append(float(probs[0, 1]))
+
+        if end >= len(r_ids):
+            break
+        start += stride
+
+    n_windows = len(window_probs)
+    if aggregation == "max":
+        p_unsafe = max(window_probs)
+    else:
+        p_unsafe = sum(window_probs) / n_windows
+
+    label = 1 if p_unsafe >= threshold else 0
+    confidence = p_unsafe if label == 1 else (1.0 - p_unsafe)
+    return (label, confidence, p_unsafe, n_windows)
+
+
+def predict_batch_sliding(
+    model,
+    tokenizer,
+    queries: list[str],
+    responses: list[str],
+    max_length: int = 512,
+    stride: int = 256,
+    device: Optional[str] = None,
+    normalize: bool = True,
+    aggregation: str = "max",
+    threshold: float = 0.5,
+) -> list[tuple[int, float, float, int]]:
+    """Batch wrapper around :func:`predict_sliding`.
+
+    Returns list of ``(label, confidence, p_unsafe, n_windows)`` tuples.
+    """
+    results = []
+    for q, r in zip(queries, responses):
+        results.append(predict_sliding(
+            model, tokenizer, q, r,
+            max_length=max_length, stride=stride,
+            device=device, normalize=normalize,
+            aggregation=aggregation, threshold=threshold,
+        ))
+    return results
+
+
 def evaluate_test_set(
     test_file: Optional[Path] = None,
     model_dir: Optional[Path] = None,

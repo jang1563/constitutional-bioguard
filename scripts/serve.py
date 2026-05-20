@@ -179,9 +179,25 @@ def _build_app(model_dir: Optional[Path] = None):
     async def classify(
         req: ClassifyRequest,
         normalize: bool = Query(default=True, description="Apply text normalization"),
+        sliding_window: bool = Query(default=False, description="Use sliding-window for long inputs"),
     ) -> ClassifyResponse:
+        from constitutional_bioguard.evaluation.evaluate_classifier import predict_sliding
+
         t0 = time.perf_counter()
         pair = req.to_pair()
+        if pair and sliding_window:
+            label, conf, p_unsafe, _nw = predict_sliding(
+                _STATE["model"], _STATE["tokenizer"],
+                pair[0], pair[1],
+                device=_STATE["device"], normalize=normalize,
+            )
+            latency_ms = (time.perf_counter() - t0) * 1000
+            return ClassifyResponse(
+                label="UNSAFE" if label == 1 else "SAFE",
+                p_unsafe=p_unsafe,
+                latency_ms=round(latency_ms, 2),
+            )
+
         if pair:
             results = _classify(
                 do_normalize=normalize, queries=[pair[0]], responses=[pair[1]],
