@@ -1,0 +1,63 @@
+# Model variant experiment configurations
+# Usage:
+#   python scripts/run_variant_experiment.py --variant deberta-large
+#   python scripts/run_variant_experiment.py --variant mdeberta
+#   python scripts/run_variant_experiment.py --variant biomedbert
+#   python scripts/run_variant_experiment.py --variant biolinkbert
+#   python scripts/run_variant_experiment.py --all
+
+variants:
+  deberta-base:
+    name: "microsoft/deberta-v3-base"
+    max_seq_length: 512
+    description: "Current baseline (deberta-v3-base)"
+    per_device_train_batch_size: 16
+
+  deberta-large:
+    name: "microsoft/deberta-v3-large"
+    max_seq_length: 512
+    description: "Performance ceiling — larger DeBERTa"
+    per_device_train_batch_size: 4
+    gradient_accumulation_steps: 8
+
+  mdeberta:
+    name: "microsoft/mdeberta-v3-base"
+    max_seq_length: 512
+    description: "Multilingual DeBERTa for cross-lingual biosafety"
+    per_device_train_batch_size: 16
+
+  biomedbert:
+    name: "microsoft/BiomedNLP-BiomedBERT-base-uncased-abstract-fulltext"
+    max_seq_length: 512
+    description: "Biomedical domain pre-training (PubMed + PMC)"
+    per_device_train_batch_size: 16
+
+  biolinkbert:
+    name: "michiyasunaga/BioLinkBERT-base"
+    max_seq_length: 512
+    description: "Bio NLP baseline — link-aware pre-training on PubMed"
+    per_device_train_batch_size: 16
+
+# Shared training params (override per-variant above)
+shared_training:
+  num_train_epochs: 5
+  learning_rate: 2.0e-5
+  lr_scheduler_type: "cosine"
+  warmup_ratio: 0.1
+  weight_decay: 0.01
+  bf16: false
+  seed: 42
+  logging_steps: 50
+  eval_strategy: "epoch"
+  save_strategy: "epoch"
+  save_total_limit: 2
+  load_best_model_at_end: true
+  metric_for_best_model: "f1"
+  early_stopping_patience: 2
+
+evaluation:
+  # After training each variant, run these evaluation steps
+  run_internal: true
+  run_adversarial: true
+  run_overrefusal: true
+  run_calibration: true
