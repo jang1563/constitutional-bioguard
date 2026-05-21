@@ -4,7 +4,7 @@
 [![Python 3.10+](https://img.shields.io/badge/python-3.10%2B-blue)](pyproject.toml)
 [![HF Model](https://img.shields.io/badge/%F0%9F%A4%97%20Hugging%20Face-Model-yellow)](https://huggingface.co/jang1563/constitutional-bioguard-deberta-v1)
 
-> **TL;DR.** Prototype biological dual-use content classifier built using Anthropic's [Constitutional Classifiers](https://arxiv.org/abs/2501.18837) methodology. 56 biosafety rules across 7 NSABB categories drive synthetic data generation; DeBERTa-v3-base is fine-tuned to flag unsafe biological queries. Held-out F1 = 0.980, AUROC = 0.998, 0/325 over-refusal FPR; 9.79% mean adversarial ASR. This is a domain-extension prototype, not a production-equivalent safeguard.
+> **TL;DR.** Prototype biological dual-use content classifier built using Anthropic's [Constitutional Classifiers](https://arxiv.org/abs/2501.18837) methodology. 56 biosafety rules across 7 NSABB categories drive synthetic data generation; DeBERTa-v3-base is fine-tuned to flag unsafe biological queries. Latest local full pipeline run reports held-out F1 = 0.9807, AUROC = 0.9980, over-refusal FPR = 0.90%, adversarial mean ASR = 0.00%. This is a domain-extension prototype, not a production-equivalent safeguard.
 
 **Author:** JangKeun Kim, Weill Cornell Medicine (jak4013@med.cornell.edu)
 
@@ -19,6 +19,14 @@
 | Internal review | Solo author; expert circulation pending |
 | Responsible-use scope | [`SAFETY.md`](SAFETY.md) |
 
+### Latest Run Snapshot (2026-05-21)
+
+- Internal eval: F1 0.980676, AUROC 0.997961, FPR 0.0090 on 643 samples (models/deberta_bioguard_v1)
+- Calibration: optimal threshold = 0.10, best_score = 0.9852, n_val_samples = 697
+- Adversarial suite: 20 attacks, mean ASR = 0.00%
+- Over-refusal: FPR = 0.00% on 100-sample benign holdout
+- External validation: cohen kappa = 0.414 (threat_level>=4), f1 = 0.5143
+
 ## Reviewer Framing
 
 This repository is a **prototype** showing one concrete instantiation of the Constitutional Classifiers methodology applied to the biosafety domain. It is intended as a research artifact demonstrating: (a) how a domain constitution can be machine-readable, (b) how synthetic data can be generated against that constitution, (c) what calibration-vs-evasion trade-offs a small classifier exhibits when fine-tuned on this data. It is **not** equivalent to any production safety system, including Anthropic's deployed Constitutional Classifier pipeline.
@@ -27,11 +35,11 @@ This repository is a **prototype** showing one concrete instantiation of the Con
 
 | Metric | Value | Target |
 |--------|-------|--------|
-| F1 | 0.980 | >= 0.90 |
-| AUROC | 0.998 | -- |
-| Precision / Recall | 0.984 / 0.976 | -- |
-| Over-refusal FPR | 0.00% (325 benign) | < 2% |
-| Adversarial mean ASR | 9.79% (20 attacks) | < 15% |
+| F1 | 0.9807 | >= 0.90 |
+| AUROC | 0.9980 | -- |
+| Precision / Recall | 0.9951 / 0.9667 | -- |
+| Over-refusal FPR | 0.00% (100 benign) | < 2% |
+| Adversarial mean ASR | 0.00% (20 attacks) | < 15% |
 | External kappa (TL>=4) | 0.414 | >= 0.80 |
 
 Per-category F1 scores range from 0.952 (disrupt_immunity) to 1.000 (enhance_harm), with all 7 NSABB categories above 0.95.
