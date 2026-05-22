@@ -62,7 +62,7 @@ def count_val_labels(val_file: Optional[Path] = None) -> tuple[int, int]:
     """
     val_file = val_file or DATA_PROCESSED / "val.jsonl"
     n_pos = n_neg = 0
-    with open(val_file) as f:
+    with open(val_file, encoding="utf-8") as f:
         for line in f:
             line = line.strip()
             if not line:
@@ -284,7 +284,7 @@ def run_escalation_calibration(
     )
     output_file = output_file or METRICS_DIR / "escalation_calibration.json"
 
-    with open(calibration_file) as f:
+    with open(calibration_file, encoding="utf-8") as f:
         calibration = json.load(f)
     curve = calibration["curve"]
 
@@ -321,7 +321,7 @@ def run_escalation_calibration(
     }
 
     output_file.parent.mkdir(parents=True, exist_ok=True)
-    with open(output_file, "w") as f:
+    with open(output_file, "w", encoding="utf-8") as f:
         json.dump(report, f, indent=2)
     logger.info("Saved escalation calibration report to %s", output_file)
 

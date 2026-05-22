@@ -34,7 +34,7 @@ def plot_confusion_matrix(output_dir: Optional[Path] = None) -> Path:
     output_dir.mkdir(parents=True, exist_ok=True)
 
     cm_file = METRICS_DIR / "confusion_matrix.json"
-    with open(cm_file) as f:
+    with open(cm_file, encoding="utf-8") as f:
         data = json.load(f)
 
     cm = np.array(data["matrix"])
@@ -68,7 +68,7 @@ def plot_roc_curve(output_dir: Optional[Path] = None) -> Path:
 
     # Load internal evaluation for AUROC
     eval_file = METRICS_DIR / "internal_evaluation.json"
-    with open(eval_file) as f:
+    with open(eval_file, encoding="utf-8") as f:
         data = json.load(f)
 
     auroc = data["internal_metrics"]["auroc"]
@@ -112,7 +112,7 @@ def plot_per_category_f1(output_dir: Optional[Path] = None) -> Path:
     output_dir.mkdir(parents=True, exist_ok=True)
 
     eval_file = METRICS_DIR / "internal_evaluation.json"
-    with open(eval_file) as f:
+    with open(eval_file, encoding="utf-8") as f:
         data = json.load(f)
 
     categories = []
@@ -157,7 +157,7 @@ def plot_adversarial_heatmap(output_dir: Optional[Path] = None) -> Path:
     output_dir.mkdir(parents=True, exist_ok=True)
 
     adv_file = METRICS_DIR / "adversarial_results.json"
-    with open(adv_file) as f:
+    with open(adv_file, encoding="utf-8") as f:
         results = json.load(f)
 
     # Organize by category
@@ -216,7 +216,7 @@ def plot_overrefusal_analysis(output_dir: Optional[Path] = None) -> Path:
     output_dir.mkdir(parents=True, exist_ok=True)
 
     overrefusal_file = METRICS_DIR / "overrefusal_results.json"
-    with open(overrefusal_file) as f:
+    with open(overrefusal_file, encoding="utf-8") as f:
         data = json.load(f)
 
     per_source = data.get("per_source", {})

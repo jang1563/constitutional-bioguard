@@ -236,7 +236,7 @@ def generate_all_benign(
         logger.info("  Generated %d %s examples", len(examples), source)
 
     # Save
-    with open(output_file, "w") as f:
+    with open(output_file, "w", encoding="utf-8") as f:
         for ex in all_examples:
             f.write(ex.model_dump_json() + "\n")
 

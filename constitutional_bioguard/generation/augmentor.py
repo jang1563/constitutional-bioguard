@@ -347,7 +347,7 @@ def run_augmentation(
         augmented.append(aug)
 
     # Save
-    with open(output_file, "w") as f:
+    with open(output_file, "w", encoding="utf-8") as f:
         for ex in augmented:
             f.write(ex.model_dump_json() + "\n")
 
