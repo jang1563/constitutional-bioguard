@@ -4,7 +4,7 @@
 [![Python 3.10+](https://img.shields.io/badge/python-3.10%2B-blue)](pyproject.toml)
 [![HF Model](https://img.shields.io/badge/%F0%9F%A4%97%20Hugging%20Face-Model-yellow)](https://huggingface.co/jang1563/constitutional-bioguard-deberta-v1)
 
-> **TL;DR.** Prototype biological dual-use content classifier built using Anthropic's [Constitutional Classifiers](https://arxiv.org/abs/2501.18837) methodology. 56 biosafety rules across 7 NSABB categories drive synthetic data generation; DeBERTa-v3-base is fine-tuned to flag unsafe biological queries. Latest local full pipeline run reports held-out F1 = 0.9807, AUROC = 0.9980, over-refusal FPR = 0.90%, adversarial mean ASR = 0.00%. This is a domain-extension prototype, not a production-equivalent safeguard.
+> **TL;DR.** Prototype biological dual-use content classifier built using Anthropic's [Constitutional Classifiers](https://arxiv.org/abs/2501.18837) methodology. 56 biosafety rules across 7 NSABB categories drive synthetic data generation; DeBERTa-v3-base is fine-tuned to flag unsafe biological queries. HPC evaluation reports held-out F1 = 0.9807, AUROC = 0.9980, over-refusal FPR = 0.00% (100 benign), adversarial mean ASR = 9.79% (20 attacks, pre-preprocessing; encoding attacks are mitigated by input normalization). This is a domain-extension prototype, not a production-equivalent safeguard.
 
 **Author:** JangKeun Kim, Weill Cornell Medicine (jak4013@med.cornell.edu)
 
@@ -23,7 +23,7 @@
 
 - Internal eval: F1 0.980676, AUROC 0.997961, FPR 0.0090 on 643 samples (models/deberta_bioguard_v1)
 - Calibration: optimal threshold = 0.10, best_score = 0.9852, n_val_samples = 697
-- Adversarial suite: 20 attacks, mean ASR = 0.00%
+- Adversarial suite: 20 attacks, mean ASR = 9.79% (pre-preprocessing); encoding attacks mitigated by input normalization
 - Over-refusal: FPR = 0.00% on 100-sample benign holdout
 - External validation: cohen kappa = 0.414 (threat_level>=4), f1 = 0.5143
 
@@ -39,10 +39,10 @@ This repository is a **prototype** showing one concrete instantiation of the Con
 | AUROC | 0.9980 | -- |
 | Precision / Recall | 0.9951 / 0.9667 | -- |
 | Over-refusal FPR | 0.00% (100 benign) | < 2% |
-| Adversarial mean ASR | 0.00% (20 attacks) | < 15% |
+| Adversarial mean ASR | 9.79% (20 attacks, pre-preprocessing) | < 15% |
 | External kappa (TL>=4) | 0.414 | >= 0.80 |
 
-Per-category F1 scores range from 0.952 (disrupt_immunity) to 1.000 (enhance_harm), with all 7 NSABB categories above 0.95.
+Per-category F1 scores range from 0.931 (confer_resistance) to 1.000 (enhance_harm, alter_host_range, enhance_susceptibility). 6 of 7 NSABB categories are above 0.95; confer_resistance is 0.931.
 
 The external kappa gap is a known artifact: the classifier correctly flags dangerous *queries* even when LLMs refuse to answer, while the external benchmark (BioThreat-Eval) uses response-based labeling that penalizes this conservative behavior.
 
@@ -52,7 +52,7 @@ The external kappa gap is a known artifact: the classifier correctly flags dange
 
 The BioThreat-Eval external benchmark scores LLM *responses* on four dimensions (refusal rate, information completeness, operational specificity, safety awareness). Constitutional BioGuard classifies *queries* — it flags whether a question is dangerous regardless of how the downstream LLM responds. When the same dangerous query is sent to GPT-4 and Claude (which both refuse), BioThreat-Eval labels those responses as safe; our classifier labels the query as unsafe. This architectural mismatch accounts for the kappa gap.
 
-Three validation strategies were tested: (1) `threat_level >= 4` with refusal correction (kappa = 0.414, best alignment), (2) `threat_level >= 3` (kappa = 0.310), and (3) response-based (kappa = 0.244). All are reported in `results/` for transparency. The internal metrics (F1 = 0.980 on held-out test set, 0.00% over-refusal FPR on 325 benign queries) reflect the classifier's performance on its intended task.
+Three validation strategies were tested: (1) `threat_level >= 4` (kappa = 0.414, best alignment), (2) `threat_level >= 3` (kappa = 0.189), and (3) response-based (kappa = 0.242). All are reported in `results/` for transparency. The internal metrics (F1 = 0.980 on held-out test set, 0.00% over-refusal FPR on 100-sample benign holdout) reflect the classifier's performance on its intended task.
 
 Additional limitations:
 - Trained on Claude-generated synthetic data; real-world distribution shift is uncharacterized
@@ -79,7 +79,7 @@ Claude API synthetic generation
     |  + augmentation (translation, jailbreak, formality, prefills)
     |  + 325 benign biology queries
     v
-~4,500 labeled examples (2968 train / 635 val / 664 test)
+~4,500 labeled examples (3062 train / 697 val / 643 test)
     |
     v
 DeBERTa-v3-base binary classifier
@@ -274,7 +274,7 @@ Encoding attacks (especially ROT13 at 47.9%, URL-encode at 29.2%) and character-
 This prototype illustrates **one** point in the safeguards stack: a domain-specific output classifier trained on a machine-readable constitution. It complements rather than replaces:
 
 - **Capability evaluations** (e.g. WMDP, biothreat-eval): measure what a base model could enable. This classifier sits downstream of those, on the response path.
-- **Over-refusal calibration** (e.g. [bio-overrefusal-v0.1](https://github.com/jang1563/bio-overrefusal-v0.1)): measures whether a deployed safeguard blocks legitimate research. This repository's `make overrefusal` target reports the same metric on the included benign set (0/325).
+- **Over-refusal calibration** (e.g. [bio-overrefusal-v0.1](https://github.com/jang1563/bio-overrefusal-v0.1)): measures whether a deployed safeguard blocks legitimate research. This repository's `make overrefusal` target reports the same metric on the included benign holdout (0/100).
 - **Boundary-case adjudication** (e.g. [ambiguity-casebook](https://github.com/jang1563/ambiguity-casebook)): documents where reasonable experts disagree. The 9.79% mean adversarial ASR here is one signal that boundary cases need human-in-the-loop, not classifier-only routing.
 
 The 0.414 external kappa against BioThreat-Eval is **not** a "the classifier failed" finding; it is an architectural mismatch (query-level vs response-level labels) that surfaces a real design choice every safeguard team has to make. See Limitations for the full discussion.
