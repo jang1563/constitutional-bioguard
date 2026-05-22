@@ -23,6 +23,7 @@ import codecs
 import logging
 import re
 import unicodedata
+from collections import Counter
 from urllib.parse import unquote as url_unquote
 
 logger = logging.getLogger(__name__)
@@ -66,13 +67,32 @@ def _is_plausible_text(text: str, min_printable_ratio: float = 0.85) -> bool:
     return (printable / len(text)) >= min_printable_ratio
 
 
+def _english_marker_score(text: str) -> int:
+    """Count common English markers that are useful for ROT13 detection."""
+    words = re.findall(r"[a-zA-Z]{2,}", text.lower())
+    if not words:
+        return 0
+    common = {
+        "a", "an", "and", "are", "as", "be", "can", "could", "for", "from",
+        "how", "i", "in", "is", "it", "of", "on", "or", "that", "the",
+        "this", "to", "what", "when", "where", "which", "with", "would",
+        "you", "your",
+    }
+    counts = Counter(words)
+    return sum(counts[word] for word in common)
+
+
 # ── ROT13 ────────────────────────────────────────────────────────────────────
 
 def _try_decode_rot13(text: str) -> str | None:
     """Decode ROT13 if the result looks like natural language."""
     try:
         decoded = codecs.decode(text, "rot_13")
-        if _is_plausible_text(decoded) and decoded != text:
+        if (
+            _is_plausible_text(decoded)
+            and decoded != text
+            and _english_marker_score(decoded) > _english_marker_score(text)
+        ):
             return decoded
     except Exception:
         pass

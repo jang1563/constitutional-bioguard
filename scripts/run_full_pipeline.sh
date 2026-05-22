@@ -46,9 +46,14 @@ echo ""
 echo "[4/6] Preparing data splits..."
 $PYTHON scripts/run_pipeline.py --step prepare -v
 
-# Step 5: Run threshold calibration
+# Step 5: Train baseline classifier on the regenerated splits
 echo ""
-echo "[5/6] Running threshold calibration..."
+echo "[5/7] Training baseline classifier..."
+$PYTHON scripts/run_pipeline.py --step train --model deberta -v
+
+# Step 6: Run threshold calibration
+echo ""
+echo "[6/7] Running threshold calibration..."
 $PYTHON -c "
 import logging
 logging.basicConfig(level=logging.INFO)
@@ -59,9 +64,9 @@ print(f'Best F1: {result[\"best_score\"]}')
 print(f'N samples: {result[\"n_val_samples\"]}')
 "
 
-# Step 6: Quick sanity — run internal evaluation
+# Step 7: Quick sanity — run internal evaluation
 echo ""
-echo "[6/6] Running internal evaluation..."
+echo "[7/7] Running internal evaluation..."
 $PYTHON scripts/run_pipeline.py --step evaluate -v
 
 echo ""
