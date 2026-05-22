@@ -41,6 +41,8 @@ STEPS = [
     "external-validate",
     "adversarial",
     "overrefusal",
+    "escalation",
+    "bow-elimination",
     "figures",
     "all",
 ]
@@ -158,6 +160,34 @@ def step_figures() -> None:
     logger.info("Generated %d figures", len(figures))
 
 
+def step_escalation() -> None:
+    """WS-1: derive the first-stage escalation operating point."""
+    from constitutional_bioguard.evaluation.escalation import (
+        run_escalation_calibration,
+    )
+
+    report = run_escalation_calibration()
+    op = report["escalation_operating_point"]
+    logger.info(
+        "Escalation calibration: gate %s",
+        "PASSED" if op.get("gate_passed") else "FAILED",
+    )
+
+
+def step_bow_elimination() -> None:
+    """WS-2: diagnose keyword-trivial training examples (dry run)."""
+    from constitutional_bioguard.training.bow_elimination import (
+        eliminate_bow_examples,
+    )
+
+    report = eliminate_bow_examples(dry_run=True)
+    logger.info(
+        "Bag-of-words elimination: BoW CV AUROC=%.4f, trivial fraction=%.3f",
+        report["bow_cv_auroc"],
+        report["trivial_fraction"],
+    )
+
+
 STEP_MAP = {
     "validate-constitution": step_validate_constitution,
     "generate-synthetic": step_generate_synthetic,
@@ -169,6 +199,8 @@ STEP_MAP = {
     "external-validate": step_external_validate,
     "adversarial": step_adversarial,
     "overrefusal": step_overrefusal,
+    "escalation": step_escalation,
+    "bow-elimination": step_bow_elimination,
     "figures": step_figures,
 }
 
