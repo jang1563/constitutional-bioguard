@@ -148,9 +148,15 @@ for text, p in zip(texts, probs):
     print(f"{label} (p={p[1]:.3f}): {text[:60]}...")
 ```
 
-### Full Pipeline: Data Regeneration & Variant Experiments
+### Full Pipeline: Data Regeneration
 
-Regenerate all synthetic training data and compare model architectures across 5 variants (deberta-base, deberta-large, mdeberta, biomedbert, biolinkbert).
+Regenerate all synthetic training data and retrain the baseline classifier.
+
+> **Note on model variants.** Infrastructure exists to compare five architectures
+> (deberta-base, deberta-large, mdeberta, biomedbert, biolinkbert) via
+> `scripts/run_variant_experiment.py`. As of this release **only the deberta-base
+> baseline has been trained and evaluated**; the multi-variant comparison is
+> planned future work and no variant results are reported here.
 
 **Step 1: Run the complete pipeline** (2–4 hours)
 
@@ -158,20 +164,23 @@ Regenerate all synthetic training data and compare model architectures across 5 
 source ~/.api_keys && nohup bash scripts/run_full_pipeline.sh > pipeline.log 2>&1 &
 ```
 
-This runs all 6 steps automatically:
+This runs all 7 steps automatically:
 1. Generate synthetic data (1960+ examples from 56 rules)
 2. Augment restricted/boundary examples
 3. Generate benign queries
 4. Prepare stratified train/val/test splits
-5. Calibrate threshold on validation set
-6. Evaluate baseline model
+5. Train the DeBERTa-v3-base classifier
+6. Calibrate threshold on validation set
+7. Evaluate the trained model
 
 **Monitor progress:**
 ```bash
 python scripts/monitor_pipeline.py --watch
 ```
 
-**Step 2: Compare model variants** (2–3 hours, after pipeline completes)
+**Step 2 (future work): Compare model variants** (~2–3 hours)
+
+The variant-comparison harness is in place but has not yet been run. To execute it:
 
 ```bash
 python scripts/run_variant_experiment.py --all
