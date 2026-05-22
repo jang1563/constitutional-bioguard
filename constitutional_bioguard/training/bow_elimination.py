@@ -114,6 +114,40 @@ def bow_predictability(
     }
 
 
+def _class_weights(labels: list[int]) -> dict[str, float]:
+    """Balanced class weights ``n / (2 * n_c)`` for a label list."""
+    n = len(labels)
+    n_pos = sum(1 for y in labels if y == 1)
+    n_neg = n - n_pos
+    return {
+        "1": round(n / (2 * n_pos), 10) if n_pos else 1.0,
+        "0": round(n / (2 * n_neg), 10) if n_neg else 1.0,
+    }
+
+
+def confidence_sweep(
+    p_true: list[float], labels: list[int], thresholds: list[float]
+) -> list[dict]:
+    """How many examples survive (are kept) at each confidence threshold.
+
+    An example is *kept* when the bag-of-words model's probability on its true
+    label is below the threshold (i.e. it is not keyword-trivial).
+    """
+    sweep = []
+    for c in thresholds:
+        kept = [(pt, y) for pt, y in zip(p_true, labels) if pt < c]
+        n_pos = sum(1 for _, y in kept if y == 1)
+        sweep.append(
+            {
+                "confidence": c,
+                "n_kept": len(kept),
+                "n_kept_positive": n_pos,
+                "n_kept_negative": len(kept) - n_pos,
+            }
+        )
+    return sweep
+
+
 def eliminate_bow_examples(
     train_file: Optional[Path] = None,
     output_file: Optional[Path] = None,
@@ -148,6 +182,15 @@ def eliminate_bow_examples(
 
     result = bow_predictability(texts, labels, confidence=confidence)
 
+    # Probability the BoW model assigns to each example's TRUE label.
+    p_true = [
+        (p if y == 1 else 1.0 - p)
+        for p, y in zip(result["p_unsafe"], labels)
+    ]
+    sweep = confidence_sweep(
+        p_true, labels, [0.90, 0.95, 0.99, 0.999, 0.9999]
+    )
+
     # Per-category breakdown of triviality, if category metadata is present.
     by_category: dict[str, dict] = {}
     for rec, is_trivial in zip(records, result["trivial"]):
@@ -167,6 +210,7 @@ def eliminate_bow_examples(
         "n_trivial": result["n_trivial"],
         "trivial_fraction": result["trivial_fraction"],
         "confidence_threshold": confidence,
+        "confidence_sweep": sweep,
         "by_category": by_category,
         "interpretation": (
             "A high bag-of-words cross-validated AUROC means surface tokens "
@@ -191,16 +235,45 @@ def eliminate_bow_examples(
             for rec, is_trivial in zip(records, result["trivial"])
             if not is_trivial
         ]
+        kept_labels = [int(r["label"]) for r in kept]
         with open(output_file, "w") as f:
             for rec in kept:
                 f.write(json.dumps(rec) + "\n")
+
+        # Class weights for the filtered set differ from the full-set weights;
+        # write a sibling file so v2 retraining uses matched weights rather
+        # than the v1 data/processed/class_weights.json.
+        weights = _class_weights(kept_labels)
+        weights_file = output_file.with_name(
+            output_file.stem + "_class_weights.json"
+        )
+        with open(weights_file, "w") as f:
+            json.dump(weights, f, indent=2)
+
         report["n_kept"] = len(kept)
+        report["n_kept_positive"] = sum(kept_labels)
+        report["n_kept_negative"] = len(kept) - sum(kept_labels)
         report["output_file"] = str(output_file)
+        report["class_weights_file"] = str(weights_file)
+        report["class_weights"] = weights
+        report["retraining_note"] = (
+            "This is the bag-of-words-HARD subset, not a drop-in replacement "
+            "for the full training set. It removes the most lexically trivial "
+            "examples so a v2 classifier is pushed toward intent over "
+            "vocabulary, but it is smaller and the deeper WS-2 conclusion "
+            "stands: because ~93% of the synthetic corpus is keyword-trivial, "
+            "the durable fix is harder data GENERATION (lexically matched "
+            "safe/unsafe pairs, boundary cases) rather than filtering alone. "
+            "Treat retraining on this subset as a controlled experiment."
+        )
+        with open(report_file, "w") as f:
+            json.dump(report, f, indent=2)
         logger.info(
-            "Wrote %d filtered examples (removed %d) to %s",
+            "Wrote %d filtered examples (removed %d) to %s; class weights -> %s",
             len(kept),
             result["n_trivial"],
             output_file,
+            weights_file,
         )
     else:
         logger.info(
