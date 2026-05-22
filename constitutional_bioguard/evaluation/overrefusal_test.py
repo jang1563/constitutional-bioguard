@@ -35,7 +35,7 @@ def load_benign_examples(
     holdout_file = holdout_file or DATA_PROCESSED / "overrefusal_holdout.jsonl"
     if holdout_file.exists():
         examples = []
-        with open(holdout_file) as f:
+        with open(holdout_file, encoding="utf-8") as f:
             for line in f:
                 if not line.strip():
                     continue
@@ -62,7 +62,7 @@ def load_benign_examples(
 
     test_file = test_file or DATA_PROCESSED / "test.jsonl"
     if test_file.exists():
-        with open(test_file) as f:
+        with open(test_file, encoding="utf-8") as f:
             for line in f:
                 if not line.strip():
                     continue
@@ -78,7 +78,7 @@ def load_benign_examples(
     benign_file = benign_file or DATA_RAW / "benign_queries.jsonl"
     if benign_file.exists():
         seen = {(e["query"], e["response"]) for e in examples}
-        with open(benign_file) as f:
+        with open(benign_file, encoding="utf-8") as f:
             for line in f:
                 if not line.strip():
                     continue
@@ -181,7 +181,7 @@ def run_overrefusal_test(
     # Save
     METRICS_DIR.mkdir(parents=True, exist_ok=True)
     output_file = METRICS_DIR / "overrefusal_results.json"
-    with open(output_file, "w") as f:
+    with open(output_file, "w", encoding="utf-8") as f:
         json.dump(results, f, indent=2)
     logger.info("Saved over-refusal results to %s", output_file)
 

@@ -36,7 +36,7 @@ logger = logging.getLogger(__name__)
 def load_training_config() -> dict:
     """Load DeBERTa training config from YAML."""
     config_path = CONFIGS_DIR / "deberta_training.yaml"
-    with open(config_path) as f:
+    with open(config_path, encoding="utf-8") as f:
         return yaml.safe_load(f)
 
 
@@ -45,7 +45,7 @@ def load_dataset(filepath: Path) -> "Dataset":
     from datasets import Dataset
 
     records = []
-    with open(filepath) as f:
+    with open(filepath, encoding="utf-8") as f:
         for line in f:
             line = line.strip()
             if line:
@@ -207,7 +207,7 @@ def train(
         if not weights_file.is_absolute():
             weights_file = DATA_PROCESSED / weights_file
         if weights_file.exists():
-            with open(weights_file) as f:
+            with open(weights_file, encoding="utf-8") as f:
                 raw_weights = json.load(f)
             class_weights = torch.tensor(
                 [raw_weights.get("0", 1.0), raw_weights.get("1", 1.0)],
@@ -286,7 +286,7 @@ def train(
 
     # Save metrics
     metrics_file = output_dir / "training_metrics.json"
-    with open(metrics_file, "w") as f:
+    with open(metrics_file, "w", encoding="utf-8") as f:
         json.dump(
             {
                 "train_metrics": train_result.metrics,

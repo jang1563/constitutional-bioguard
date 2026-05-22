@@ -20,7 +20,7 @@ def parse_pipeline_log(log_path: Path) -> dict:
     if not log_path.exists():
         return {"status": "not_started", "message": f"Log file not found: {log_path}"}
 
-    with open(log_path) as f:
+    with open(log_path, encoding="utf-8") as f:
         lines = f.readlines()
 
     if not lines:

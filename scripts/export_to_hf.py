@@ -52,7 +52,7 @@ def export_model(
     metrics_file = METRICS_DIR / "internal_evaluation.json"
     metrics = {}
     if metrics_file.exists():
-        with open(metrics_file) as f:
+        with open(metrics_file, encoding="utf-8") as f:
             metrics = json.load(f)
 
     internal = metrics.get("internal_metrics", {})
@@ -153,7 +153,7 @@ MIT
         print(f"Existing model card found at {card_path} — keeping it. "
               f"Pass --regenerate-card to overwrite with the generated template.")
     else:
-        with open(card_path, "w") as f:
+        with open(card_path, "w", encoding="utf-8") as f:
             f.write(model_card)
 
     # Create repo if needed, then upload
@@ -244,7 +244,7 @@ MIT
         tmpdir = Path(tmpdir)
 
         # Write dataset card
-        with open(tmpdir / "README.md", "w") as f:
+        with open(tmpdir / "README.md", "w", encoding="utf-8") as f:
             f.write(dataset_card)
 
         # Copy data files

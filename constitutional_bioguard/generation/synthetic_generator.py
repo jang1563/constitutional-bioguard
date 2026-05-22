@@ -355,7 +355,7 @@ def generate_all(
             (boundary_file, boundary_done),
         ]:
             if fpath.exists():
-                with open(fpath) as f:
+                with open(fpath, encoding="utf-8") as f:
                     for line in f:
                         line = line.strip()
                         if line:
@@ -416,7 +416,7 @@ def generate_all(
             else:
                 target_file = boundary_file
 
-            with open(target_file, "a") as f:
+            with open(target_file, "a", encoding="utf-8") as f:
                 f.write(example.model_dump_json() + "\n")
 
     # Summary
@@ -446,7 +446,7 @@ def load_existing_examples(data_dir: Optional[Path] = None) -> list[SyntheticExa
     ]:
         filepath = data_dir / filename
         if filepath.exists():
-            with open(filepath) as f:
+            with open(filepath, encoding="utf-8") as f:
                 for line in f:
                     line = line.strip()
                     if line:

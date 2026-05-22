@@ -49,7 +49,7 @@ def load_jsonl_examples(filepath: Path) -> list[SyntheticExample]:
         logger.warning("File not found: %s", filepath)
         return examples
 
-    with open(filepath) as f:
+    with open(filepath, encoding="utf-8") as f:
         for line_num, line in enumerate(f, 1):
             line = line.strip()
             if not line:
@@ -221,7 +221,7 @@ def split_benign_holdout(
 def save_jsonl(examples: list[dict], filepath: Path) -> None:
     """Save examples as JSONL."""
     filepath.parent.mkdir(parents=True, exist_ok=True)
-    with open(filepath, "w") as f:
+    with open(filepath, "w", encoding="utf-8") as f:
         for ex in examples:
             f.write(json.dumps(ex, ensure_ascii=False) + "\n")
     logger.info("Saved %d examples to %s", len(examples), filepath)
@@ -281,7 +281,7 @@ def prepare_data(
 
     # Save class weights
     weights_file = output_dir / "class_weights.json"
-    with open(weights_file, "w") as f:
+    with open(weights_file, "w", encoding="utf-8") as f:
         json.dump(weights, f, indent=2)
 
     # Summary
@@ -317,7 +317,7 @@ def prepare_data(
 
     # Save summary
     summary_file = output_dir / "data_summary.json"
-    with open(summary_file, "w") as f:
+    with open(summary_file, "w", encoding="utf-8") as f:
         json.dump(summary, f, indent=2)
 
     return summary

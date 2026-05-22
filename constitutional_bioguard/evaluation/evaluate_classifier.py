@@ -270,7 +270,7 @@ def evaluate_test_set(
 
     # Load test data
     records = []
-    with open(test_file) as f:
+    with open(test_file, encoding="utf-8") as f:
         for line in f:
             line = line.strip()
             if line:
@@ -331,14 +331,14 @@ def evaluate_test_set(
     # Save
     METRICS_DIR.mkdir(parents=True, exist_ok=True)
     metrics_file = METRICS_DIR / "internal_evaluation.json"
-    with open(metrics_file, "w") as f:
+    with open(metrics_file, "w", encoding="utf-8") as f:
         f.write(report.model_dump_json(indent=2))
     logger.info("Saved evaluation report to %s", metrics_file)
 
     # Save confusion matrix
     cm = confusion_matrix(true_labels, pred_labels)
     cm_file = METRICS_DIR / "confusion_matrix.json"
-    with open(cm_file, "w") as f:
+    with open(cm_file, "w", encoding="utf-8") as f:
         json.dump({"matrix": cm.tolist(), "labels": ["SAFE", "UNSAFE"]}, f, indent=2)
 
     # Save classification report
@@ -346,7 +346,7 @@ def evaluate_test_set(
         true_labels, pred_labels, target_names=["SAFE", "UNSAFE"]
     )
     report_file = METRICS_DIR / "classification_report.txt"
-    with open(report_file, "w") as f:
+    with open(report_file, "w", encoding="utf-8") as f:
         f.write(report_text)
 
     return report
@@ -396,7 +396,7 @@ def calibrate_threshold(
     model_dir_path = model_dir or (MODELS_DIR / "deberta_bioguard_v1")
 
     records = []
-    with open(val_file) as f:
+    with open(val_file, encoding="utf-8") as f:
         for line in f:
             if line.strip():
                 records.append(json.loads(line.strip()))
@@ -452,7 +452,7 @@ def calibrate_threshold(
     }
 
     cal_file = model_dir_path / "calibration.json"
-    with open(cal_file, "w") as f:
+    with open(cal_file, "w", encoding="utf-8") as f:
         json.dump(result, f, indent=2)
     logger.info(
         "Calibration: optimal threshold=%.2f (%s=%.4f) saved to %s",

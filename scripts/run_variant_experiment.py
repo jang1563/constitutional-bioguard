@@ -34,7 +34,7 @@ COMPARISON_FILE = RESULTS_DIR / "metrics" / "variant_comparison.json"
 
 
 def load_experiment_config() -> dict:
-    with open(EXPERIMENT_CONFIG) as f:
+    with open(EXPERIMENT_CONFIG, encoding="utf-8") as f:
         return yaml.safe_load(f)
 
 
@@ -146,7 +146,7 @@ def compare_results() -> None:
         print("No comparison file found. Run experiments first.")
         return
 
-    with open(COMPARISON_FILE) as f:
+    with open(COMPARISON_FILE, encoding="utf-8") as f:
         data = json.load(f)
 
     print("\n" + "=" * 90)
@@ -229,7 +229,7 @@ def main() -> int:
     # Merge with existing results
     existing = []
     if COMPARISON_FILE.exists():
-        with open(COMPARISON_FILE) as f:
+        with open(COMPARISON_FILE, encoding="utf-8") as f:
             existing = json.load(f).get("results", [])
     existing_names = {e["variant"] for e in existing}
     for r in all_results:
@@ -237,7 +237,7 @@ def main() -> int:
             existing = [e for e in existing if e["variant"] != r["variant"]]
         existing.append(r)
 
-    with open(COMPARISON_FILE, "w") as f:
+    with open(COMPARISON_FILE, "w", encoding="utf-8") as f:
         json.dump({"results": existing}, f, indent=2)
     logger.info("Saved comparison to %s", COMPARISON_FILE)
 

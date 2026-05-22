@@ -180,7 +180,7 @@ def evaluate_wmdp(model_dir: Path, limit: int | None = None) -> dict:
     # ── Save results ──────────────────────────────────────────────────────────
     METRICS_DIR.mkdir(parents=True, exist_ok=True)
     out_path = METRICS_DIR / "wmdp_bio_evaluation.json"
-    with open(out_path, "w") as f:
+    with open(out_path, "w", encoding="utf-8") as f:
         json.dump(results, f, indent=2)
     print(f"\nSaved to: {out_path}")
 

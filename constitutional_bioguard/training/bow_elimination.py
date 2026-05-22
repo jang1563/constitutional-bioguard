@@ -33,7 +33,7 @@ logger = logging.getLogger(__name__)
 def load_records(path: Path) -> list[dict]:
     """Load a JSONL file into a list of dicts."""
     records = []
-    with open(path) as f:
+    with open(path, encoding="utf-8") as f:
         for line in f:
             line = line.strip()
             if line:
@@ -225,7 +225,7 @@ def eliminate_bow_examples(
     }
 
     report_file.parent.mkdir(parents=True, exist_ok=True)
-    with open(report_file, "w") as f:
+    with open(report_file, "w", encoding="utf-8") as f:
         json.dump(report, f, indent=2)
     logger.info("Saved bag-of-words elimination report to %s", report_file)
 
@@ -236,7 +236,7 @@ def eliminate_bow_examples(
             if not is_trivial
         ]
         kept_labels = [int(r["label"]) for r in kept]
-        with open(output_file, "w") as f:
+        with open(output_file, "w", encoding="utf-8") as f:
             for rec in kept:
                 f.write(json.dumps(rec) + "\n")
 
@@ -247,7 +247,7 @@ def eliminate_bow_examples(
         weights_file = output_file.with_name(
             output_file.stem + "_class_weights.json"
         )
-        with open(weights_file, "w") as f:
+        with open(weights_file, "w", encoding="utf-8") as f:
             json.dump(weights, f, indent=2)
 
         report["n_kept"] = len(kept)
@@ -266,7 +266,7 @@ def eliminate_bow_examples(
             "safe/unsafe pairs, boundary cases) rather than filtering alone. "
             "Treat retraining on this subset as a controlled experiment."
         )
-        with open(report_file, "w") as f:
+        with open(report_file, "w", encoding="utf-8") as f:
             json.dump(report, f, indent=2)
         logger.info(
             "Wrote %d filtered examples (removed %d) to %s; class weights -> %s",

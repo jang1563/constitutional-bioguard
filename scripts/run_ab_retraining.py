@@ -199,7 +199,7 @@ def main() -> None:
         METRICS_DIR / "ab_retraining_comparison.json"
     )
     output.parent.mkdir(parents=True, exist_ok=True)
-    with open(output, "w") as f:
+    with open(output, "w", encoding="utf-8") as f:
         json.dump(comparison, f, indent=2)
     logger.info("Wrote A/B comparison to %s", output)
 

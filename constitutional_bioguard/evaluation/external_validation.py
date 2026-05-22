@@ -38,7 +38,7 @@ def load_query_bank(path: Optional[Path] = None) -> list[dict]:
             f"Query bank not found: {path}\n"
             f"Ensure BioThreat-Eval data is available at {BIOTHREAT_EVAL_DIR}"
         )
-    with open(path) as f:
+    with open(path, encoding="utf-8") as f:
         return json.load(f)
 
 
@@ -57,7 +57,7 @@ def load_evaluation_results(results_dir: Optional[Path] = None) -> list[dict]:
 
     all_results = []
     for result_file in sorted(results_dir.glob("evaluation_results_*.json")):
-        with open(result_file) as f:
+        with open(result_file, encoding="utf-8") as f:
             data = json.load(f)
         model_name = result_file.stem.replace("evaluation_results_", "")
         for entry in data:
@@ -196,7 +196,7 @@ def run_external_validation(
     # Save
     METRICS_DIR.mkdir(parents=True, exist_ok=True)
     output_file = METRICS_DIR / "external_validation.json"
-    with open(output_file, "w") as f:
+    with open(output_file, "w", encoding="utf-8") as f:
         json.dump(results, f, indent=2)
     logger.info("Saved external validation results to %s", output_file)
 

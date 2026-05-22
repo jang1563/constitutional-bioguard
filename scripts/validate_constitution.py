@@ -50,7 +50,7 @@ MIN_TEXT_LENGTH = 20  # Minimum length for description fields
 
 def load_constitution(path: Path) -> dict:
     """Load and parse the YAML constitution file."""
-    with open(path) as f:
+    with open(path, encoding="utf-8") as f:
         return yaml.safe_load(f)
 
 
@@ -65,7 +65,7 @@ def validate_schema(data: dict) -> list[str]:
     try:
         import jsonschema
 
-        with open(schema_path) as f:
+        with open(schema_path, encoding="utf-8") as f:
             schema = json.load(f)
         jsonschema.validate(data, schema)
     except ImportError:

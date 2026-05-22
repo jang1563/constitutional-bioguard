@@ -334,7 +334,7 @@ def run_adversarial_suite(
 
     # Load UNSAFE test examples only
     unsafe_examples = []
-    with open(test_file) as f:
+    with open(test_file, encoding="utf-8") as f:
         for line in f:
             if not line.strip():
                 continue
@@ -414,7 +414,7 @@ def run_adversarial_suite(
     # Save results
     METRICS_DIR.mkdir(parents=True, exist_ok=True)
     output_file = METRICS_DIR / "adversarial_results.json"
-    with open(output_file, "w") as f:
+    with open(output_file, "w", encoding="utf-8") as f:
         json.dump(
             [r.model_dump() for r in results],
             f,
