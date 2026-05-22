@@ -32,6 +32,7 @@ def export_model(
     model_dir: Path,
     repo_id: str,
     private: bool = False,
+    regenerate_card: bool = False,
 ) -> str:
     """Push trained model to HuggingFace Hub.
 
@@ -144,10 +145,16 @@ with torch.no_grad():
 MIT
 """
 
-    # Write model card
+    # Write model card. A hand-maintained card (richer than this generated
+    # template) may already exist; preserve it rather than overwriting.
+    # Use --regenerate-card to force the generated template instead.
     card_path = model_dir / "README.md"
-    with open(card_path, "w") as f:
-        f.write(model_card)
+    if card_path.exists() and not regenerate_card:
+        print(f"Existing model card found at {card_path} — keeping it. "
+              f"Pass --regenerate-card to overwrite with the generated template.")
+    else:
+        with open(card_path, "w") as f:
+            f.write(model_card)
 
     # Create repo if needed, then upload
     api.create_repo(repo_id=repo_id, repo_type="model", exist_ok=True, private=private)
@@ -285,6 +292,11 @@ def main():
         "--private", action="store_true",
         help="Create private repos",
     )
+    parser.add_argument(
+        "--regenerate-card", action="store_true",
+        help="Overwrite an existing model card with the generated template "
+             "(default: preserve a hand-maintained card if present)",
+    )
     args = parser.parse_args()
 
     logging.basicConfig(level=logging.INFO)
@@ -303,6 +315,7 @@ def main():
             model_dir=model_dir,
             repo_id=f"{args.repo_prefix}-deberta-v1",
             private=args.private,
+            regenerate_card=args.regenerate_card,
         )
 
     if args.dataset:

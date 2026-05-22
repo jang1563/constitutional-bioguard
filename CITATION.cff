@@ -8,7 +8,7 @@ authors:
     orcid: "https://orcid.org/0000-0002-8733-9925"
     affiliation: "Weill Cornell Medicine"
     email: jak4013@med.cornell.edu
-version: "0.1.0"
+version: "0.1.1"
 date-released: "2026-04-12"
 license: MIT
 repository-code: "https://github.com/jang1563/constitutional-bioguard"

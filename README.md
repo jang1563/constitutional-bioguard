@@ -12,7 +12,7 @@
 
 | Surface | Status |
 |---------|--------|
-| Code | v0.1.0 prototype, MIT-licensed, public on GitHub |
+| Code | v0.1.1 prototype, MIT-licensed, public on GitHub |
 | Model | `jang1563/constitutional-bioguard-deberta-v1` on Hugging Face |
 | Constitution | 56 rules / 7 NSABB categories (`constitution/biosafety_constitution.yaml`) |
 | External validation | BioThreat-Eval cross-walk reported in `results/`; kappa-gap explained in Limitations |
@@ -306,7 +306,7 @@ If you use this work, please cite:
   title  = {Constitutional BioGuard: A Biosafety Content Classifier},
   year   = {2026},
   url    = {https://github.com/jang1563/constitutional-bioguard},
-  version = {v0.1.0},
+  version = {v0.1.1},
 }
 ```
 
