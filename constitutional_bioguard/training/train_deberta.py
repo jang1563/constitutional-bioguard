@@ -197,7 +197,15 @@ def train(
     # Class weights
     class_weights = None
     if config["data"].get("class_weights", False):
-        weights_file = DATA_PROCESSED / "class_weights.json"
+        # Honor an explicit class_weights_file (e.g. for the WS-2 BoW-filtered
+        # dataset, whose class balance differs from the full set); otherwise
+        # fall back to the default full-set weights.
+        weights_name = config["data"].get(
+            "class_weights_file", "class_weights.json"
+        )
+        weights_file = Path(weights_name)
+        if not weights_file.is_absolute():
+            weights_file = DATA_PROCESSED / weights_file
         if weights_file.exists():
             with open(weights_file) as f:
                 raw_weights = json.load(f)
