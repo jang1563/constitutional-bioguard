@@ -111,7 +111,7 @@ Anthropic's Constitutional Classifiers methodology.
 | AUROC | {internal.get('auroc', 'N/A')} |
 | Precision | {internal.get('precision', 'N/A')} |
 | Recall | {internal.get('recall', 'N/A')} |
-| Over-refusal FPR | 0.00% (325 benign queries) |
+| Over-refusal FPR | 0.00% (100-sample benign holdout) |
 | Adversarial mean ASR | 9.79% (20 attack types; encoding 17.9%, character 8.9%, semantic 6.9%) |
 
 ## NSABB Categories
@@ -207,7 +207,7 @@ generated using Anthropic's Constitutional Classifiers methodology.
 ## Dataset Description
 
 - **Source**: Generated via Claude API from a 56-rule biosafety constitution
-- **Size**: ~4,500 examples (2,968 train / 635 val / 664 test)
+- **Size**: ~4,500 examples (3,062 train / 697 val / 643 test)
 - **Labels**: Binary (SAFE=0 / UNSAFE=1)
 - **Format**: JSONL with fields: text, label, fine_label, category
 
