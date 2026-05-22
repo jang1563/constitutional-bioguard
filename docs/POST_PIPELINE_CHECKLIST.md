@@ -2,6 +2,14 @@
 
 After `scripts/run_full_pipeline.sh` completes (2–4 hours), follow this workflow to evaluate and compare models.
 
+> **⚠️ All numeric values in this document are illustrative placeholders, not
+> measured results.** Example calibration thresholds, data-split counts, metric
+> tables, and the variant-comparison table below were written before the runs
+> they describe and have **not** been verified against actual outputs. The
+> multi-variant comparison has not been executed. For real, verified metrics see
+> `results/metrics/*.json` and the README "Results" section. Do not cite any
+> number from this checklist as a finding.
+
 ## ✓ Pipeline Complete
 
 When you see:
@@ -130,18 +138,19 @@ done
 python scripts/run_variant_experiment.py --compare
 ```
 
-Example output:
+Example output (**ILLUSTRATIVE FORMAT ONLY — these numbers are fabricated
+placeholders, the variant comparison has not been run**):
 ```
 ==========================================================================================
- Model Variant Comparison
+ Model Variant Comparison   [SAMPLE LAYOUT — NOT REAL RESULTS]
 ==========================================================================================
 Variant             F1      AUROC   Prec    Rec     FPR     Adv ASR   OR-FPR  Thresh
 ------------------------------------------------------------------------------------------
-deberta-base       0.9100  0.95200 0.9150  0.9050  0.0300   9.79%     3.20%  0.61
-deberta-large      0.9250  0.96100 0.9280  0.9220  0.0220   8.10%     2.80%  0.59
-mdeberta           0.8950  0.94100 0.9000  0.8900  0.0450   11.2%     4.50%  0.62
-biomedbert         0.9180  0.95800 0.9220  0.9140  0.0310   9.05%     3.10%  0.60
-biolinkbert        0.9120  0.95400 0.9180  0.9060  0.0320   9.35%     3.25%  0.61
+deberta-base        <tbd>   <tbd>   <tbd>   <tbd>   <tbd>    <tbd>     <tbd>  <tbd>
+deberta-large       <tbd>   <tbd>   <tbd>   <tbd>   <tbd>    <tbd>     <tbd>  <tbd>
+mdeberta            <tbd>   <tbd>   <tbd>   <tbd>   <tbd>    <tbd>     <tbd>  <tbd>
+biomedbert          <tbd>   <tbd>   <tbd>   <tbd>   <tbd>    <tbd>     <tbd>  <tbd>
+biolinkbert         <tbd>   <tbd>   <tbd>   <tbd>   <tbd>    <tbd>     <tbd>  <tbd>
 ==========================================================================================
 ```
 
@@ -213,55 +222,52 @@ Create a new section in `README.md` under "Results" with:
 - Threshold calibration curve
 - Adversarial evaluation per category
 
-Example template:
+Example template (**fill `<tbd>` with measured values — do not ship placeholders**):
 ```markdown
-## Results (2026-05-20)
+## Results (<date>)
 
 ### Data
-- Train: 728 examples (364 safe, 364 unsafe)
-- Val: 312 examples (157 safe, 155 unsafe)
-- Test: 312 examples (157 safe, 155 unsafe)
-- Total: 1,352 examples across 56 bio-safety rules
+- Train: <tbd> examples (<tbd> safe, <tbd> unsafe)
+- Val: <tbd> examples (<tbd> safe, <tbd> unsafe)
+- Test: <tbd> examples (<tbd> safe, <tbd> unsafe)
+- Total: <tbd> examples across 56 bio-safety rules
 
 ### Baseline (deberta-v3-base)
 | Metric | Score |
 |--------|-------|
-| F1 | 0.910 |
-| AUROC | 0.952 |
-| Precision | 0.915 |
-| Recall | 0.905 |
-| FPR | 3.0% |
+| F1 | <tbd> |
+| AUROC | <tbd> |
+| Precision | <tbd> |
+| Recall | <tbd> |
+| FPR | <tbd> |
 
-### Best Variant: deberta-v3-large
+### Best Variant: <tbd — variant comparison not yet run>
 | Metric | Score |
 |--------|-------|
-| F1 | 0.925 |
-| AUROC | 0.961 |
-| Precision | 0.928 |
-| Recall | 0.922 |
-| FPR | 2.2% |
-| Adversarial ASR | 8.1% |
-| Overrefusal FPR | 2.8% |
-| Optimal Threshold | 0.59 |
+| F1 | <tbd> |
+| AUROC | <tbd> |
+| Precision | <tbd> |
+| Recall | <tbd> |
+| FPR | <tbd> |
+| Adversarial ASR | <tbd> |
+| Overrefusal FPR | <tbd> |
+| Optimal Threshold | <tbd> |
 ```
 
 ---
 
 ## 8. Commit Updated Results
 
+Commit message template (**replace every `<tbd>` with measured values**):
 ```bash
-git add -A && git commit -m "Data regeneration & variant experiments (2026-05-20)
+git add -A && git commit -m "Data regeneration & evaluation (<date>)
 
-- Regenerated full synthetic dataset: 1,352 examples from 56 bio-safety rules
-- Retrained baseline (deberta-base): F1=0.910, AUROC=0.952
-- Compared 5 model variants; deberta-large is best (F1=0.925, FPR=2.2%)
-- Updated calibration threshold: 0.59 (previously 0.61)
-- Metrics improved with realistic response data
+- Regenerated synthetic dataset: <tbd> examples from 56 bio-safety rules
+- Retrained baseline (deberta-base): F1=<tbd>, AUROC=<tbd>
+- Calibration threshold: <tbd>
+- (variant comparison: not run — future work)
 
-Best model: variant_deberta-large
-Deploy with: python scripts/serve.py --model-dir models/variant_deberta-large
-
-Co-Authored-By: Claude Sonnet 4 <noreply@anthropic.com>"
+Co-Authored-By: Claude <noreply@anthropic.com>"
 ```
 
 ---
