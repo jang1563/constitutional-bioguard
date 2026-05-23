@@ -3,7 +3,7 @@
 **JangKeun Kim**
 Weill Cornell Medicine | jak4013@med.cornell.edu
 
-**Draft:** 2026-05-22 | **Status:** WS-3 pending
+**Draft:** 2026-05-23 | **Status:** WS-1/2/3 complete, WS-4 planned
 
 ---
 
@@ -21,9 +21,12 @@ find that (1) the exchange-classification format (query-response pairs) and
 escalation-calibrated cascades transfer directly, (2) bag-of-words shortcut
 elimination, expected to close an external validity gap, instead degrades
 generalisation, confirming the gap is architectural rather than lexical, and
-(3) [WS-3 result pending]. This work contributes empirical evidence on the
-domain-specificity of CC++ components and identifies concrete failure modes
-when moving from general-purpose to domain-specialised safety classification.
+(3) probe-classifier complementarity cannot be measured on synthetic in-
+distribution data due to a ceiling effect (AU-PRC > 0.997 for all components),
+though low error correlation (rho = 0.24) hints at latent complementarity on
+harder distributions. This work contributes empirical evidence on the domain-
+specificity of CC++ components and identifies concrete failure modes when
+moving from general-purpose to domain-specialised safety classification.
 
 ---
 
@@ -182,30 +185,56 @@ training data quality requires **data regeneration** with controlled lexical
 overlap, not post-hoc filtering. This is consistent with CC++'s own methodology,
 which generates new data rather than filtering existing data.
 
-### 3.3 WS-3: Activation-Probe Ensemble (Pending)
+### 3.3 WS-3: Activation-Probe Ensemble (Gate FAIL -- Ceiling Effect)
 
 **Question:** Does the CC++ finding that linear activation probes ensemble
 complementarily with external fine-tuned classifiers hold in the biosafety
 domain?
 
-**Method.** We extract residual-stream activations at ~40% depth from
-open-weight LLMs (Llama-3.1-8B, Gemma-2-9B) as proxies for the production
-model. Two probe types:
-- **Mean probe**: average hidden states across all tokens.
+**Method.** We extracted residual-stream activations at layer 12 (~40% depth)
+from Llama-3.1-8B on the same train (n=3,062) / test (n=643) split used for
+BioGuard. Two probe types:
+- **Mean probe**: average hidden states across all tokens at the target layer.
 - **Suffix probe**: append a classification instruction, take the final token's
   hidden state (following Cunningham et al.'s cheap-monitors approach).
 
-The ensemble combines probe logits with BioGuard classifier logits via
-weight sweep, and measures complementarity via Spearman rank correlation of
-per-example errors.
+Both probes are LogisticRegressionCV with 5-fold cross-validation and balanced
+class weights. Ensembles use a weighted average of probe and BioGuard
+probabilities, with weight swept from 0.0 to 1.0.
 
-**Go/no-go gate.** The ensemble's AU-PRC must exceed the better single
-component by >0.01, and error correlation must be <0.3. If both hold, the
-CC++ complementarity effect transfers to biosafety.
+**Result.**
 
-**Status:** Job 49545518 submitted to SDSC Expanse.
+| Component | AU-PRC | AUROC | F1 | TPR@1%FPR |
+|-----------|--------|-------|----|-----------|
+| BioGuard (DeBERTa) | 0.9979 | 0.9954 | 0.9745 | 0.9524 |
+| Mean probe | 0.9990 | 0.9981 | 0.9807 | 0.9738 |
+| Suffix probe | 0.9978 | 0.9958 | 0.9720 | 0.9524 |
+| Best ensemble (mean, w=1.0) | 0.9990 | 0.9981 | 0.9807 | 0.9738 |
 
-**Result:** [Pending]
+Error correlation (Spearman rho of per-example errors):
+- Mean probe vs BioGuard: rho = 0.535 (high, non-complementary)
+- Suffix probe vs BioGuard: rho = 0.240 (low, complementary)
+
+**Gate: FAIL.** The best ensemble's AU-PRC equals the best single component
+(mean probe alone). Margin = 0.000, far below the 0.01 threshold.
+
+**Interpretation.** This is a **ceiling effect**, not evidence against
+complementarity. Both the probe and BioGuard already achieve AU-PRC > 0.997
+on the synthetic test set, leaving no headroom for ensemble improvement. This
+is qualitatively different from the CC++ setting, where probes have weak
+standalone TPR (~43% at 1% FPR) and complement stronger classifiers on
+diverse real-world traffic.
+
+Three factors drive the ceiling: (1) the test set is drawn from the same
+synthetic distribution as training; (2) the domain taxonomy (NSABB 7
+categories) is narrow enough for a linear probe to capture fully; (3) the
+synthetic data lacks the distributional diversity of real-world queries.
+
+The suffix probe's low error correlation (rho = 0.24) hints that
+complementarity *might* emerge on a harder test distribution where both
+classifiers have room to disagree. **Testing complementarity requires an
+out-of-distribution evaluation set** (e.g., WMDP-Bio, BioThreat-Eval
+responses). This is the key methodological lesson and future work.
 
 ### 3.4 WS-4: Reconstruction Attacks (Planned)
 
@@ -252,14 +281,21 @@ labelling) and partly data-driven (synthetic training data vs real evaluation
 data). Any domain-specific deployment must include external validation as a
 first-class metric, not an afterthought.
 
-### 4.3 What Remains Open
+### 4.3 What Cannot Be Tested on Synthetic Data
 
-**Probe complementarity.** Whether activation probes provide orthogonal signal
-to fine-tuned classifiers in the biosafety domain is the central open question
-(WS-3). The CC++ finding that probes have weak standalone TPR at strict FPR
-(~43% at 1% FPR) but ensemble well is architecturally motivated -- probes
-capture different features than text classifiers. Whether this holds when both
-are evaluated on a narrow domain taxonomy is non-obvious.
+**Probe complementarity.** WS-3 found that both probe and classifier saturate
+on the synthetic test set (AU-PRC > 0.997), producing a ceiling effect that
+makes ensemble complementarity unmeasurable. The suffix probe's low error
+correlation (rho = 0.24) suggests the *potential* for complementarity on a
+harder distribution, but this remains untested. The methodological lesson is
+clear: **complementarity is a property of the evaluation distribution, not just
+the model pair.** Testing it requires out-of-distribution data where both
+classifiers have room to fail differently.
+
+Notably, probes achieved TPR@1%FPR = 0.97 -- far above the ~43% reported by
+McKenzie et al. (2025) on real-world data. This gap itself is evidence that
+synthetic in-distribution evaluation inflates all metrics equally, masking the
+regime where complementarity matters.
 
 **Adaptive attacks.** Neither CC++ nor this work tests probe robustness to
 adaptive attacks that specifically target the probe. Reconstruction attacks
@@ -274,11 +310,19 @@ CC++ (we have no access to Claude's internals or production traffic), but it
 tests whether the architectural principles survive a move to a specialised
 domain with limited data and evaluation infrastructure.
 
-The negative WS-2 result is arguably the most useful finding: it demonstrates
-that shortcut-elimination techniques designed for large, diverse safety
-datasets can fail in specialised domains where the "shortcuts" are actually
-the core signal. This has implications for any team applying CC++ methodology
-to domain-specific threats (chemical, radiological, nuclear, cyber).
+Two negative results carry the most signal:
+
+1. **WS-2 (shortcut elimination):** techniques designed for large, diverse
+   safety datasets can fail in specialised domains where the "shortcuts" are
+   actually the core signal.
+2. **WS-3 (probe ensemble):** complementarity cannot be measured on synthetic
+   in-distribution data -- all classifiers saturate, hiding the regime where
+   ensemble benefit would emerge.
+
+Both have implications for any team applying CC++ methodology to domain-
+specific threats (chemical, radiological, nuclear, cyber): internal synthetic
+evaluation is necessary but not sufficient. External, out-of-distribution
+validation must be a first-class component of any domain-transfer effort.
 
 ---
 
@@ -294,7 +338,7 @@ BioGuard repository. Training data is withheld per the project safety policy
 | A/B internal comparison | `results/metrics/ab_retraining_comparison.json` |
 | A/B external comparison | `results/metrics/external_validation_AB_comparison.json` |
 | Per-variant external results | `results/metrics/external_validation_{A_full,B_bowhard}.json` |
-| Probe ensemble results | `results/metrics/probe_ensemble_*.json` [pending] |
+| Probe ensemble results | `results/metrics/probe_ensemble_llama-3.1-8b.json` |
 | v2 research design | `docs/V2_DESIGN.md` |
 
 ---
@@ -319,4 +363,4 @@ BioGuard repository. Training data is withheld per the project safety policy
 
 ---
 
-*Draft. Sections 3.3, 3.4, and 4.3 will be updated with WS-3/WS-4 results.*
+*Draft. Section 3.4 will be updated with WS-4 results.*

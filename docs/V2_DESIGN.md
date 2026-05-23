@@ -32,16 +32,14 @@ research question rather than a footnote. The headline research contribution is
 a domain-transfer replication: **does the CC++ probe + external-classifier
 ensemble effect hold in the biosafety domain?**
 
-**Status (2026-05-22).** WS-1 (escalation calibration) and WS-2 (external
-validation) are executed; WS-3 (probe ensemble) is the next compute-bound
-step. The first WS-2 hypothesis — that the kappa gap is a bag-of-words
-shortcut artefact — was tested and **rejected**: the unfiltered variant
-reproduced v1's external kappa (0.368, vs v1's 0.414), while the
-bag-of-words-filtered variant performed *worse* (0.240), confirming the
-kappa gap is architectural (query-vs-response labelling), not lexical.
-The re-scoped prescription is **data regeneration with lexical matching**,
-not training-set filtering — and WS-3's probe-ensemble work becomes
-correspondingly higher priority.
+**Status (2026-05-23).** WS-1 (escalation calibration), WS-2 (external
+validation), and WS-3 (probe ensemble) are executed. WS-2 hypothesis
+(kappa gap is a BoW shortcut) was **rejected** — the gap is architectural.
+WS-3 gate **failed** due to ceiling effect: both probe (AU-PRC 0.999)
+and classifier (0.998) saturate on synthetic in-distribution data,
+leaving no room for ensemble improvement. This is an honest negative
+result — complementarity cannot be tested without an external OOD test
+set. WS-4 (reconstruction attacks) remains.
 
 ---
 
@@ -238,34 +236,48 @@ rejected. Re-scoped; see Result below.***
 
 ### WS-3 — Activation-probe ensemble (research headline)
 *Compute: GPU required — NAIRR / ACCESS (Expanse).*
+*Status: tested 2026-05-22 — gate FAIL (ceiling effect); negative result reported honestly.*
 
 - **Objective.** Replicate the CC++ finding that linear activation probes
   ensemble complementarily with external fine-tuned classifiers — in the
   biosafety domain — and quantify the robustness gain.
-- **Method.**
-  - Anthropic trains probes on the protected model's own activations; we
-    have no access to Claude internals. Replicate on **open-weight models**
-    as a proxy: Llama-3.1-8B (32 layers, hidden 4096) and Gemma-2-9B
-    (42 layers, hidden 3584).
-  - Extract residual-stream activations at ~40% depth (the layer band that
-    carries the most linearly-decodable abstract concepts; McKenzie et al.
-    probed layer 31/80). Tooling: HuggingFace `output_hidden_states` or
-    baukit.
-  - Train a **Mean probe** and a bioweapon-specific **suffix probe**
-    (append a ~150-token instruction, probe the final token; Cunningham
-    et al., cheap-monitors). Use sliding-window-mean logit smoothing and
-    a softmax-weighted loss.
-  - Form the ensemble: BioGuard-v2 (external text classifier) ⊕ probe.
-    Measure the rank correlation of their per-example errors to test the
-    "complementary signal" claim.
-- **Metrics.** AU-PRC of probe alone, classifier alone, and ensemble;
-  Spearman rank correlation of errors; TPR at 1% FPR (probes alone are known to
-  be weak here — ~43% in McKenzie et al. — which is itself the argument for the
-  ensemble).
-- **Go/no-go gate.** If the ensemble's AU-PRC exceeds the better single
-  component by a meaningful margin and error correlation is low, the CC++
-  effect transfers to biosafety — this is the publishable result. If the probe
-  adds nothing, report the negative result honestly and stop WS-3.
+- **Method (executed).**
+  - Probed **Llama-3.1-8B** (32 layers, hidden 4096) at layer 12 (~40%
+    depth) on the same train/test split used for BioGuard.
+  - Trained **Mean probe** (average all tokens) and **Suffix probe**
+    (append classification instruction, take final token). Both are
+    LogisticRegressionCV with 5-fold CV, class-weight balancing.
+  - Formed weighted ensembles (weight sweep 0.0--1.0) with BioGuard
+    (DeBERTa-v3-base, A_full variant). Measured Spearman rank correlation
+    of per-example errors.
+- **Result (n=643 test).**
+
+  | Component | AU-PRC | AUROC | F1 | TPR@1%FPR |
+  |-----------|--------|-------|----|-----------|
+  | BioGuard alone | 0.9979 | 0.9954 | 0.9745 | 0.9524 |
+  | Mean probe | 0.9990 | 0.9981 | 0.9807 | 0.9738 |
+  | Suffix probe | 0.9978 | 0.9958 | 0.9720 | 0.9524 |
+  | Best ensemble (mean, w=1.0) | 0.9990 | 0.9981 | 0.9807 | 0.9738 |
+
+  Error correlation: mean rho=0.535 (high, non-complementary),
+  suffix rho=0.240 (low, complementary but no margin to exploit).
+
+- **Gate: FAIL.** Best ensemble AU-PRC = best single component (mean probe);
+  margin = 0.000. The gate criterion (margin > 0.01 AND correlation < 0.3)
+  is not met.
+- **Interpretation.** The CC++ complementarity effect does **not** reproduce
+  under this experimental setup. Both probe and classifier already achieve
+  AU-PRC > 0.997 on the synthetic test set — a **ceiling effect** leaves no
+  room for ensemble improvement. This is qualitatively different from the CC++
+  setting where probes have weak standalone TPR (~43% at 1% FPR) and
+  complement stronger classifiers. On synthetic in-distribution data, all
+  classifiers saturate.
+
+  The honest conclusion: **complementarity cannot be tested on in-distribution
+  synthetic data.** A meaningful replication requires an external, out-of-
+  distribution test set (e.g., WMDP-Bio, BioThreat-Eval) where the classifier
+  and probe may disagree. This is future work.
+- **Artifacts.** `results/metrics/probe_ensemble_llama-3.1-8b.json`.
 
 ### WS-4 — Reconstruction attacks and red-team metrics
 *Compute: minimal.*
@@ -351,8 +363,10 @@ and its composition is itself a documented limitation.
    remains future work for triangulation.
 3. **M3 — Hardened evaluation.** WS-4 complete: reconstruction attacks added,
    metrics shifted to vulnerability discovery rate.
-4. **M4 — Probe ensemble result.** WS-3 complete: probe/classifier ensemble
-   measured on open models; positive or negative result reported.
+4. **M4 — Probe ensemble result.** ✅ Done (2026-05-22). WS-3 complete:
+   probe/classifier ensemble measured on Llama-3.1-8B. Gate FAIL — ceiling
+   effect on synthetic data (AU-PRC > 0.997 for all components). Negative
+   result reported honestly; complementarity requires OOD evaluation.
 5. **M5 — Technical report.** "Extending Constitutional Classifiers++ to
    Biosafety: what transfers and what does not" — with the external-validity
    gap as the central question, not a footnote.

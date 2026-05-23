@@ -1,0 +1,183 @@
+{
+  "experiment": "WS-3 activation-probe ensemble",
+  "model_name": "llama-3.1-8b",
+  "target_layer": 12,
+  "layer_fraction": 0.4,
+  "n_train": 3062,
+  "n_test": 643,
+  "bioguard": {
+    "au_prc": 0.997879,
+    "auroc": 0.99542,
+    "f1": 0.974545,
+    "tpr_at_1pct_fpr": 0.952381,
+    "n_total": 643,
+    "probe_type": "bioguard_only",
+    "model_name": "deberta-v3-base",
+    "target_layer": -1
+  },
+  "probes": {
+    "mean": {
+      "au_prc": 0.999041,
+      "auroc": 0.998132,
+      "f1": 0.980676,
+      "tpr_at_1pct_fpr": 0.97381,
+      "n_total": 643,
+      "probe_type": "mean",
+      "model_name": "llama-3.1-8b",
+      "target_layer": 12
+    },
+    "suffix": {
+      "au_prc": 0.99783,
+      "auroc": 0.995772,
+      "f1": 0.971985,
+      "tpr_at_1pct_fpr": 0.952381,
+      "n_total": 643,
+      "probe_type": "suffix",
+      "model_name": "llama-3.1-8b",
+      "target_layer": 12
+    }
+  },
+  "ensembles": {
+    "mean": {
+      "au_prc": 0.999041,
+      "auroc": 0.998132,
+      "f1": 0.980676,
+      "tpr_at_1pct_fpr": 0.97381,
+      "n_total": 643,
+      "probe_type": "ensemble",
+      "model_name": "llama-3.1-8b",
+      "target_layer": 12,
+      "weight_probe": 1.0,
+      "best_weight": 1.0,
+      "weight_sweep": [
+        {
+          "weight_probe": 0.0,
+          "au_prc": 0.997879
+        },
+        {
+          "weight_probe": 0.1,
+          "au_prc": 0.998829
+        },
+        {
+          "weight_probe": 0.2,
+          "au_prc": 0.998836
+        },
+        {
+          "weight_probe": 0.3,
+          "au_prc": 0.998843
+        },
+        {
+          "weight_probe": 0.4,
+          "au_prc": 0.998848
+        },
+        {
+          "weight_probe": 0.5,
+          "au_prc": 0.998877
+        },
+        {
+          "weight_probe": 0.6,
+          "au_prc": 0.998923
+        },
+        {
+          "weight_probe": 0.7,
+          "au_prc": 0.998924
+        },
+        {
+          "weight_probe": 0.8,
+          "au_prc": 0.998952
+        },
+        {
+          "weight_probe": 0.9,
+          "au_prc": 0.999003
+        },
+        {
+          "weight_probe": 1.0,
+          "au_prc": 0.999041
+        }
+      ]
+    },
+    "suffix": {
+      "au_prc": 0.99813,
+      "auroc": 0.996284,
+      "f1": 0.974545,
+      "tpr_at_1pct_fpr": 0.952381,
+      "n_total": 643,
+      "probe_type": "ensemble",
+      "model_name": "llama-3.1-8b",
+      "target_layer": 12,
+      "weight_probe": 0.1,
+      "best_weight": 0.1,
+      "weight_sweep": [
+        {
+          "weight_probe": 0.0,
+          "au_prc": 0.997879
+        },
+        {
+          "weight_probe": 0.1,
+          "au_prc": 0.99813
+        },
+        {
+          "weight_probe": 0.2,
+          "au_prc": 0.998106
+        },
+        {
+          "weight_probe": 0.3,
+          "au_prc": 0.998076
+        },
+        {
+          "weight_probe": 0.4,
+          "au_prc": 0.998058
+        },
+        {
+          "weight_probe": 0.5,
+          "au_prc": 0.99803
+        },
+        {
+          "weight_probe": 0.6,
+          "au_prc": 0.998028
+        },
+        {
+          "weight_probe": 0.7,
+          "au_prc": 0.997996
+        },
+        {
+          "weight_probe": 0.8,
+          "au_prc": 0.997928
+        },
+        {
+          "weight_probe": 0.9,
+          "au_prc": 0.997874
+        },
+        {
+          "weight_probe": 1.0,
+          "au_prc": 0.99783
+        }
+      ]
+    }
+  },
+  "complementarity": {
+    "mean": {
+      "spearman_error_correlation": 0.535399,
+      "spearman_p_value": 5.637007607494463e-49,
+      "interpretation": "Low correlation (<0.3) indicates complementary errors \u2014 the probe and classifier fail on different examples, supporting ensemble benefit."
+    },
+    "suffix": {
+      "spearman_error_correlation": 0.239964,
+      "spearman_p_value": 7.124079981075534e-10,
+      "interpretation": "Low correlation (<0.3) indicates complementary errors \u2014 the probe and classifier fail on different examples, supporting ensemble benefit."
+    }
+  },
+  "go_no_go": {
+    "passed": false,
+    "best_single_au_prc": 0.999041,
+    "best_ensemble_au_prc": 0.999041,
+    "margin": 0.0,
+    "best_ensemble_type": "mean",
+    "error_correlation": 0.535399,
+    "criteria": {
+      "margin_threshold": 0.01,
+      "correlation_threshold": 0.3
+    },
+    "verdict": "FAIL: Ensemble does not meaningfully improve over best single component. Report as negative result."
+  }
+}

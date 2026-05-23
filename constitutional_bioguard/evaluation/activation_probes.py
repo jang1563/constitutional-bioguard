@@ -125,7 +125,7 @@ def load_model_for_probing(
 
     model = AutoModelForCausalLM.from_pretrained(
         hf_id,
-        dtype=dtype,
+        torch_dtype=dtype,
         device_map=device,
         output_hidden_states=True,
         trust_remote_code=True,
@@ -382,14 +382,8 @@ def get_bioguard_probs(
         model=model, tokenizer=tokenizer,
         queries=queries, responses=responses,
     )
-    # predict_batch returns list of (label, confidence)
-    # Convert to P(UNSAFE): if label=1 -> conf, if label=0 -> 1-conf
-    probs = []
-    for label, conf in preds_and_confs:
-        if label == 1:
-            probs.append(conf)
-        else:
-            probs.append(1.0 - conf)
+    # predict_batch returns list of (label, confidence, prob_unsafe)
+    probs = [p[2] for p in preds_and_confs]  # prob_unsafe directly
     return np.array(probs)
 
 
