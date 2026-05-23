@@ -35,12 +35,13 @@ def parse_args() -> argparse.Namespace:
             "  6.1  OOD evaluation on WMDP-Bio\n"
             "  6.2  Bootstrap CIs for WS-2 kappa\n"
             "  6.3  Pre- vs post-preprocessing adversarial comparison\n"
+            "  6.7  OOD evaluation on BioThreat-Eval (expert labels)\n"
         ),
     )
     parser.add_argument(
         "--experiment",
         type=str,
-        choices=["6.1", "6.2", "6.3", "all"],
+        choices=["6.1", "6.2", "6.3", "6.7", "all"],
         default="all",
         help="Which experiment to run (default: all)",
     )
@@ -88,6 +89,7 @@ def main():
         cache_wmdp_bio,
         run_adversarial_comparison,
         run_all_corrective,
+        run_biothreat_ood_evaluation,
         run_bootstrap_kappa,
         run_ood_evaluation,
     )
@@ -123,6 +125,38 @@ def main():
     elif args.experiment == "6.3":
         results = run_adversarial_comparison(model_dir=args.model_a)
         _print_adversarial_summary(results)
+
+    elif args.experiment == "6.7":
+        results = run_biothreat_ood_evaluation(
+            model_dir_a=args.model_a, model_dir_b=args.model_b,
+        )
+        _print_biothreat_summary(results)
+
+
+def _print_biothreat_summary(r: dict):
+    print(f"\n6.7 BioThreat-Eval OOD ({r['n_pairs']} pairs)")
+    for strat, info in r["by_strategy"].items():
+        if info.get("skipped"):
+            print(f"  {strat}: SKIPPED ({info.get('reason')})")
+            continue
+        m = info["variant_a"]["metrics_at_0.5"]
+        f1opt = info["variant_a"].get("f1_optimal", {})
+        print(f"  {strat} (n+={info['n_positive']}/n-={info['n_negative']}):")
+        print(f"    A_full @ t=0.5: AU-PRC={m['au_prc']:.4f} AUROC={m['auroc']:.4f} "
+              f"F1={m['f1']:.4f} FPR={m['fpr']:.4f}")
+        if f1opt:
+            print(f"    F1-optimal: t={f1opt.get('threshold')} F1={f1opt.get('f1'):.4f} "
+                  f"recall={f1opt.get('recall'):.4f} fpr={f1opt.get('fpr'):.4f}")
+        if "variant_b" in info:
+            mb = info["variant_b"]["metrics_at_0.5"]
+            print(f"    B_bowhard @ t=0.5: AU-PRC={mb['au_prc']:.4f} "
+                  f"AUROC={mb['auroc']:.4f} F1={mb['f1']:.4f}")
+    cmp = r.get("cross_benchmark_comparison", {})
+    if cmp:
+        print("\n  Cross-benchmark (primary strategy):")
+        for name, vals in cmp.items():
+            if "auroc" in vals:
+                print(f"    {name}: AU-PRC={vals['au_prc']:.4f} AUROC={vals['auroc']:.4f}")
 
 
 def _print_summary(results: dict):
