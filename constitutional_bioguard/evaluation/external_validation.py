@@ -111,6 +111,7 @@ def format_for_classifier(entry: dict, query_bank: dict) -> tuple[str, str]:
 def run_external_validation(
     model_dir: Optional[Path] = None,
     results_dir: Optional[Path] = None,
+    output_file: Optional[Path] = None,
 ) -> dict:
     """Run external validation on BioThreat-Eval data.
 
@@ -195,7 +196,7 @@ def run_external_validation(
 
     # Save
     METRICS_DIR.mkdir(parents=True, exist_ok=True)
-    output_file = METRICS_DIR / "external_validation.json"
+    output_file = output_file or (METRICS_DIR / "external_validation.json")
     with open(output_file, "w", encoding="utf-8") as f:
         json.dump(results, f, indent=2)
     logger.info("Saved external validation results to %s", output_file)

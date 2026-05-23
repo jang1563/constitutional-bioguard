@@ -32,6 +32,17 @@ research question rather than a footnote. The headline research contribution is
 a domain-transfer replication: **does the CC++ probe + external-classifier
 ensemble effect hold in the biosafety domain?**
 
+**Status (2026-05-22).** WS-1 (escalation calibration) and WS-2 (external
+validation) are executed; WS-3 (probe ensemble) is the next compute-bound
+step. The first WS-2 hypothesis — that the kappa gap is a bag-of-words
+shortcut artefact — was tested and **rejected**: the unfiltered variant
+reproduced v1's external kappa (0.368, vs v1's 0.414), while the
+bag-of-words-filtered variant performed *worse* (0.240), confirming the
+kappa gap is architectural (query-vs-response labelling), not lexical.
+The re-scoped prescription is **data regeneration with lexical matching**,
+not training-set filtering — and WS-3's probe-ensemble work becomes
+correspondingly higher priority.
+
 ---
 
 ## 1. Background and Motivation
@@ -172,44 +183,78 @@ investment or the line is killed.
   encoder is too weak to be a useful first stage — revisit the base model.
 
 ### WS-2 — External validation against the kappa gap
-*Compute: small (inference only).*
+*Compute: small (inference only). **Status: tested 2026-05-22 — hypothesis
+rejected. Re-scoped; see Result below.***
 
 - **Objective.** Determine whether v1's external kappa = 0.414 is driven by the
   query-vs-response label mismatch (the v1 README's explanation) or by
   synthetic-only training distribution shift — or both.
-- **Method.**
-  - Build a curated **non-synthetic** evaluation set (Section 5).
-  - Re-evaluate v1 and v2 on it; decompose error into label-mismatch vs
-    distribution-shift components by stratifying on label provenance.
+- **Original method (executed).**
   - Apply **bag-of-words elimination** (McKenzie et al., arXiv:2506.10805) to
     the training data — drop examples whose label is predictable from surface
-    keywords — so the classifier learns intent rather than bio vocabulary.
-- **Metrics.** Cohen kappa and AU-PRC on the curated external set, reported
-  separately for hard negatives (benign-but-suspicious) and easy negatives.
-- **Go/no-go gate.** If retraining with bag-of-words elimination plus the
-  curated set lifts external AU-PRC materially, distribution shift was a real
-  cause and v2 retraining is justified. If not, the gap is architectural
-  (label-level mismatch) and should be documented as a fixed limitation, not
-  chased.
+    keywords — so the DeBERTa classifier is pushed to learn intent rather
+    than bio vocabulary.
+  - Retrain two variants under identical hyperparameters: A=full set (v1
+    baseline reproduction), B=bag-of-words-filtered set.
+  - Evaluate both on the BioThreat-Eval external set; the WS-2 hypothesis
+    holds iff B's external Cohen kappa exceeds A's.
+- **Result (2026-05-22, n=558).**
+  - In-distribution: A and B essentially tied on the synthetic test set
+    (F1 0.9745 vs 0.9757; B's FPR is actually lower, 0.013 → 0.005).
+  - External (BioThreat-Eval, threat_level >= 4): **A_full kappa = 0.368
+    (reproduces v1's 0.414 within run-to-run variance); B_bowhard kappa =
+    0.240 — a 0.128 drop.** The drop is consistent across all three label
+    strategies (TL>=4, TL>=3, response-based; -0.11 to -0.13 each).
+  - **Hypothesis rejected.** Bag-of-words elimination did not push the model
+    toward intent-based learning; it removed prototypical training signal
+    that the model needed for generalisation. The "trivial" examples were
+    not pure shortcuts — they carried real intent information that a BoW
+    model could *also* exploit. With 93% of the synthetic corpus
+    keyword-predictable, filtering is the wrong intervention: minority
+    filtering (McKenzie et al.) only works when the *minority* of examples
+    are trivial. A_full's near-reproduction of v1's kappa also confirms the
+    kappa gap is structural (query-level vs response-level labelling), not
+    a keyword artefact — the README's original architectural explanation
+    is supported.
+  - **Secondary finding.** Internal F1 was essentially identical between A
+    and B; the synthetic test set is drawn from the same lexically
+    over-separable distribution as training and is unable to detect the
+    generalisation collapse that the external set surfaces immediately.
+    Concretely: *internal metrics are not a substitute for external
+    evaluation in safety classification.* This is itself a methodology
+    finding consistent with CC++'s use of red-teaming over F1.
+- **Re-scoped prescription.** The durable fix is **data REGENERATION**, not
+  filtering: produce lexically matched safe/unsafe pairs and boundary-case
+  rewrites so the surface vocabulary cannot itself separate the classes
+  (mirroring CC++'s future-work suggestion of *"targeted synthetic data
+  generation to teach classifier models the intended decision boundary"*).
+  Concrete next experiment: regenerate with explicit lexical matching as a
+  generation constraint and re-measure external kappa. WS-3 (probe
+  ensemble) becomes higher priority since the v1-style external gap is
+  confirmed real and not removable by data filtering alone.
+- **Artifacts.** `scripts/run_ab_retraining.py`, `scripts/run_ab_external.py`,
+  `results/metrics/ab_retraining_comparison.json`,
+  `results/metrics/external_validation_AB_comparison.json`.
 
 ### WS-3 — Activation-probe ensemble (research headline)
-*Compute: GPU required — NAIRR / ACCESS.*
+*Compute: GPU required — NAIRR / ACCESS (Expanse).*
 
 - **Objective.** Replicate the CC++ finding that linear activation probes
   ensemble complementarily with external fine-tuned classifiers — in the
   biosafety domain — and quantify the robustness gain.
 - **Method.**
-  - Anthropic trains probes on the protected model's own activations; we have
-    no access to Claude internals. Replicate on **open-weight models** as a
-    proxy: Llama-3.1-8B (32 layers, hidden 4096) and Gemma-2-9B (42 layers,
-    hidden 3584).
+  - Anthropic trains probes on the protected model's own activations; we
+    have no access to Claude internals. Replicate on **open-weight models**
+    as a proxy: Llama-3.1-8B (32 layers, hidden 4096) and Gemma-2-9B
+    (42 layers, hidden 3584).
   - Extract residual-stream activations at ~40% depth (the layer band that
     carries the most linearly-decodable abstract concepts; McKenzie et al.
-    probed layer 31/80). Tooling: HuggingFace `output_hidden_states` or baukit.
-  - Train a **Mean probe** and a bioweapon-specific **suffix probe** (append a
-    ~150-token instruction, probe the final token; Cunningham et al.,
-    cheap-monitors). Use sliding-window-mean logit smoothing and a
-    softmax-weighted loss.
+    probed layer 31/80). Tooling: HuggingFace `output_hidden_states` or
+    baukit.
+  - Train a **Mean probe** and a bioweapon-specific **suffix probe**
+    (append a ~150-token instruction, probe the final token; Cunningham
+    et al., cheap-monitors). Use sliding-window-mean logit smoothing and
+    a softmax-weighted loss.
   - Form the ensemble: BioGuard-v2 (external text classifier) ⊕ probe.
     Measure the rank correlation of their per-example errors to test the
     "complementary signal" claim.
@@ -240,8 +285,12 @@ investment or the line is killed.
 - **Go/no-go gate.** Always completes — this is evaluation hardening, not a
   speculative line.
 
-**Priority:** WS-1, WS-2, WS-4 require little or no GPU and start immediately.
-WS-3 is the novel research contribution and depends on compute allocation.
+**Priority (updated 2026-05-22):** WS-1 and WS-2 are executed (WS-1 gate
+passed; WS-2 hypothesis rejected, re-scoped to data regeneration). WS-3
+(probe ensemble) is the next step — its priority is *higher* than originally
+planned because WS-2 confirmed the external gap is not removable by data
+filtering. WS-4 (reconstruction attacks) remains low-compute and can run
+in parallel with WS-3.
 
 ---
 
@@ -293,10 +342,13 @@ and its composition is itself a documented limitation.
 
 ## 7. Deliverables and Milestones
 
-1. **M1 — Reframed first stage.** WS-1 complete: BioGuard recalibrated for
-   escalation, Stage 2 path wired, escalation metrics reported.
-2. **M2 — Honest external validity.** WS-2 complete: curated external set,
-   v1/v2 re-evaluated, kappa gap decomposed.
+1. **M1 — Reframed first stage.** ✅ Done (2026-05-22). WS-1 escalation
+   calibration shipped; gate passed at 1% production base rate.
+2. **M2 — Honest external validity.** ✅ Done (2026-05-22). WS-2 A/B
+   retraining + BioThreat-Eval evaluation completed. Hypothesis rejected:
+   kappa 0.368 (full) → 0.240 (BoW-filtered); kappa gap confirmed
+   architectural. Curated multi-source external set (WS-2 registry)
+   remains future work for triangulation.
 3. **M3 — Hardened evaluation.** WS-4 complete: reconstruction attacks added,
    metrics shifted to vulnerability discovery rate.
 4. **M4 — Probe ensemble result.** WS-3 complete: probe/classifier ensemble
