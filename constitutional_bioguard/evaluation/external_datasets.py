@@ -131,6 +131,45 @@ REGISTRY: dict[str, ExternalDataset] = {
         notes="Clearly-benign biology; should never be flagged.",
         bio_specific=True,
     ),
+    "jailbreak_foundry": ExternalDataset(
+        key="jailbreak_foundry",
+        name="Jailbreak Foundry",
+        role="adversarial",
+        label_level="query",
+        measures="Unified harness with 30 reproduced jailbreak attacks.",
+        access="GitHub: jailbreak-foundry (arXiv code release).",
+        license="Verify in repo — research use.",
+        arxiv="2602.24009",
+        notes=(
+            "Use for WS-4 reconstruction attack evaluation. Includes "
+            "fragment-across-context and prompt decomposition patterns."
+        ),
+        bio_specific=False,
+    ),
+    "drattack": ExternalDataset(
+        key="drattack",
+        name="DrAttack",
+        role="adversarial",
+        label_level="query",
+        measures="Prompt decomposition and reconstruction jailbreaks.",
+        access="GitHub: drattack.",
+        license="Verify in repo.",
+        arxiv="2402.16914",
+        notes="Directly relevant to WS-4 reconstruction attack family.",
+        bio_specific=False,
+    ),
+    "deep_inception_cbrn": ExternalDataset(
+        key="deep_inception_cbrn",
+        name="Deep Inception (CBRN dataset)",
+        role="adversarial",
+        label_level="query",
+        measures="Reframing/role-play attacks; 86% success on commercial LLMs.",
+        access="arXiv:2510.21133 supplementary; 200 CBRN prompts.",
+        license="Research use — verify.",
+        arxiv="2510.21133",
+        notes="Tests whether classifier handles reframed/role-play attacks.",
+        bio_specific=True,
+    ),
 }
 
 

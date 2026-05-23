@@ -1,6 +1,6 @@
 # Constitutional BioGuard v2 — Research Design
 
-**Status:** design draft | **Date:** 2026-05-22 | **Author:** JangKeun Kim (jak4013@med.cornell.edu)
+**Status:** design draft (gap-audit update) | **Date:** 2026-05-23 | **Author:** JangKeun Kim (jak4013@med.cornell.edu)
 
 This document specifies the v2 research program for Constitutional BioGuard. It is
 written to serve two purposes simultaneously: (a) a compute-allocation proposal
@@ -47,7 +47,15 @@ set. WS-4 (reconstruction attacks) remains.
 
 ### 1.1 BioGuard v1 recap
 
-- 56-rule machine-readable biosafety constitution across 7 NSABB categories.
+- 56-rule machine-readable biosafety constitution across 7 NSABB categories
+  (enhance_harm, disrupt_immunity, confer_resistance, increase_stability,
+  alter_host_range, enhance_susceptibility, generate_reconstruct). These map
+  to the **7 experimental effects** enumerated in the 2025 USG DURC-PEPP
+  policy (effective 2025-05-06), which supersedes the older DURC + P3CO
+  frameworks and broadens scope beyond listed agents to *any pathogen
+  reasonably anticipated to produce these effects*. The constitution's
+  category structure is policy-aligned but should be periodically reviewed as
+  the domestic gain-of-function policy landscape remains in flux.
 - ~4,500 synthetic examples generated via Claude API (3,062 / 697 / 643 split).
 - DeBERTa-v3-base fine-tuned for binary SAFE/UNSAFE classification on
   `query [SEP] response` pairs.
@@ -120,11 +128,19 @@ deliberate, literature-validated decisions:
 - A small DeBERTa-v3 encoder is the correct first-stage technology — encoder
   first-stage + LLM-judge second-stage is an established pattern
   (JurEE, arXiv:2410.08442; Hybrid LLM, arXiv:2404.14618).
-- The open safety-guard ecosystem (Llama Guard 3/4, ShieldGemma, WildGuard,
-  Aegis 2.0, Granite Guardian) is entirely LLM-judge models at 2–12B — these
+- The open safety-guard ecosystem (Llama Guard 4 12B, ShieldGemma, WildGuard,
+  Aegis 2.0, Granite Guardian) is entirely LLM-judge models at 2--12B — these
   are natural second-stage candidates, not competitors to the first stage.
-  Only the Llama Guard 3/4 line has an explicit indiscriminate-weapons (S9)
-  category covering biological weapons.
+  ShieldGemma shows +10.8% AU-PRC over Llama Guard on general benchmarks but
+  covers only 4 categories and shows poor multi-risk reliability. All exhibit
+  ~30% blind spots when judging own-family outputs. None cover biosecurity-
+  specific NSABB/DURC-PEPP taxonomies — BioGuard is a **domain-specific
+  complement**, not a competitor.
+- **Backbone choice.** DeBERTa-v3-base (184M) remains the default. ModernBERT
+  (Warner et al. 2024) offers 1/5th memory and 2--4x speed with GLUE parity,
+  but arXiv:2504.08716 shows DeBERTa-v3 retains better sample efficiency at
+  small dataset scales (~3,000 examples). A head-to-head ModernBERT ablation
+  is low-priority future work.
 
 ---
 
@@ -176,6 +192,10 @@ investment or the line is killed.
     as an LLM-judge; benchmark Llama Guard 4 as an open alternative.
 - **Metrics.** Recall at fixed escalation budget; escalation rate at fixed
   target recall; AU-PRC (not ROC-AUC — the harmful class is rare).
+- **Confidence calibration.** Recent work (arXiv:2605.06350) shows LLM
+  confidence is poorly calibrated, making static thresholds brittle under
+  distribution shift. WS-1 mitigates this via temperature scaling, but
+  the escalation threshold should be monitored for drift on new data.
 - **Go/no-go gate.** Achieve >= 0.98 recall on the held-out positive set at an
   escalation rate <= 15%. If escalation rate exceeds ~40% at target recall, the
   encoder is too weak to be a useful first stage — revisit the base model.
@@ -226,6 +246,13 @@ rejected. Re-scoped; see Result below.***
   rewrites so the surface vocabulary cannot itself separate the classes
   (mirroring CC++'s future-work suggestion of *"targeted synthetic data
   generation to teach classifier models the intended decision boundary"*).
+  Recent work confirms this direction: lexical/semantic diversity metrics
+  correlate 0.5--0.7 with downstream performance (arXiv:2511.01490, ACL'26),
+  and persona-diversified generation outperforms post-hoc filtering
+  (EMNLP'25 Findings). The WS-2 BoW filtering failure is consistent with
+  **diversity collapse** — removing 40% of training data reduced lexical
+  coverage of the target categories. Future regeneration should measure
+  MTLD/HD-D diversity before and after.
   Concrete next experiment: regenerate with explicit lexical matching as a
   generation constraint and re-measure external kappa. WS-3 (probe
   ensemble) becomes higher priority since the v1-style external gap is
@@ -278,6 +305,17 @@ rejected. Re-scoped; see Result below.***
   distribution test set (e.g., WMDP-Bio, BioThreat-Eval) where the classifier
   and probe may disagree. This is future work.
 - **Artifacts.** `results/metrics/probe_ensemble_llama-3.1-8b.json`.
+- **Future directions (informed by gap audit).**
+  - **Nonlinear probes.** Truncated Polynomial Classifiers (TPCs;
+    arXiv:2509.26238, ICLR'26) extend linear probes with higher-order
+    interactions and dynamic compute allocation. May break the ceiling
+    effect by capturing features that linear probes miss.
+  - **OOD evaluation.** Re-run the ensemble experiment with WMDP-Bio and
+    SOSBench as test sets, where probe and classifier may disagree.
+  - **Theoretical limits.** arXiv:2603.25861 proves no polynomial-time probe
+    can detect "coherent misalignment" (fanatic behaviour); probes are
+    effective only against strategic deception. This bounds what WS-3
+    probes can achieve even with nonlinear extensions.
 
 ### WS-4 — Reconstruction attacks and red-team metrics
 *Compute: minimal.*
@@ -285,24 +323,32 @@ rejected. Re-scoped; see Result below.***
 - **Objective.** Cover the attack class that actually broke last-generation CC,
   and adopt CC++'s evaluation framing.
 - **Method.**
+  - Leverage **Jailbreak Foundry** (arXiv:2602.24009) — a unified harness
+    with 30 reproduced attacks — rather than building a custom attack suite.
+    Supplement with **DrAttack** (arXiv:2402.16914) for prompt decomposition
+    and reconstruction patterns specifically.
   - Add a **reconstruction** attack family to the adversarial suite —
-    fragment-across-benign-context patterns. Only patterns are released; no
-    operational payloads (consistent with `SAFETY.md`).
+    fragment-across-benign-context patterns. Only structural patterns are
+    released; no operational payloads (consistent with `SAFETY.md`).
+  - Include **Deep Inception** reframing attacks (arXiv:2510.21133), which
+    achieve 86% success vs 33.8% for direct requests on commercial LLMs.
   - Measure how much the exchange-style input mitigates reconstruction vs an
     input-only baseline.
-  - Shift the headline metric from F1 to **vulnerabilities per 1,000
-    adversarial queries** and calibrated red-team time, mirroring Anthropic's
-    reporting (Sharma et al. 2025; CC++).
-- **Metrics.** Reconstruction-attack ASR; vulnerability discovery rate.
+  - Shift the headline metric from F1 to **vulnerability discovery rate (VDR)**
+    — vulnerabilities per 1,000 adversarial queries — and calibrated red-team
+    time, mirroring Anthropic's reporting (Sharma et al. 2025; CC++). Report
+    multi-metric (WER, ASR, NASR, FASR) following HarmBench conventions
+    (arXiv:2402.04249).
+- **Metrics.** Reconstruction-attack ASR; VDR; per-category precision/recall.
 - **Go/no-go gate.** Always completes — this is evaluation hardening, not a
   speculative line.
 
-**Priority (updated 2026-05-22):** WS-1 and WS-2 are executed (WS-1 gate
-passed; WS-2 hypothesis rejected, re-scoped to data regeneration). WS-3
-(probe ensemble) is the next step — its priority is *higher* than originally
-planned because WS-2 confirmed the external gap is not removable by data
-filtering. WS-4 (reconstruction attacks) remains low-compute and can run
-in parallel with WS-3.
+**Priority (updated 2026-05-23):** WS-1, WS-2, and WS-3 are executed. WS-4
+(reconstruction attacks) is the only remaining workstream — CPU-only, uses
+Jailbreak Foundry + DrAttack frameworks. Beyond WS-4, the gap audit identifies
+three high-value extensions: (1) external OOD evaluation on WMDP-Bio +
+SOSBench, (2) data regeneration with lexical diversity metrics (MTLD/HD-D),
+(3) DURC-PEPP policy alignment verification.
 
 ---
 
@@ -384,8 +430,11 @@ and its composition is itself a documented limitation.
   in the source literature and remains untested here.
 - The external evaluation set is a curated union of imperfect public
   benchmarks; a true large non-synthetic biosafety corpus does not exist.
-- Standalone activation probes have weak TPR at strict FPR (~43% at 1% FPR);
-  they are only ever a first-stage filter, never a sole gate.
+- Standalone activation probes have weak TPR at strict FPR (~43% at 1% FPR
+  on real-world data; our synthetic-data TPR of 97% reflects ceiling effect).
+  Probes are only ever a first-stage filter, never a sole gate. Furthermore,
+  arXiv:2603.25861 proves no polynomial-time probe can detect coherent
+  misalignment — probes detect strategic deception but not "fanatic" behaviour.
 - All training data remains Claude-generated synthetic; real Claude usage data
   is not used. This is consistent with the prototype/offline-analysis stage —
   graduating to real-traffic analysis is explicitly out of scope for v2.
@@ -425,3 +474,17 @@ probe ensembling) survive the move to biosafety, and documenting which do not.
 - WMDP. arXiv:2403.03218. | SOSBench. arXiv:2505.21605. | SciKnowEval.
   arXiv:2406.09098. | LAB-Bench. arXiv:2407.10362. | OR-Bench. arXiv:2405.20947.
 - Nikolić et al. 2025. The Jailbreak Tax. arXiv:2504.10694.
+- Jailbreak Foundry. 2026. arXiv:2602.24009.
+- DrAttack. Liu et al. 2024. arXiv:2402.16914.
+- Deep Inception (CBRN). arXiv:2510.21133.
+- Classification-Verification Dichotomy. arXiv:2604.00072.
+- AegisLLM (WMDP unlearning). arXiv:2505.06108.
+- Beyond Linear Probes: TPCs. arXiv:2509.26238 (ICLR'26).
+- Why Safety Probes Catch Liars But Miss Fanatics. arXiv:2603.25861.
+- Synthetic Eggs in Many Baskets (data diversity). arXiv:2511.01490 (ACL'26).
+- Lexical Diversity via Persona Prompting. EMNLP'25 Findings.
+- Is Escalation Worth It? arXiv:2605.06350.
+- HarmBench. Mazeika et al. 2024. arXiv:2402.04249.
+- Warner et al. 2024. ModernBERT. HuggingFace blog.
+- DeBERTa-v3 vs ModernBERT sample efficiency. arXiv:2504.08716.
+- USG DURC-PEPP Policy. 2025. osp.od.nih.gov/policies/nsabb/.

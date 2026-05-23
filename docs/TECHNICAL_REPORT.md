@@ -299,7 +299,36 @@ regime where complementarity matters.
 
 **Adaptive attacks.** Neither CC++ nor this work tests probe robustness to
 adaptive attacks that specifically target the probe. Reconstruction attacks
-(WS-4) test the classifier but not the probe.
+(WS-4) test the classifier but not the probe. arXiv:2603.25861 establishes
+a theoretical limit: no polynomial-time probe can detect "coherent
+misalignment" -- probes are effective against strategic deception (95%+) but
+provably blind to aligned-looking but fundamentally misaligned behaviour.
+
+**Probe extensions.** Truncated Polynomial Classifiers (TPCs; arXiv:2509.26238,
+ICLR'26) extend linear probes with higher-order feature interactions and
+dynamic compute allocation. These may break the ceiling effect on synthetic
+data, and are a natural next step for WS-3.
+
+### 4.4 Policy Alignment
+
+The BioGuard constitution's 7 NSABB categories map to the 7 experimental
+effects enumerated in the 2025 USG DURC-PEPP policy (effective 2025-05-06),
+which supersedes the older DURC + P3CO frameworks and broadens scope beyond
+agent-list-based categories. The current domestic gain-of-function research
+policy is in flux (proposed pause pending revision), meaning any biosafety
+classifier must support updateable category definitions. BioGuard's
+constitution-driven approach inherently supports this -- new rules can be
+added to the YAML constitution without retraining the pipeline architecture.
+
+### 4.5 Competitive Landscape
+
+Llama Guard 4 (12B), ShieldGemma, and similar safety guards are general-
+purpose LLM-judge models. None cover NSABB/DURC-PEPP biosecurity-specific
+taxonomies. ShieldGemma shows +10.8% AU-PRC over Llama Guard on general
+benchmarks but covers only 4 categories. All exhibit ~30% blind spots when
+judging own-family model outputs. BioGuard occupies a different niche:
+a domain-specific, cheap, first-stage complement to these general guards,
+not a competitor.
 
 ---
 
@@ -323,6 +352,14 @@ Both have implications for any team applying CC++ methodology to domain-
 specific threats (chemical, radiological, nuclear, cyber): internal synthetic
 evaluation is necessary but not sufficient. External, out-of-distribution
 validation must be a first-class component of any domain-transfer effort.
+
+A third methodological lesson: **synthetic data quality should be measured
+before and after any intervention.** Recent work shows lexical/semantic
+diversity metrics (MTLD, HD-D) correlate 0.5--0.7 with downstream
+performance (arXiv:2511.01490). WS-2's BoW filtering failure is consistent
+with diversity collapse -- removing 40% of training data reduced lexical
+coverage of target categories. Persona-diversified generation (EMNLP'25)
+outperforms post-hoc filtering, pointing toward the correct intervention.
 
 ---
 
@@ -360,6 +397,15 @@ BioGuard repository. Training data is withheld per the project safety policy
 - SciKnowEval. 2024. arXiv:2406.09098.
 - LAB-Bench. 2024. arXiv:2407.10362.
 - OR-Bench. 2024. arXiv:2405.20947.
+- HarmBench. Mazeika et al. 2024. arXiv:2402.04249.
+- Jailbreak Foundry. 2026. arXiv:2602.24009.
+- DrAttack. Liu et al. 2024. arXiv:2402.16914.
+- Deep Inception (CBRN). arXiv:2510.21133.
+- Beyond Linear Probes: TPCs. arXiv:2509.26238 (ICLR'26).
+- Why Safety Probes Catch Liars But Miss Fanatics. arXiv:2603.25861.
+- Synthetic Eggs in Many Baskets. arXiv:2511.01490 (ACL'26).
+- Is Escalation Worth It? arXiv:2605.06350.
+- USG DURC-PEPP Policy. 2025. osp.od.nih.gov/policies/nsabb/.
 
 ---
 
