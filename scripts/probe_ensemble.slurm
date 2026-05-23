@@ -6,6 +6,7 @@
 #SBATCH --qos=nairr-gpu-shared-normal
 #SBATCH --account=crl195
 #SBATCH --gpus=1
+#SBATCH --nodes=1
 #SBATCH --ntasks-per-node=1
 #SBATCH --cpus-per-task=8
 #SBATCH --mem=64G
