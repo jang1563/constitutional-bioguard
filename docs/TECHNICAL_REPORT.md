@@ -3,7 +3,7 @@
 **JangKeun Kim**
 Weill Cornell Medicine | jak4013@med.cornell.edu
 
-**Version:** 1.2 (2026-05-23) | **Status:** All workstreams + corrective experiments 6.1--6.3 complete
+**Version:** 1.3 (2026-05-23) | **Status:** All workstreams + corrective experiments 6.1--6.3, 6.7 complete
 
 ---
 
@@ -24,13 +24,17 @@ generalisation, confirming the gap is architectural rather than lexical, and
 (3) probe-classifier complementarity cannot be measured on synthetic in-
 distribution data due to a ceiling effect (AU-PRC > 0.997 for all components),
 though low error correlation (rho = 0.24) hints at latent complementarity on
-harder distributions. Corrective OOD evaluation on WMDP-Bio (1,273 questions, 5,092
-exchange pairs) confirms the ceiling: AUROC drops from 0.9975 to 0.4993,
-demonstrating the classifier learned synthetic distribution patterns
-rather than biosecurity concepts. This work contributes empirical
-evidence on the domain-specificity of CC++ components and identifies the
-synthetic data ceiling as the primary obstacle when moving from general-
-purpose to domain-specialised safety classification.
+harder distributions. Two corrective OOD evaluations sharpen the picture: on WMDP-Bio MCQs
+(AUROC 0.4993), the classifier appears random, but the binary
+labelling (correct = UNSAFE) introduces noise. On BioThreat-Eval
+(558 expert-labelled responses, AUROC 0.7196), the classifier has
+genuine but limited discriminative ability -- recall caps at ~44%
+across all thresholds, far below deployable. The synthetic data
+ceiling exists but is more nuanced than "random on OOD." This work
+contributes empirical evidence on the domain-specificity of CC++
+components and identifies the synthetic data ceiling as the primary
+obstacle when moving from general-purpose to domain-specialised safety
+classification.
 
 ---
 
@@ -625,36 +629,123 @@ Persona-diversified generation (EMNLP'25) and MTLD/HD-D monitoring
 2. Measure MTLD and HD-D before and after regeneration.
 3. Retrain and evaluate on BioThreat-Eval + WMDP-Bio.
 
+### 6.7 OOD Evaluation on BioThreat-Eval (Refines the WMDP-Bio Story)
+
+**Rationale.** Experiment 6.1 used WMDP-Bio multiple-choice items
+converted to (query, response) pairs by treating correct answers as
+UNSAFE and distractors as SAFE. This is an imperfect approximation:
+"correctness" is not "danger." Some correct WMDP-Bio answers describe
+textbook biology with no operational content. BioThreat-Eval addresses
+this by providing 558 expert-labelled (query, real LLM response) pairs
+with multi-dimensional scores (threat_level, operational_specificity,
+refusal_rate). Evaluating on this benchmark separates true classifier
+failure from label-conversion artifacts.
+
+**Method.** Loaded BioThreat-Eval (93 queries x 6 LLMs = 558 scored
+responses), ran inference with both A_full and B_bowhard (capturing
+probabilities, not just predictions), and computed full classification
+metrics under three label-derivation strategies:
+- **threat_level >= 4** (severe queries; primary)
+- **threat_level >= 3** (broader concern)
+- **response-based** (op_spec >= 0.5 AND refusal < 0.5 AND TL >= 3;
+  measures whether the response actually leaked operational info)
+
+**Result (A_full @ default threshold 0.5, primary strategy):**
+
+| Metric | Value |
+|--------|-------|
+| AU-PRC | 0.6698 |
+| AUROC | 0.7196 |
+| F1 | 0.5037 |
+| Precision | 0.756 |
+| Recall | 0.378 |
+| FPR | 0.0582 |
+
+Three-benchmark comparison:
+
+| Benchmark | AU-PRC | AUROC | F1 | FPR |
+|-----------|--------|-------|-----|-----|
+| Internal (synthetic) | 0.998 | 0.998 | 0.976 | 0.5% |
+| WMDP-Bio (MCQ-derived) | 0.257 | 0.499 | 0.260 | 26.5% |
+| **BioThreat-Eval (expert)** | **0.670** | **0.720** | **0.504** | **5.8%** |
+
+Confidence distribution shows real separation: UNSAFE items mean
+probability 0.39, SAFE items 0.055 (compare WMDP-Bio: both ~0.28,
+indistinguishable).
+
+Threshold sweep reveals a recall ceiling: across thresholds from 0.05
+to 0.9, recall stays in [0.37, 0.44]. The classifier cannot find more
+than ~44% of true positives at any operating point.
+
+A_full vs B_bowhard at threshold 0.5: A has F1 0.50 (prec 0.76, rec
+0.38), B has F1 0.32 (prec 1.00, rec 0.19). B is more conservative --
+when it flags, it is always right, but it misses 81% of threats.
+Consistent with WS-2 and 6.2: BoW filtering made B over-cautious.
+
+**Interpretation.** This experiment resolves an ambiguity left by 6.1.
+
+- **WMDP-Bio's AUROC 0.4993 was misleadingly pessimistic.** The
+  "correct = UNSAFE" labelling injected substantial noise: many
+  WMDP-Bio correct answers are textbook facts that the classifier
+  reasonably did not flag.
+- **The classifier has real but limited discriminative ability on real
+  biosecurity content.** AUROC 0.72 is meaningfully above random,
+  confirming the model learned more than synthetic style.
+- **It is still not deployable.** Recall capped at 44% across all
+  thresholds means the classifier would miss the majority of real
+  threats at any operating point. Useful as part of a defense stack,
+  insufficient as a sole filter.
+- **Multi-strategy labelling matters.** Threat_level_3, threat_level_4,
+  and response-based strategies give different AUROC rankings; no
+  single binary captures "safety" cleanly.
+
+**Caveats.** BioThreat-Eval queries themselves are constructed from a
+biothreat taxonomy by experts, so they are not fully naturalistic;
+recall ceiling could reflect this distributional narrowness as well as
+true classifier limits. Multi-turn and adversarially adaptive content
+remain untested.
+
 ### 6.6 Summary of Corrective Findings
 
-All three corrective experiments are complete. Together they paint a
-clear picture:
+Four corrective experiments complete (6.1, 6.2, 6.3, 6.7). The
+picture they paint is nuanced:
 
-1. **The synthetic data ceiling is confirmed** (6.1). AUROC drops from
-   0.9975 to 0.4993 on OOD data -- the classifier is genuinely random
-   outside its training distribution. This is the single most important
-   finding of the entire project.
+1. **The synthetic data ceiling is real but bounded** (6.1 + 6.7).
+   WMDP-Bio AUROC of 0.4993 looked catastrophic, but BioThreat-Eval
+   (expert-labelled) gives 0.7196 -- meaningful discriminative
+   ability. The WMDP-Bio failure was inflated by label-conversion
+   noise. The classifier learned more than synthetic style, but not
+   enough for deployment: recall caps at ~44% on real biosecurity
+   content.
 
 2. **The WS-2 kappa degradation is statistically robust** (6.2). Paired
    delta bootstrap CI [0.057, 0.199] excludes zero (P = 0.0003). BoW
    filtering genuinely harmed external generalization -- the "shortcuts"
-   were prototypical signal the model needed.
+   were prototypical signal the model needed. 6.7 confirms this at the
+   classification-metric level (A_full F1 0.50 vs B_bowhard F1 0.32).
 
 3. **Preprocessing is not the source of adversarial robustness** (6.3).
    The classifier handles attacks independently, but only because both
    the attacks and the test data come from the same weak distribution.
    Real adversarial robustness remains unmeasured.
 
-4. **Internal metrics are worse than uninformative -- they are
-   misleading.** AU-PRC of 0.9979, F1 of 0.9757, and 0% ASR all
-   suggested a production-ready classifier. OOD evaluation revealed a
-   classifier with no discriminative ability on real biosecurity content.
+4. **Internal metrics are systematically misleading.** AU-PRC of 0.9979,
+   F1 of 0.9757, and 0% ASR all suggested a production-ready classifier.
+   External evaluation (both WMDP-Bio and BioThreat-Eval) reveals the
+   true ceiling. Without external benchmarks, internal numbers create
+   false confidence.
+
+5. **Labelling matters as much as data distribution** (6.7). Three
+   strategies (threat_level_4, threat_level_3, response-based) gave
+   meaningfully different rankings. The binary SAFE/UNSAFE abstraction
+   that suits training is too coarse for evaluation; ordinal threat
+   scores carry information that binary collapse destroys.
 
 The corrective path forward is data-centric: regenerate training data
 with distributional diversity matching real-world content (6.5), then
-re-evaluate on WMDP-Bio. Architecture changes (cascade, ensemble) are
-premature until the classifier has genuine discriminative ability on
-OOD data.
+re-evaluate on BioThreat-Eval. Architecture changes (cascade, ensemble)
+are premature until the classifier closes the recall ceiling on real
+content.
 
 ---
 
@@ -707,6 +798,7 @@ BioGuard repository. Training data is withheld per the project safety policy
 | 6.2 Bootstrap kappa CI | `results/metrics/corrective_6_2_bootstrap_kappa.json` |
 | 6.3 Adversarial comparison | `results/metrics/corrective_6_3_adversarial_comparison.json` |
 | 6.3 Pre-preprocessing results | `results/metrics/adversarial_pre_preprocessing.json` |
+| 6.7 BioThreat-Eval OOD evaluation | `results/metrics/corrective_6_7_biothreat_ood.json` |
 | v2 research design | `docs/V2_DESIGN.md` |
 
 ---
@@ -740,6 +832,7 @@ BioGuard repository. Training data is withheld per the project safety policy
 
 ---
 
-*All four workstreams and corrective experiments 6.1--6.3 complete.
-Future work: data regeneration with lexical diversity metrics (6.5),
-OOD evaluation on SOSBench, multi-turn reconstruction attacks.*
+*All four workstreams and corrective experiments 6.1--6.3, 6.7
+complete. Future work: data regeneration with lexical diversity
+metrics (6.5), OOD evaluation on SOSBench and HarmBench bio subset,
+multi-turn reconstruction attacks.*
