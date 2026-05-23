@@ -44,8 +44,8 @@ def load_model_and_tokenizer(model_dir: Optional[Path] = None):
     from transformers import AutoModelForSequenceClassification, AutoTokenizer
 
     model_dir = model_dir or MODELS_DIR / "deberta_bioguard_v1"
-    tokenizer = AutoTokenizer.from_pretrained(str(model_dir))
-    model = AutoModelForSequenceClassification.from_pretrained(str(model_dir))
+    tokenizer = AutoTokenizer.from_pretrained(str(model_dir), local_files_only=True)
+    model = AutoModelForSequenceClassification.from_pretrained(str(model_dir), local_files_only=True)
     model.eval()
     return model, tokenizer
 

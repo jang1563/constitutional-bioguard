@@ -125,7 +125,7 @@ def load_model_for_probing(
 
     model = AutoModelForCausalLM.from_pretrained(
         hf_id,
-        torch_dtype=dtype,
+        dtype=dtype,
         device_map=device,
         output_hidden_states=True,
         trust_remote_code=True,
