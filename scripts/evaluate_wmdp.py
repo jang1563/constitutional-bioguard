@@ -139,7 +139,7 @@ def evaluate_wmdp(model_dir: Path, limit: int | None = None) -> dict:
     results = {
         "dataset": "cais/wmdp (wmdp-bio, test split)",
         "n_questions": n_questions,
-        "n_total_inputs": len(all_texts),
+        "n_total_inputs": len(all_labels),
         "n_unsafe_expected": int(sum(all_labels)),
         "n_safe_expected": int(len(all_labels) - sum(all_labels)),
         "note": (

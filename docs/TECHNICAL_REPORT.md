@@ -94,8 +94,8 @@ testing a specific CC++ mechanism:
 |----|---------------|---------------------|--------|
 | WS-1 | Cascade escalation | Neyman-Pearson threshold calibration | Done |
 | WS-2 | Training data quality | Bag-of-words shortcut elimination | Done (hypothesis rejected) |
-| WS-3 | Activation probes | Linear probes on open-weight LLMs | Running |
-| WS-4 | Reconstruction attacks | Fragment-across-context adversarial | Planned |
+| WS-3 | Activation probes | Linear probes on open-weight LLMs | Done (gate FAIL) |
+| WS-4 | Reconstruction attacks | Fragment-across-context adversarial | Done (0% ASR) |
 
 ---
 
@@ -367,7 +367,185 @@ not a competitor.
 
 ---
 
-## 5. Relation to CC++ and Broader Implications
+## 5. Critical Self-Assessment
+
+The single dominant finding across all four workstreams is that **synthetic
+in-distribution evaluation creates a ceiling effect that inflates every
+metric and masks every interesting signal.** Each workstream must be
+re-evaluated through this lens.
+
+### 5.1 What Each Workstream Actually Showed
+
+**WS-1 is analytically correct but empirically untested.** The escalation
+rate formula is sound, but it depends on two quantities measured on a
+validation set that is 68% positive -- orders of magnitude more than any
+production distribution. The F1-optimal threshold is 0.10 (not the
+reported 0.65), indicating the classifier's probability scores are
+overconfident: most UNSAFE predictions cluster near 1.0, most SAFE near
+0.0. The threshold of 0.65 captures the desired recall, but confidence
+calibration on a realistic distribution remains unverified. AU-PRC is
+undefined when the evaluation set has ~68% positives (the metric measures
+ranking performance on imbalanced data; at 68% positive, even random
+ranking looks good).
+
+**WS-2 is the only workstream that properly answered its question.** It
+used external data (BioThreat-Eval) and obtained a clear negative result:
+filtering does not help. However, run-to-run variance is unquantified.
+A_full's kappa (0.368) vs v1's kappa (0.414) represents a delta of 0.046
+that could be initialization noise, hyperparameter drift, or a real
+effect. Without bootstrap confidence intervals or multiple seeds, the
+"architectural gap" interpretation is a hypothesis, not a verified
+conclusion.
+
+**WS-3's best_weight=1.0 means the probe alone outperforms BioGuard.**
+This is not "no complementarity" -- it is a statement that, on this
+evaluation set, the LLM probe is strictly better than the DeBERTa
+classifier. But the evaluation set is LLM-generated synthetic data,
+and the probe comes from the same LLM family. The probe's advantage
+is trivially circular: Llama recognises its own generation patterns.
+The 643-sample test set with metrics at 0.99+ provides no statistical
+power to distinguish components -- the effective sample size for
+disagreement analysis is the number of errors (~5--10 examples), far
+too small for reliable correlation estimates.
+
+**WS-4's 0% ASR is an artifact of preprocessing, not classifier
+robustness.** The `predict_batch` pipeline normalizes Unicode, strips
+zero-width characters, and decodes encodings before classification.
+Character-level and encoding attacks are undone before they reach the
+model. Semantic and reconstruction attacks are rule-based
+transformations applied to synthetic data -- they do not model a real
+adversary. The accuracy_degradation column (nonzero for leetspeak,
+case_swap, hypothetical, mixed_script, roleplay_reframe, and
+academic_reframe at 0.02) indicates these attacks flip SAFE examples
+to UNSAFE (false positive direction), which the ASR metric (UNSAFE
+to SAFE) does not capture. A complete robustness report would include
+both directions.
+
+### 5.2 The Synthetic Data Ceiling
+
+All four workstreams share a root cause: the synthetic training and
+evaluation data is too easy and too homogeneous.
+
+- **Ceiling on discrimination.** When AU-PRC > 0.997, any component
+  comparison is noise. Ensemble, cascade, and shortcut analyses all
+  need evaluation data where classifiers make meaningful numbers of
+  errors.
+- **Ceiling on adversarial robustness.** Rule-based attacks on
+  synthetic data measure robustness to string transformations, not
+  to adversarial intent. An LLM-generated adaptive attack that
+  rephrases harmful content into domain-appropriate language would be
+  a far harder test.
+- **Ceiling on generalization.** Only WS-2 broke through the ceiling
+  by using external data, and it immediately revealed a finding
+  invisible to internal metrics (kappa collapse under filtering).
+
+This ceiling is not a flaw in the CC++ methodology -- it is a
+consequence of applying it in a domain where labelled external data
+is scarce and synthetic data is the only available training signal.
+The methodological contribution of this work is identifying the
+ceiling precisely and specifying what breaks it.
+
+---
+
+## 6. Corrective Experiments: What Would Break the Ceiling
+
+The following experiments are designed to address the specific
+limitations identified in Section 5. They are ordered by expected
+information gain per unit of effort.
+
+### 6.1 OOD Evaluation on WMDP-Bio + SOSBench (Breaks WS-1, WS-3, WS-4 Ceilings)
+
+**Rationale.** WMDP-Bio (Li et al. 2024) contains 1,273 biology
+dual-use QA pairs; SOSBench (2025) provides 2,000+ science-of-
+security queries with ground-truth labels. These are out-of-
+distribution for BioGuard's synthetic training data and would provide
+the "room to fail" needed for meaningful component comparison.
+
+**Design.**
+1. Format WMDP-Bio and SOSBench into BioGuard's exchange-classifier
+   input format (`query [SEP] response`).
+2. Re-run WS-1 threshold sweep on OOD data. If AU-PRC drops
+   significantly (expected: below 0.95), the escalation rate formula
+   needs recalibration.
+3. Re-run WS-3 probe ensemble sweep. If the ceiling breaks (AU-PRC
+   < 0.99), the ensemble weight and complementarity analysis become
+   meaningful.
+4. Re-run WS-4 adversarial suite on OOD inputs. If ASR > 0% post-
+   preprocessing, the classifier has real vulnerabilities to find.
+
+**Effort:** 1-2 days (data formatting + inference, no retraining).
+
+### 6.2 Bootstrap CIs for WS-2 Kappa (Quantifies Run-to-Run Variance)
+
+**Rationale.** The delta between A_full (0.368) and B_bowhard (0.240)
+could be initialization noise. Without confidence intervals, the
+"architectural gap" claim is an assertion.
+
+**Design.**
+1. Compute 10,000-iteration bootstrap CIs on Cohen's kappa for both
+   A_full and B_bowhard against BioThreat-Eval.
+2. If the 95% CIs do not overlap, the delta is robust. If they do
+   overlap, retrain 3-5 seeds per variant and report the distribution.
+
+**Effort:** <1 hour (no retraining needed for bootstrap; 2-3 days for
+multi-seed if required).
+
+### 6.3 Pre-Preprocessing Adversarial Evaluation (Separates Preprocessing from Classification)
+
+**Rationale.** WS-4 reports post-preprocessing ASR. The v1 README
+reports 9.79% ASR pre-preprocessing. The gap between these is the
+preprocessing contribution, not the classifier's contribution.
+
+**Design.**
+1. Re-run adversarial suite with `normalize=False` in `predict_batch`.
+2. Report both pre- and post-preprocessing ASR side by side.
+3. For attacks where pre-preprocessing ASR > 0%, analyze which
+   preprocessing step is responsible (Unicode normalization, zero-
+   width stripping, encoding decode).
+
+**Effort:** <1 hour.
+
+### 6.4 Multi-Seed Retraining for WS-2 (Separates Signal from Noise)
+
+**Rationale.** If bootstrap CIs overlap (6.2), multi-seed retraining
+is the definitive test.
+
+**Design.** Retrain A_full and B_bowhard with 5 random seeds each,
+report kappa mean +/- std.
+
+**Effort:** 2-3 days (10 SLURM jobs on Expanse).
+
+### 6.5 Data Regeneration with Diversity Metrics (Addresses Root Cause)
+
+**Rationale.** The synthetic data ceiling is a data quality problem.
+Persona-diversified generation (EMNLP'25) and MTLD/HD-D monitoring
+(arXiv:2511.01490) are the corrective interventions.
+
+**Design.**
+1. Regenerate training data with persona-diversified prompts (10+
+   researcher personas, varied institutions, mixed formality).
+2. Measure MTLD and HD-D before and after regeneration.
+3. Retrain and evaluate on BioThreat-Eval + WMDP-Bio.
+
+**Effort:** 1 week (generation + retraining + evaluation).
+
+### 6.6 Priority Assessment
+
+Experiments 6.1 and 6.3 have the highest information-gain-to-effort
+ratio and should be executed first. Together, they determine whether
+any of the ceiling-dominated results change on harder data. If
+they do, experiments 6.2 and 6.4 become important for interpretation.
+Experiment 6.5 addresses the root cause but requires significant
+compute and is the longest-term investment.
+
+For the Safeguards Labs RE application, **6.1 and 6.3 are the
+minimum viable corrective experiments** -- they transform the
+narrative from "everything works on synthetic data" to "here is
+what breaks on real data and what we would fix."
+
+---
+
+## 7. Relation to CC++ and Broader Implications
 
 This work is a **domain-transfer stress test** of CC++. It does not reproduce
 CC++ (we have no access to Claude's internals or production traffic), but it
@@ -398,7 +576,7 @@ outperforms post-hoc filtering, pointing toward the correct intervention.
 
 ---
 
-## 6. Artifacts
+## 8. Artifacts
 
 All code, metrics, and design documents are available in the Constitutional
 BioGuard repository. Training data is withheld per the project safety policy
@@ -411,6 +589,7 @@ BioGuard repository. Training data is withheld per the project safety policy
 | A/B external comparison | `results/metrics/external_validation_AB_comparison.json` |
 | Per-variant external results | `results/metrics/external_validation_{A_full,B_bowhard}.json` |
 | Probe ensemble results | `results/metrics/probe_ensemble_llama-3.1-8b.json` |
+| Adversarial suite results | `results/metrics/adversarial_results.json` |
 | v2 research design | `docs/V2_DESIGN.md` |
 
 ---

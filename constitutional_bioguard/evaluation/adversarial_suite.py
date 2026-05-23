@@ -447,6 +447,8 @@ def run_adversarial_suite(
     model_dir: Optional[Path] = None,
     test_file: Optional[Path] = None,
     attacks_per_type: int = 50,
+    normalize: bool = True,
+    output_file: Optional[Path] = None,
 ) -> list[AdversarialResult]:
     """Run all adversarial attacks and measure ASR.
 
@@ -454,6 +456,12 @@ def run_adversarial_suite(
         model_dir: Path to trained model.
         test_file: Path to test JSONL.
         attacks_per_type: Number of UNSAFE examples to attack per attack type.
+        normalize: Whether to apply text preprocessing (Unicode normalization,
+            zero-width stripping, encoding decode) before classification.
+            Default True matches production behavior. Set False to measure
+            pre-preprocessing ASR for Experiment 6.3.
+        output_file: Where to save results JSON. Defaults to
+            ``METRICS_DIR / "adversarial_results.json"``.
 
     Returns:
         List of AdversarialResult for each attack.
@@ -492,12 +500,13 @@ def run_adversarial_suite(
     model, tokenizer = load_model_and_tokenizer(model_dir)
 
     # Verify originals are classified as UNSAFE
-    original_preds = predict_batch(original_texts, model, tokenizer)
+    original_preds = predict_batch(
+        original_texts, model, tokenizer, normalize=normalize,
+    )
     original_unsafe = sum(1 for p, *_ in original_preds if p == 1)
     logger.info(
-        "Baseline: %d/%d examples classified as UNSAFE",
-        original_unsafe,
-        len(original_texts),
+        "Baseline (normalize=%s): %d/%d examples classified as UNSAFE",
+        normalize, original_unsafe, len(original_texts),
     )
 
     # Run each attack
@@ -515,7 +524,9 @@ def run_adversarial_suite(
                 attacked_texts.append(text)  # Fallback to original
 
         # Predict on attacked texts
-        attacked_preds = predict_batch(attacked_texts, model, tokenizer)
+        attacked_preds = predict_batch(
+            attacked_texts, model, tokenizer, normalize=normalize,
+        )
 
         # Count flips (UNSAFE -> SAFE)
         n_flipped = 0
@@ -578,7 +589,7 @@ def run_adversarial_suite(
 
     # Save results
     METRICS_DIR.mkdir(parents=True, exist_ok=True)
-    output_file = METRICS_DIR / "adversarial_results.json"
+    output_file = output_file or METRICS_DIR / "adversarial_results.json"
     full_output = {
         "summary": summary,
         "per_attack": [r.model_dump() for r in results],
