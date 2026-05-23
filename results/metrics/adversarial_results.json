@@ -1,0 +1,291 @@
+{
+  "summary": {
+    "total_attack_types": 27,
+    "total_queries": 1323,
+    "total_vulnerabilities": 0,
+    "vulnerability_discovery_rate_per_1k": 0.0,
+    "mean_asr": 0.0,
+    "by_category": {
+      "character": {
+        "asr": 0.0,
+        "n_tested": 343,
+        "n_flipped": 0,
+        "attacks": [
+          "homoglyphs",
+          "invisible_chars",
+          "leetspeak",
+          "case_swap",
+          "whitespace",
+          "typos",
+          "unicode_norm"
+        ]
+      },
+      "encoding": {
+        "asr": 0.0,
+        "n_tested": 245,
+        "n_flipped": 0,
+        "attacks": [
+          "base64_partial",
+          "rot13",
+          "hex_words",
+          "url_encode",
+          "backspace"
+        ]
+      },
+      "semantic": {
+        "asr": 0.0,
+        "n_tested": 294,
+        "n_flipped": 0,
+        "attacks": [
+          "passive_voice",
+          "euphemism",
+          "hypothetical",
+          "negation_flip",
+          "question_to_statement",
+          "context_dilution"
+        ]
+      },
+      "multilingual": {
+        "asr": 0.0,
+        "n_tested": 98,
+        "n_flipped": 0,
+        "attacks": [
+          "code_switch",
+          "mixed_script"
+        ]
+      },
+      "reconstruction": {
+        "asr": 0.0,
+        "n_tested": 343,
+        "n_flipped": 0,
+        "attacks": [
+          "code_fragment",
+          "list_fragment",
+          "conversation_embed",
+          "template_variable",
+          "roleplay_reframe",
+          "academic_reframe",
+          "translation_chain"
+        ]
+      }
+    }
+  },
+  "per_attack": [
+    {
+      "attack_name": "homoglyphs",
+      "attack_category": "character",
+      "n_tested": 49,
+      "n_flipped": 0,
+      "attack_success_rate": 0.0,
+      "accuracy_degradation": 0.0
+    },
+    {
+      "attack_name": "invisible_chars",
+      "attack_category": "character",
+      "n_tested": 49,
+      "n_flipped": 0,
+      "attack_success_rate": 0.0,
+      "accuracy_degradation": 0.0
+    },
+    {
+      "attack_name": "leetspeak",
+      "attack_category": "character",
+      "n_tested": 49,
+      "n_flipped": 0,
+      "attack_success_rate": 0.0,
+      "accuracy_degradation": 0.02
+    },
+    {
+      "attack_name": "case_swap",
+      "attack_category": "character",
+      "n_tested": 49,
+      "n_flipped": 0,
+      "attack_success_rate": 0.0,
+      "accuracy_degradation": 0.02
+    },
+    {
+      "attack_name": "whitespace",
+      "attack_category": "character",
+      "n_tested": 49,
+      "n_flipped": 0,
+      "attack_success_rate": 0.0,
+      "accuracy_degradation": 0.0
+    },
+    {
+      "attack_name": "typos",
+      "attack_category": "character",
+      "n_tested": 49,
+      "n_flipped": 0,
+      "attack_success_rate": 0.0,
+      "accuracy_degradation": 0.0
+    },
+    {
+      "attack_name": "unicode_norm",
+      "attack_category": "character",
+      "n_tested": 49,
+      "n_flipped": 0,
+      "attack_success_rate": 0.0,
+      "accuracy_degradation": 0.0
+    },
+    {
+      "attack_name": "base64_partial",
+      "attack_category": "encoding",
+      "n_tested": 49,
+      "n_flipped": 0,
+      "attack_success_rate": 0.0,
+      "accuracy_degradation": 0.0
+    },
+    {
+      "attack_name": "rot13",
+      "attack_category": "encoding",
+      "n_tested": 49,
+      "n_flipped": 0,
+      "attack_success_rate": 0.0,
+      "accuracy_degradation": 0.0
+    },
+    {
+      "attack_name": "hex_words",
+      "attack_category": "encoding",
+      "n_tested": 49,
+      "n_flipped": 0,
+      "attack_success_rate": 0.0,
+      "accuracy_degradation": 0.0
+    },
+    {
+      "attack_name": "url_encode",
+      "attack_category": "encoding",
+      "n_tested": 49,
+      "n_flipped": 0,
+      "attack_success_rate": 0.0,
+      "accuracy_degradation": 0.0
+    },
+    {
+      "attack_name": "backspace",
+      "attack_category": "encoding",
+      "n_tested": 49,
+      "n_flipped": 0,
+      "attack_success_rate": 0.0,
+      "accuracy_degradation": 0.0
+    },
+    {
+      "attack_name": "passive_voice",
+      "attack_category": "semantic",
+      "n_tested": 49,
+      "n_flipped": 0,
+      "attack_success_rate": 0.0,
+      "accuracy_degradation": 0.0
+    },
+    {
+      "attack_name": "euphemism",
+      "attack_category": "semantic",
+      "n_tested": 49,
+      "n_flipped": 0,
+      "attack_success_rate": 0.0,
+      "accuracy_degradation": 0.0
+    },
+    {
+      "attack_name": "hypothetical",
+      "attack_category": "semantic",
+      "n_tested": 49,
+      "n_flipped": 0,
+      "attack_success_rate": 0.0,
+      "accuracy_degradation": 0.02
+    },
+    {
+      "attack_name": "negation_flip",
+      "attack_category": "semantic",
+      "n_tested": 49,
+      "n_flipped": 0,
+      "attack_success_rate": 0.0,
+      "accuracy_degradation": 0.0
+    },
+    {
+      "attack_name": "question_to_statement",
+      "attack_category": "semantic",
+      "n_tested": 49,
+      "n_flipped": 0,
+      "attack_success_rate": 0.0,
+      "accuracy_degradation": 0.0
+    },
+    {
+      "attack_name": "context_dilution",
+      "attack_category": "semantic",
+      "n_tested": 49,
+      "n_flipped": 0,
+      "attack_success_rate": 0.0,
+      "accuracy_degradation": 0.0
+    },
+    {
+      "attack_name": "code_switch",
+      "attack_category": "multilingual",
+      "n_tested": 49,
+      "n_flipped": 0,
+      "attack_success_rate": 0.0,
+      "accuracy_degradation": 0.0
+    },
+    {
+      "attack_name": "mixed_script",
+      "attack_category": "multilingual",
+      "n_tested": 49,
+      "n_flipped": 0,
+      "attack_success_rate": 0.0,
+      "accuracy_degradation": 0.02
+    },
+    {
+      "attack_name": "code_fragment",
+      "attack_category": "reconstruction",
+      "n_tested": 49,
+      "n_flipped": 0,
+      "attack_success_rate": 0.0,
+      "accuracy_degradation": 0.0
+    },
+    {
+      "attack_name": "list_fragment",
+      "attack_category": "reconstruction",
+      "n_tested": 49,
+      "n_flipped": 0,
+      "attack_success_rate": 0.0,
+      "accuracy_degradation": 0.0
+    },
+    {
+      "attack_name": "conversation_embed",
+      "attack_category": "reconstruction",
+      "n_tested": 49,
+      "n_flipped": 0,
+      "attack_success_rate": 0.0,
+      "accuracy_degradation": 0.0
+    },
+    {
+      "attack_name": "template_variable",
+      "attack_category": "reconstruction",
+      "n_tested": 49,
+      "n_flipped": 0,
+      "attack_success_rate": 0.0,
+      "accuracy_degradation": 0.0
+    },
+    {
+      "attack_name": "roleplay_reframe",
+      "attack_category": "reconstruction",
+      "n_tested": 49,
+      "n_flipped": 0,
+      "attack_success_rate": 0.0,
+      "accuracy_degradation": 0.02
+    },
+    {
+      "attack_name": "academic_reframe",
+      "attack_category": "reconstruction",
+      "n_tested": 49,
+      "n_flipped": 0,
+      "attack_success_rate": 0.0,
+      "accuracy_degradation": 0.02
+    },
+    {
+      "attack_name": "translation_chain",
+      "attack_category": "reconstruction",
+      "n_tested": 49,
+      "n_flipped": 0,
+      "attack_success_rate": 0.0,
+      "accuracy_degradation": 0.0
+    }
+  ]
+}

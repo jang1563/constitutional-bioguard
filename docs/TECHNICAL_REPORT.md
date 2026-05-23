@@ -3,7 +3,7 @@
 **JangKeun Kim**
 Weill Cornell Medicine | jak4013@med.cornell.edu
 
-**Draft:** 2026-05-23 | **Status:** WS-1/2/3 complete, WS-4 planned
+**Version:** 1.0 (2026-05-23) | **Status:** All workstreams complete
 
 ---
 
@@ -236,17 +236,52 @@ classifiers have room to disagree. **Testing complementarity requires an
 out-of-distribution evaluation set** (e.g., WMDP-Bio, BioThreat-Eval
 responses). This is the key methodological lesson and future work.
 
-### 3.4 WS-4: Reconstruction Attacks (Planned)
+### 3.4 WS-4: Reconstruction Attacks (0% ASR, with Caveats)
 
 **Question:** Is BioGuard robust to the attack class that actually broke
 first-generation Constitutional Classifiers -- reconstruction attacks that
 fragment harmful content across benign context?
 
-**Method.** Add a reconstruction attack family to the adversarial evaluation
-suite, adopting CC++'s vulnerability-discovery-rate framing rather than
-aggregate ASR.
+**Method.** Added 7 reconstruction attacks to the adversarial suite (27 total
+across 5 categories), following Jailbreak Foundry (arXiv:2602.24009) and
+DrAttack (arXiv:2402.16914) patterns: code fragmentation, list decomposition,
+conversation embedding, template variables, roleplay reframing (Deep
+Inception-style), academic reframing, and translation chain obfuscation.
+Adopted vulnerability discovery rate (VDR per 1,000 queries) as the headline
+metric.
 
-**Status:** Planned (CPU-only, can run in parallel with WS-3).
+**Result.**
+
+| Category | Attacks | ASR | Flipped |
+|----------|---------|-----|---------|
+| Character | 7 | 0.00% | 0/343 |
+| Encoding | 5 | 0.00% | 0/245 |
+| Semantic | 6 | 0.00% | 0/294 |
+| Multilingual | 2 | 0.00% | 0/98 |
+| Reconstruction | 7 | 0.00% | 0/343 |
+| **Total** | **27** | **0.00%** | **0/1,323** |
+
+VDR = 0.0 per 1,000 queries.
+
+**Interpretation.** The 0% ASR is post-preprocessing (the `predict_batch`
+pipeline normalizes Unicode, strips zero-width characters, and decodes
+encodings before classification). This is the same pattern reported in v1:
+9.79% ASR pre-preprocessing, 0% post-preprocessing.
+
+For reconstruction attacks specifically, the classifier still detects the
+harmful content because: (1) the original keywords survive fragmentation
+(they appear in individual fragments), and (2) the exchange-style input
+(`query [SEP] response`) provides enough context for classification.
+
+**Honest caveats:**
+- Rule-based attacks on synthetic test data understate real-world adversarial
+  risk. LLM-generated adaptive attacks (which can tailor obfuscation to the
+  specific classifier) are the next evaluation frontier.
+- The reconstruction attacks fragment text but do not truly *distribute*
+  harmful intent across multiple benign turns (multi-turn reconstruction).
+  Multi-turn attacks remain untested.
+- 0% ASR on 50 examples per attack does not mean the classifier is
+  invulnerable -- it means these specific attack patterns do not defeat it.
 
 ---
 
@@ -409,4 +444,6 @@ BioGuard repository. Training data is withheld per the project safety policy
 
 ---
 
-*Draft. Section 3.4 will be updated with WS-4 results.*
+*All four workstreams complete. Future work: OOD evaluation on WMDP-Bio +
+SOSBench, data regeneration with lexical diversity metrics, multi-turn
+reconstruction attacks.*

@@ -407,8 +407,11 @@ and its composition is itself a documented limitation.
    kappa 0.368 (full) → 0.240 (BoW-filtered); kappa gap confirmed
    architectural. Curated multi-source external set (WS-2 registry)
    remains future work for triangulation.
-3. **M3 — Hardened evaluation.** WS-4 complete: reconstruction attacks added,
-   metrics shifted to vulnerability discovery rate.
+3. **M3 — Hardened evaluation.** ✅ Done (2026-05-23). WS-4 complete: 7
+   reconstruction attacks added (27 total), VDR metric introduced. Result:
+   ASR = 0.00% across all 5 categories (post-preprocessing). Honest caveat:
+   rule-based attacks on synthetic data understate real-world adversarial
+   risk; LLM-generated adaptive attacks are the next evaluation frontier.
 4. **M4 — Probe ensemble result.** ✅ Done (2026-05-22). WS-3 complete:
    probe/classifier ensemble measured on Llama-3.1-8B. Gate FAIL — ceiling
    effect on synthetic data (AU-PRC > 0.997 for all components). Negative
