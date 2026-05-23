@@ -3,7 +3,7 @@
 **JangKeun Kim**
 Weill Cornell Medicine | jak4013@med.cornell.edu
 
-**Version:** 1.0 (2026-05-23) | **Status:** All workstreams complete
+**Version:** 1.1 (2026-05-23) | **Status:** All workstreams + corrective experiments 6.1, 6.3 complete
 
 ---
 
@@ -24,9 +24,13 @@ generalisation, confirming the gap is architectural rather than lexical, and
 (3) probe-classifier complementarity cannot be measured on synthetic in-
 distribution data due to a ceiling effect (AU-PRC > 0.997 for all components),
 though low error correlation (rho = 0.24) hints at latent complementarity on
-harder distributions. This work contributes empirical evidence on the domain-
-specificity of CC++ components and identifies concrete failure modes when
-moving from general-purpose to domain-specialised safety classification.
+harder distributions. Corrective OOD evaluation on WMDP-Bio (1,273 questions, 5,092
+exchange pairs) confirms the ceiling: AUROC drops from 0.9975 to 0.4993,
+demonstrating the classifier learned synthetic distribution patterns
+rather than biosecurity concepts. This work contributes empirical
+evidence on the domain-specificity of CC++ components and identifies the
+synthetic data ceiling as the primary obstacle when moving from general-
+purpose to domain-specialised safety classification.
 
 ---
 
@@ -447,39 +451,79 @@ ceiling precisely and specifying what breaks it.
 
 ---
 
-## 6. Corrective Experiments: What Would Break the Ceiling
+## 6. Corrective Experiments
 
-The following experiments are designed to address the specific
-limitations identified in Section 5. They are ordered by expected
-information gain per unit of effort.
+The following experiments address the limitations identified in
+Section 5. Experiments 6.1 and 6.3 are complete; 6.2 is pending.
 
-### 6.1 OOD Evaluation on WMDP-Bio + SOSBench (Breaks WS-1, WS-3, WS-4 Ceilings)
+### 6.1 OOD Evaluation on WMDP-Bio (AUROC 0.4993 -- Random)
 
 **Rationale.** WMDP-Bio (Li et al. 2024) contains 1,273 biology
-dual-use QA pairs; SOSBench (2025) provides 2,000+ science-of-
-security queries with ground-truth labels. These are out-of-
-distribution for BioGuard's synthetic training data and would provide
-the "room to fail" needed for meaningful component comparison.
+dual-use MCQ items with ground-truth correct answers. These are
+out-of-distribution for BioGuard's synthetic training data and
+provide the "room to fail" needed for meaningful evaluation beyond
+the synthetic ceiling.
 
-**Design.**
-1. Format WMDP-Bio and SOSBench into BioGuard's exchange-classifier
-   input format (`query [SEP] response`).
-2. Re-run WS-1 threshold sweep on OOD data. If AU-PRC drops
-   significantly (expected: below 0.95), the escalation rate formula
-   needs recalibration.
-3. Re-run WS-3 probe ensemble sweep. If the ceiling breaks (AU-PRC
-   < 0.99), the ensemble weight and complementarity analysis become
-   meaningful.
-4. Re-run WS-4 adversarial suite on OOD inputs. If ASR > 0% post-
-   preprocessing, the classifier has real vulnerabilities to find.
+**Method.** Each MCQ was converted to exchange-classifier format:
+question as query, each answer choice as response. Correct answers
+are labelled UNSAFE (hazardous knowledge), wrong answers SAFE
+(distractors), yielding 5,092 exchange pairs (1,273 positive,
+3,819 negative). BioGuard A_full was evaluated at t=0.50 (standard)
+and t=0.65 (the WS-1 operating point).
 
-**Effort:** 1-2 days (data formatting + inference, no retraining).
+**Result.**
 
-### 6.2 Bootstrap CIs for WS-2 Kappa (Quantifies Run-to-Run Variance)
+| Metric | Internal (synthetic) | OOD (WMDP-Bio) | Delta |
+|--------|---------------------|-----------------|-------|
+| AU-PRC | 0.9979 | 0.2567 | -0.7412 |
+| AUROC | 0.9975 | 0.4993 | -0.4982 |
+| F1 | 0.9757 | 0.2603 | -0.7154 |
+| FPR | 0.45% | 26.53% | +26.08 pp |
+| TPR@1%FPR | 0.9524 | 0.0134 | -0.9390 |
 
-**Rationale.** The delta between A_full (0.368) and B_bowhard (0.240)
-could be initialization noise. Without confidence intervals, the
-"architectural gap" claim is an assertion.
+Escalation rate at the WS-1 operating point (t=0.65, 1% base rate):
+internal 4.06%, OOD **24.4%**. The cascade would send 1 in 4 queries
+to Stage 2 -- far above any reasonable compute budget.
+
+Confidence analysis: mean probability for UNSAFE items (0.2869) is
+indistinguishable from SAFE items (0.2771). The classifier cannot
+discriminate between correct and incorrect answers on WMDP-Bio. Of
+1,273 correct (hazardous) answers, only 342 (26.9%) were flagged at
+t=0.50.
+
+**Interpretation.** AUROC of 0.4993 is random classification. The
+classifier learned the statistical patterns of the synthetic training
+data (Claude-generated phrasing, specific vocabulary distributions,
+formatting conventions), not the underlying biosecurity concepts. When
+presented with human-written MCQ content that tests the same knowledge
+domain but with different distributional properties, all discriminative
+ability vanishes.
+
+This confirms Section 5's central thesis and retroactively invalidates
+three workstream conclusions:
+
+- **WS-1:** the 4.06% escalation rate was measured on data the
+  classifier trivially classifies. On real OOD data, escalation reaches
+  24.4%, breaking the cascade budget assumption.
+- **WS-3:** the ceiling (AU-PRC > 0.997) was a data artifact, not
+  evidence of strong classification. Both probe and classifier saturated
+  because the task was too easy, not because the models were too good.
+- **WS-4:** 0% ASR on synthetic data likewise reflected task easiness,
+  not adversarial robustness.
+
+**Caveats.** WMDP-Bio MCQs are an approximation of dual-use content,
+not a gold-standard biosecurity benchmark. The correct-answer-is-UNSAFE
+labelling assumption is imperfect: some correct answers describe
+safety-relevant facts without being operationally harmful. Despite
+this approximation, AUROC near 0.50 leaves no room for labelling
+noise to explain the result -- the classifier is genuinely random on
+this distribution.
+
+### 6.2 Bootstrap CIs for WS-2 Kappa (Pending)
+
+**Rationale.** The delta between A_full (kappa 0.368) and B_bowhard
+(kappa 0.240) could be initialization noise. Without confidence
+intervals, the "architectural gap" claim is an assertion.
 
 **Design.**
 1. Compute 10,000-iteration bootstrap CIs on Cohen's kappa for both
@@ -487,35 +531,66 @@ could be initialization noise. Without confidence intervals, the
 2. If the 95% CIs do not overlap, the delta is robust. If they do
    overlap, retrain 3-5 seeds per variant and report the distribution.
 
-**Effort:** <1 hour (no retraining needed for bootstrap; 2-3 days for
-multi-seed if required).
+**Status:** Not yet executed. Requires BioThreat-Eval data (not
+available on the SDSC Expanse compute node). Can be run locally.
 
-### 6.3 Pre-Preprocessing Adversarial Evaluation (Separates Preprocessing from Classification)
+### 6.3 Pre- vs Post-Preprocessing Adversarial Comparison (Preprocessing Contributes Nothing)
 
-**Rationale.** WS-4 reports post-preprocessing ASR. The v1 README
-reports 9.79% ASR pre-preprocessing. The gap between these is the
-preprocessing contribution, not the classifier's contribution.
+**Rationale.** Section 5.1 predicted that WS-4's 0% ASR is "an artifact
+of preprocessing, not classifier robustness." If true, pre-preprocessing
+ASR should be substantially higher than post-preprocessing ASR.
 
-**Design.**
-1. Re-run adversarial suite with `normalize=False` in `predict_batch`.
-2. Report both pre- and post-preprocessing ASR side by side.
-3. For attacks where pre-preprocessing ASR > 0%, analyze which
-   preprocessing step is responsible (Unicode normalization, zero-
-   width stripping, encoding decode).
+**Method.** Ran the full 27-attack adversarial suite twice on BioGuard
+A_full: once with normalize=True (post-preprocessing, the default
+pipeline) and once with normalize=False (pre-preprocessing, raw text
+passed directly to the classifier without Unicode normalization,
+zero-width stripping, or encoding decode).
 
-**Effort:** <1 hour.
+**Result.**
 
-### 6.4 Multi-Seed Retraining for WS-2 (Separates Signal from Noise)
+| Category | Attacks | Pre-ASR | Post-ASR | Delta |
+|----------|---------|---------|----------|-------|
+| Character | 7 | 0.00% | 0.00% | 0.0 |
+| Encoding | 5 | 0.00% | 0.00% | 0.0 |
+| Semantic | 6 | 0.00% | 0.00% | 0.0 |
+| Multilingual | 2 | 0.00% | 0.00% | 0.0 |
+| Reconstruction | 7 | 0.00% | 0.00% | 0.0 |
+| **Total** | **27** | **0.00%** | **0.00%** | **0.0** |
 
-**Rationale.** If bootstrap CIs overlap (6.2), multi-seed retraining
+VDR = 0.0 per 1,000 queries in both modes. 27 of 27 attacks are
+classified as "classifier handles independently." Preprocessing
+blocked zero attacks.
+
+The only measurable difference is in false-positive-direction accuracy
+degradation: for homoglyphs and rot13, pre-preprocessing acc_degradation
+= 0.02 (1 SAFE item flipped to UNSAFE) while post-preprocessing = 0.00.
+Preprocessing prevents 2 FP-direction flips out of 1,323 queries -- a
+negligible contribution.
+
+**Interpretation.** Section 5.1's prediction that WS-4's 0% ASR is an
+artifact of preprocessing is **partially refuted**. The classifier
+itself handles all 27 attack types without preprocessing assistance.
+However, this is not evidence of robust classification -- it is evidence
+that **rule-based attacks on synthetic data are uniformly weak**. The
+DeBERTa tokenizer naturally handles many character-level perturbations
+(Unicode normalization, whitespace collapsing), and the attacks transform
+text in ways that do not fool a classifier trained on similarly-
+distributed synthetic data.
+
+The v1 README's reported 9.79% pre-preprocessing ASR was not reproduced
+with the retrained A_full model, suggesting the original v1 checkpoint
+may have had different robustness characteristics or the attack
+implementation evolved between versions.
+
+### 6.4 Future: Multi-Seed Retraining for WS-2
+
+**Rationale.** If 6.2's bootstrap CIs overlap, multi-seed retraining
 is the definitive test.
 
 **Design.** Retrain A_full and B_bowhard with 5 random seeds each,
 report kappa mean +/- std.
 
-**Effort:** 2-3 days (10 SLURM jobs on Expanse).
-
-### 6.5 Data Regeneration with Diversity Metrics (Addresses Root Cause)
+### 6.5 Future: Data Regeneration with Diversity Metrics
 
 **Rationale.** The synthetic data ceiling is a data quality problem.
 Persona-diversified generation (EMNLP'25) and MTLD/HD-D monitoring
@@ -527,21 +602,30 @@ Persona-diversified generation (EMNLP'25) and MTLD/HD-D monitoring
 2. Measure MTLD and HD-D before and after regeneration.
 3. Retrain and evaluate on BioThreat-Eval + WMDP-Bio.
 
-**Effort:** 1 week (generation + retraining + evaluation).
+### 6.6 Summary of Corrective Findings
 
-### 6.6 Priority Assessment
+Experiments 6.1 and 6.3 together paint a clear picture:
 
-Experiments 6.1 and 6.3 have the highest information-gain-to-effort
-ratio and should be executed first. Together, they determine whether
-any of the ceiling-dominated results change on harder data. If
-they do, experiments 6.2 and 6.4 become important for interpretation.
-Experiment 6.5 addresses the root cause but requires significant
-compute and is the longest-term investment.
+1. **The synthetic data ceiling is confirmed** (6.1). AUROC drops from
+   0.9975 to 0.4993 on OOD data -- the classifier is genuinely random
+   outside its training distribution. This is the single most important
+   finding of the entire project.
 
-For the Safeguards Labs RE application, **6.1 and 6.3 are the
-minimum viable corrective experiments** -- they transform the
-narrative from "everything works on synthetic data" to "here is
-what breaks on real data and what we would fix."
+2. **Preprocessing is not the source of adversarial robustness** (6.3).
+   The classifier handles attacks independently, but only because both
+   the attacks and the test data come from the same weak distribution.
+   Real adversarial robustness remains unmeasured.
+
+3. **Internal metrics are worse than uninformative -- they are
+   misleading.** AU-PRC of 0.9979, F1 of 0.9757, and 0% ASR all
+   suggested a production-ready classifier. OOD evaluation revealed a
+   classifier with no discriminative ability on real biosecurity content.
+
+The corrective path forward is data-centric: regenerate training data
+with distributional diversity matching real-world content (6.5), then
+re-evaluate on WMDP-Bio. Architecture changes (cascade, ensemble) are
+premature until the classifier has genuine discriminative ability on
+OOD data.
 
 ---
 
@@ -590,6 +674,9 @@ BioGuard repository. Training data is withheld per the project safety policy
 | Per-variant external results | `results/metrics/external_validation_{A_full,B_bowhard}.json` |
 | Probe ensemble results | `results/metrics/probe_ensemble_llama-3.1-8b.json` |
 | Adversarial suite results | `results/metrics/adversarial_results.json` |
+| 6.1 OOD evaluation (WMDP-Bio) | `results/metrics/corrective_6_1_ood_evaluation.json` |
+| 6.3 Adversarial comparison | `results/metrics/corrective_6_3_adversarial_comparison.json` |
+| 6.3 Pre-preprocessing results | `results/metrics/adversarial_pre_preprocessing.json` |
 | v2 research design | `docs/V2_DESIGN.md` |
 
 ---
@@ -623,6 +710,7 @@ BioGuard repository. Training data is withheld per the project safety policy
 
 ---
 
-*All four workstreams complete. Future work: OOD evaluation on WMDP-Bio +
-SOSBench, data regeneration with lexical diversity metrics, multi-turn
-reconstruction attacks.*
+*All four workstreams and corrective experiments 6.1, 6.3 complete.
+Experiment 6.2 (bootstrap CIs) pending local execution. Future work:
+data regeneration with lexical diversity metrics (6.5), OOD evaluation
+on SOSBench, multi-turn reconstruction attacks.*
