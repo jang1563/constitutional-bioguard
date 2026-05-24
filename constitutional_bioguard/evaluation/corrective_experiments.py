@@ -820,7 +820,7 @@ def run_wildguard_stratified_diagnosis(
     responses = [r["response"] for r in rows]
     adversarial_flags = np.array([bool(r["adversarial"]) for r in rows])
     subcategories = [r["subcategory"] for r in rows]
-    refusal_labels = [r.get("response_refusal_label", "unknown") for r in rows]
+    refusal_labels = [r.get("response_refusal_label") or "unknown" for r in rows]
     wg_harm_labels = np.array([
         1 if r["response_harm_label"] == "harmful" else 0 for r in rows
     ])
