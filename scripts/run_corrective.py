@@ -36,12 +36,13 @@ def parse_args() -> argparse.Namespace:
             "  6.2  Bootstrap CIs for WS-2 kappa\n"
             "  6.3  Pre- vs post-preprocessing adversarial comparison\n"
             "  6.7  OOD evaluation on BioThreat-Eval (expert labels)\n"
+            "  6.8  WildGuardMix adversarial cross-domain OOD\n"
         ),
     )
     parser.add_argument(
         "--experiment",
         type=str,
-        choices=["6.1", "6.2", "6.3", "6.7", "all"],
+        choices=["6.1", "6.2", "6.3", "6.7", "6.8", "all"],
         default="all",
         help="Which experiment to run (default: all)",
     )
@@ -92,6 +93,7 @@ def main():
         run_biothreat_ood_evaluation,
         run_bootstrap_kappa,
         run_ood_evaluation,
+        run_wildguard_adversarial_ood,
     )
 
     # Handle --cache-wmdp
@@ -131,6 +133,56 @@ def main():
             model_dir_a=args.model_a, model_dir_b=args.model_b,
         )
         _print_biothreat_summary(results)
+
+    elif args.experiment == "6.8":
+        results = run_wildguard_adversarial_ood(
+            model_dir_a=args.model_a, model_dir_b=args.model_b,
+        )
+        _print_wildguard_summary(results)
+
+
+def _print_wildguard_summary(r: dict):
+    va = r["variant_a"]
+    o = va["overall"]
+    adv = va["by_adversarial"]["adversarial"]
+    van = va["by_adversarial"]["vanilla"]
+    d = va["by_adversarial"]["delta_fpr_adv_minus_vani"]
+    print(f"\n6.8 WildGuard cross-domain OOD ({r['n_items']} items)")
+    print(f"  Overall FAR: {o['false_alarm_rate']:.3f} "
+          f"[Wilson 95% {o['wilson_95_lower']:.3f}, {o['wilson_95_upper']:.3f}] "
+          f"(n_flagged={o['n_flagged_unsafe']}/{o['n']})")
+    print(f"  Adversarial FAR: {adv['false_alarm_rate']:.3f} "
+          f"[{adv['wilson_95_lower']:.3f}, {adv['wilson_95_upper']:.3f}] "
+          f"(n={adv['n']})")
+    print(f"  Vanilla FAR:     {van['false_alarm_rate']:.3f} "
+          f"[{van['wilson_95_lower']:.3f}, {van['wilson_95_upper']:.3f}] "
+          f"(n={van['n']})")
+    print(f"  Delta FAR (adv-van): {d['point_estimate']:.3f} "
+          f"[{d['ci_lower']:.3f}, {d['ci_upper']:.3f}]  "
+          f"z={d['z_statistic']:.2f}  p={d['p_value_two_sided']:.4f}")
+    print(f"  Interpretation: {d.get('interpretation', '')}")
+    print()
+    auroc = va.get("auroc_vs_wildguard_label", {})
+    if auroc.get("overall") is not None:
+        print(f"  AUROC vs WildGuard label: overall={auroc['overall']:.3f}, "
+              f"adv={auroc.get('adversarial_only', 'n/a')}, "
+              f"vani={auroc.get('vanilla_only', 'n/a')}")
+    bio = va.get("bio_keyword_audit", {})
+    if bio.get("bio_adjacent_n", 0) > 0:
+        print(f"\n  Bio-keyword audit: {bio['bio_adjacent_n']} items "
+              f"flagged as bio-adjacent")
+        fb = bio["fpr_bio_adjacent"]
+        fn = bio["fpr_non_bio_adjacent"]
+        print(f"    Bio-adjacent FAR:     {fb['false_alarm_rate']:.3f} "
+              f"[{fb['wilson_95_lower']:.3f}, {fb['wilson_95_upper']:.3f}]")
+        print(f"    Non-bio-adjacent FAR: {fn['false_alarm_rate']:.3f}")
+        print(f"    Delta: {bio['fpr_delta_bio_minus_non']:.3f}")
+    print()
+    print("  Per-subcategory (top 5 by FAR):")
+    for s in va["by_subcategory"][:5]:
+        flag = " (n<20, descriptive)" if s["descriptive_only"] else ""
+        print(f"    {s['subcategory']:50s} FAR={s['false_alarm_rate']:.3f} "
+              f"(n={s['n']}){flag}")
 
 
 def _print_biothreat_summary(r: dict):
