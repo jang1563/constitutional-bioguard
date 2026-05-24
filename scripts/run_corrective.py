@@ -37,12 +37,13 @@ def parse_args() -> argparse.Namespace:
             "  6.3  Pre- vs post-preprocessing adversarial comparison\n"
             "  6.7  OOD evaluation on BioThreat-Eval (expert labels)\n"
             "  6.8  WildGuardMix adversarial cross-domain OOD\n"
+            "  6.8b Stratified diagnosis of WildGuardMix false alarms\n"
         ),
     )
     parser.add_argument(
         "--experiment",
         type=str,
-        choices=["6.1", "6.2", "6.3", "6.7", "6.8", "all"],
+        choices=["6.1", "6.2", "6.3", "6.7", "6.8", "6.8b", "all"],
         default="all",
         help="Which experiment to run (default: all)",
     )
@@ -94,6 +95,7 @@ def main():
         run_bootstrap_kappa,
         run_ood_evaluation,
         run_wildguard_adversarial_ood,
+        run_wildguard_stratified_diagnosis,
     )
 
     # Handle --cache-wmdp
@@ -139,6 +141,38 @@ def main():
             model_dir_a=args.model_a, model_dir_b=args.model_b,
         )
         _print_wildguard_summary(results)
+
+    elif args.experiment == "6.8b":
+        results = run_wildguard_stratified_diagnosis(
+            model_dir_a=args.model_a,
+        )
+        _print_stratified_summary(results)
+
+
+def _print_stratified_summary(r: dict):
+    print(f"\n6.8b Stratified diagnosis ({r['n_items']} items)")
+    print(f"  Length correlation (Spearman rho): "
+          f"{r['length_correlation']['spearman_rho_length_vs_prob']:.4f} "
+          f"(p={r['length_correlation']['spearman_p_value']:.4g})")
+    print(f"    -> {r['length_correlation']['interpretation']}")
+    pp = r["probability_percentiles"]
+    print(f"  Prob medians: overall={pp['overall']['p50']:.3f} "
+          f"adv={pp['adversarial']['p50']:.3f} "
+          f"vani={pp['vanilla']['p50']:.3f}")
+    print("\n  Length x Adversarial FAR:")
+    for s in r["length_x_adversarial_x_far"]:
+        print(f"    Q{s['length_quartile']} {'adv' if s['adversarial'] else 'van':3s}: "
+              f"FAR={s['far']:.3f} (n={s['n']}, range={s['length_range_chars']})")
+    print("\n  Refusal x Adversarial FAR:")
+    for s in r["refusal_x_adversarial_x_far"]:
+        print(f"    {s['refusal_label']:15s} {'adv' if s['adversarial'] else 'van':3s}: "
+              f"FAR={s['far']:.3f} mean_prob={s['mean_prob']:.3f} (n={s['n']})")
+    print("\n  High-confidence (prob>=0.9) breakdown:")
+    h = r["high_confidence_characterization"]
+    print(f"    Total: {h['n_total_flagged_high_conf']}")
+    print(f"    Adversarial: {h['by_adversarial']['adv']}  Vanilla: {h['by_adversarial']['vani']}")
+    print(f"    WG-harmful: {h['by_wg_label']['wg_harmful']}  WG-unharmful: {h['by_wg_label']['wg_unharmful']}")
+    print(f"    By refusal: {h['by_refusal']}")
 
 
 def _print_wildguard_summary(r: dict):

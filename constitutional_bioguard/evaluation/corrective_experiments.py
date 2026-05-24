@@ -777,6 +777,280 @@ def load_wildguard_test(
     return rows
 
 
+def run_wildguard_stratified_diagnosis(
+    model_dir_a: Optional[Path] = None,
+    output_file: Optional[Path] = None,
+    save_per_item: bool = True,
+) -> dict:
+    """Experiment 6.8b: Stratified diagnosis of WildGuardMix false alarms.
+
+    Follow-up to 6.8. Re-runs A_full on WildGuardTest capturing per-item
+    probabilities, then computes stratified analyses to distinguish:
+    (a) "framing reflex" vs (b) "general harm intent" vs (c) artifacts
+    of length/style/refusal.
+
+    Output stratifications:
+      - Length quartile x adversarial x FAR
+      - Refusal vs compliance x adversarial x FAR
+      - Subcategory x adversarial x FAR (interaction)
+      - High-confidence (prob >= 0.9) item characterization
+      - Probability distribution by refusal label
+
+    Args:
+        model_dir_a: Path to A_full model.
+        output_file: Where to save results.
+        save_per_item: If True, save per-item probabilities (large file).
+
+    Returns:
+        Results dict with stratified analyses.
+    """
+    from constitutional_bioguard.evaluation.evaluate_classifier import (
+        load_model_and_tokenizer,
+        predict_batch,
+    )
+
+    model_dir_a = model_dir_a or MODELS_DIR / "deberta_bioguard_v1_A_full"
+    output_file = output_file or METRICS_DIR / "corrective_6_8b_stratified.json"
+
+    # ── Load WildGuardTest ──
+    rows = load_wildguard_test()
+    rows = [r for r in rows if r.get("response_harm_label") is not None]
+
+    queries = [r["prompt"] for r in rows]
+    responses = [r["response"] for r in rows]
+    adversarial_flags = np.array([bool(r["adversarial"]) for r in rows])
+    subcategories = [r["subcategory"] for r in rows]
+    refusal_labels = [r.get("response_refusal_label", "unknown") for r in rows]
+    wg_harm_labels = np.array([
+        1 if r["response_harm_label"] == "harmful" else 0 for r in rows
+    ])
+
+    # Compute response lengths (character count)
+    response_lengths = np.array([len(r) for r in responses])
+
+    # ── Run A_full inference (capture probs) ──
+    logger.info("Loading A_full model: %s", model_dir_a)
+    model_a, tok_a = load_model_and_tokenizer(model_dir_a)
+    logger.info("Running inference on %d items...", len(rows))
+    preds_a = predict_batch(
+        model=model_a, tokenizer=tok_a,
+        queries=queries, responses=responses,
+        normalize=True,
+    )
+    probs_a = np.array([p[2] for p in preds_a])
+    pred_unsafe = (probs_a >= 0.5).astype(int)
+    del model_a, tok_a
+
+    # ── 1. Length quartile x adversarial x FAR ──
+    length_quartiles = np.quantile(response_lengths, [0.25, 0.5, 0.75])
+    length_bin = np.zeros(len(rows), dtype=int)
+    length_bin[response_lengths >= length_quartiles[0]] = 1
+    length_bin[response_lengths >= length_quartiles[1]] = 2
+    length_bin[response_lengths >= length_quartiles[2]] = 3
+
+    length_strata = []
+    for q in range(4):
+        for adv in [True, False]:
+            mask = (length_bin == q) & (adversarial_flags == adv)
+            n = int(mask.sum())
+            if n == 0:
+                continue
+            n_flag = int(pred_unsafe[mask].sum())
+            far = n_flag / n
+            lo, hi = _wilson_interval(n_flag, n)
+            length_strata.append({
+                "length_quartile": q,
+                "length_range_chars": (
+                    [0, int(length_quartiles[0])] if q == 0
+                    else [int(length_quartiles[q-1]), int(length_quartiles[q])] if q < 3
+                    else [int(length_quartiles[2]), int(response_lengths.max())]
+                ),
+                "adversarial": adv,
+                "n": n,
+                "n_flagged": n_flag,
+                "far": round(far, 4),
+                "wilson_95_lower": round(lo, 4),
+                "wilson_95_upper": round(hi, 4),
+                "mean_prob": round(float(probs_a[mask].mean()), 4),
+            })
+
+    # ── 2. Refusal x adversarial x FAR ──
+    refusal_strata = []
+    refusal_categories = sorted(set(refusal_labels))
+    for refusal in refusal_categories:
+        for adv in [True, False]:
+            mask = np.array(
+                [(refusal_labels[i] == refusal) and bool(adversarial_flags[i])
+                 == adv for i in range(len(rows))]
+            )
+            n = int(mask.sum())
+            if n == 0:
+                continue
+            n_flag = int(pred_unsafe[mask].sum())
+            far = n_flag / n
+            lo, hi = _wilson_interval(n_flag, n)
+            refusal_strata.append({
+                "refusal_label": refusal,
+                "adversarial": adv,
+                "n": n,
+                "n_flagged": n_flag,
+                "far": round(far, 4),
+                "wilson_95_lower": round(lo, 4),
+                "wilson_95_upper": round(hi, 4),
+                "mean_prob": round(float(probs_a[mask].mean()), 4),
+            })
+
+    # ── 3. Subcategory x adversarial x FAR (interaction) ──
+    subcat_interaction = []
+    unique_subcats = sorted(set(subcategories))
+    for sub in unique_subcats:
+        row_entry = {"subcategory": sub}
+        for adv_label, adv_val in [("adv", True), ("vani", False)]:
+            mask = np.array(
+                [(subcategories[i] == sub) and bool(adversarial_flags[i])
+                 == adv_val for i in range(len(rows))]
+            )
+            n = int(mask.sum())
+            if n == 0:
+                row_entry[f"{adv_label}_n"] = 0
+                continue
+            n_flag = int(pred_unsafe[mask].sum())
+            far = n_flag / n
+            lo, hi = _wilson_interval(n_flag, n)
+            row_entry[f"{adv_label}_n"] = n
+            row_entry[f"{adv_label}_far"] = round(far, 4)
+            row_entry[f"{adv_label}_far_ci"] = [round(lo, 4), round(hi, 4)]
+            row_entry[f"{adv_label}_mean_prob"] = round(float(probs_a[mask].mean()), 4)
+        # Compute delta if both present
+        if "adv_far" in row_entry and "vani_far" in row_entry:
+            row_entry["delta_adv_minus_vani"] = round(
+                row_entry["adv_far"] - row_entry["vani_far"], 4
+            )
+        subcat_interaction.append(row_entry)
+
+    # ── 4. High-confidence flagged items (prob >= 0.9) characterization ──
+    high_conf_mask = probs_a >= 0.9
+    n_high_conf = int(high_conf_mask.sum())
+    high_conf_summary = {
+        "n_total_flagged_high_conf": n_high_conf,
+        "by_adversarial": {
+            "adv": int((high_conf_mask & adversarial_flags).sum()),
+            "vani": int((high_conf_mask & ~adversarial_flags).sum()),
+        },
+        "by_refusal": {},
+        "by_wg_label": {
+            "wg_harmful": int((high_conf_mask & (wg_harm_labels == 1)).sum()),
+            "wg_unharmful": int((high_conf_mask & (wg_harm_labels == 0)).sum()),
+        },
+        "by_subcategory_top5": [],
+    }
+    for refusal in refusal_categories:
+        c = sum(1 for i in range(len(rows))
+                if high_conf_mask[i] and refusal_labels[i] == refusal)
+        high_conf_summary["by_refusal"][refusal] = c
+    # Top-5 subcategories among high-conf items
+    subcat_high_conf = {}
+    for i in range(len(rows)):
+        if high_conf_mask[i]:
+            subcat_high_conf[subcategories[i]] = (
+                subcat_high_conf.get(subcategories[i], 0) + 1
+            )
+    high_conf_summary["by_subcategory_top5"] = sorted(
+        [{"subcategory": k, "n": v} for k, v in subcat_high_conf.items()],
+        key=lambda x: -x["n"],
+    )[:5]
+
+    # ── 5. Probability percentiles overall and by stratum ──
+    prob_percentiles = {
+        "overall": {
+            "p10": round(float(np.percentile(probs_a, 10)), 4),
+            "p25": round(float(np.percentile(probs_a, 25)), 4),
+            "p50": round(float(np.percentile(probs_a, 50)), 4),
+            "p75": round(float(np.percentile(probs_a, 75)), 4),
+            "p90": round(float(np.percentile(probs_a, 90)), 4),
+        },
+        "adversarial": {
+            "p10": round(float(np.percentile(probs_a[adversarial_flags], 10)), 4),
+            "p50": round(float(np.percentile(probs_a[adversarial_flags], 50)), 4),
+            "p90": round(float(np.percentile(probs_a[adversarial_flags], 90)), 4),
+        },
+        "vanilla": {
+            "p10": round(float(np.percentile(probs_a[~adversarial_flags], 10)), 4),
+            "p50": round(float(np.percentile(probs_a[~adversarial_flags], 50)), 4),
+            "p90": round(float(np.percentile(probs_a[~adversarial_flags], 90)), 4),
+        },
+    }
+
+    # ── 6. Hypothesis tests ──
+    # H_length: Does length correlate with prob (Spearman)?
+    from scipy.stats import spearmanr
+    rho, p = spearmanr(response_lengths, probs_a)
+    length_correlation = {
+        "spearman_rho_length_vs_prob": round(float(rho), 4),
+        "spearman_p_value": round(float(p), 6),
+        "interpretation": (
+            "Strong positive correlation suggests length is a confound"
+            if rho > 0.3 else
+            "Weak/no correlation; length unlikely a primary driver"
+        ),
+    }
+
+    results = {
+        "experiment": "6.8b Stratified diagnosis of WildGuardMix false alarms",
+        "model_dir_a": str(model_dir_a),
+        "n_items": len(rows),
+        "n_adversarial": int(adversarial_flags.sum()),
+        "n_vanilla": int((~adversarial_flags).sum()),
+        "methods_note": (
+            "Stratified analyses to distinguish framing-reflex hypothesis from "
+            "alternative explanations (length artifact, refusal-vs-compliance "
+            "interaction, general harm intent). Per-item probabilities saved "
+            "for reproducibility."
+        ),
+        "length_x_adversarial_x_far": length_strata,
+        "refusal_x_adversarial_x_far": refusal_strata,
+        "subcategory_x_adversarial_interaction": subcat_interaction,
+        "high_confidence_characterization": high_conf_summary,
+        "probability_percentiles": prob_percentiles,
+        "length_correlation": length_correlation,
+    }
+
+    if save_per_item:
+        results["per_item_probabilities"] = [
+            {
+                "idx": i,
+                "prob_unsafe": round(float(probs_a[i]), 4),
+                "adversarial": bool(adversarial_flags[i]),
+                "subcategory": subcategories[i],
+                "refusal_label": refusal_labels[i],
+                "response_length": int(response_lengths[i]),
+                "wg_harm_label": int(wg_harm_labels[i]),
+            }
+            for i in range(len(rows))
+        ]
+
+    METRICS_DIR.mkdir(parents=True, exist_ok=True)
+    with open(output_file, "w", encoding="utf-8") as f:
+        json.dump(results, f, indent=2)
+    logger.info("Saved stratified diagnosis to %s", output_file)
+
+    # Print summary
+    logger.info(
+        "Length correlation: rho=%.4f, p=%.4g (%s)",
+        length_correlation["spearman_rho_length_vs_prob"],
+        length_correlation["spearman_p_value"],
+        length_correlation["interpretation"],
+    )
+    logger.info(
+        "Probability medians: overall=%.4f, adv=%.4f, vani=%.4f",
+        prob_percentiles["overall"]["p50"],
+        prob_percentiles["adversarial"]["p50"],
+        prob_percentiles["vanilla"]["p50"],
+    )
+
+    return results
+
+
 def run_wildguard_adversarial_ood(
     model_dir_a: Optional[Path] = None,
     model_dir_b: Optional[Path] = None,
