@@ -3,7 +3,7 @@
 **JangKeun Kim**
 Weill Cornell Medicine | jak4013@med.cornell.edu
 
-**Version:** 1.4 (2026-05-24) | **Status:** All workstreams + corrective experiments 6.1--6.3, 6.7, 6.8 complete
+**Version:** 1.5 (2026-05-25) | **Status:** All workstreams + corrective experiments 6.1--6.3, 6.7, 6.8, 6.8b complete
 
 ---
 
@@ -32,10 +32,15 @@ genuine but limited discriminative ability -- recall caps at ~44%
 across all thresholds. The decisive finding comes from WildGuardMix
 (1,709 cross-domain adversarial items, no bio): false alarm rate is
 **51% overall**, rising to **79% on adversarial items** (vs 27% on
-vanilla, Delta = +52pp, p < 0.0001). The classifier learned to flag
-"adversarial-looking content" rather than "bio-specific harm" -- a
-diagnosis that recontextualises every prior workstream's apparent
-success. This work contributes empirical evidence on the domain-
+vanilla, Delta = +52pp, p < 0.0001). A follow-up stratified diagnosis
+isolates the mechanism: length is uncorrelated with the classifier's
+decision (Spearman rho = -0.044), refusals are flagged *more* than
+compliances (90% vs 75% under adversarial framing), and benign content
+shows the largest adversarial inflation (+65 pp). The classifier
+learned a **shortcut feature** (Geirhos et al. 2020) -- presence of
+adversarial framing -- rather than the intended target concept of bio
+hazard content. This diagnosis recontextualises every prior workstream's
+apparent success. This work contributes empirical evidence on the domain-
 specificity of CC++ components and identifies the synthetic data
 ceiling as the primary obstacle when moving from general-purpose to
 domain-specialised safety classification.
@@ -841,22 +846,136 @@ semantically bio-relevant content. Also, the "WildGuard harmful" label
 is itself classifier-derived (with human spot-checking); it is not a
 gold standard.
 
+### 6.8b Stratified Diagnosis: The Shortcut is Framing, Not Content
+
+**Rationale.** Experiment 6.8 identified a large false alarm rate
+inflated by adversarial framing. Three alternative explanations needed
+ruling out: (a) artifact of response length, (b) artifact of refusal
+vs compliance pattern, (c) leakage of bio content via subcategories
+not detected by keyword audit. 6.8b re-runs A_full with per-item
+probability saving and computes stratified analyses to distinguish
+"framing reflex" from these alternatives.
+
+**Method.** Inference on the same 1,709 WildGuardTest items, with
+per-item probabilities saved. Computed:
+- Length quartile x adversarial x FAR
+- Refusal vs compliance x adversarial x FAR
+- Subcategory x adversarial interaction (delta FAR)
+- High-confidence (probability >= 0.9) item characterization
+- Spearman correlation between response length and probability_UNSAFE
+
+**Result 1: Length is not a confound.**
+
+Spearman rho(response length, prob_UNSAFE) = -0.044 (p = 0.067). The
+adversarial vs vanilla gap is consistent across all four length
+quartiles:
+
+| Length Quartile | Range (chars) | Adv FAR | Van FAR | Delta |
+|-----------------|---------------|---------|---------|-------|
+| Q0 (shortest) | [0, 746] | 0.867 | 0.338 | +53 pp |
+| Q1 | [746, 1639] | 0.818 | 0.249 | +57 pp |
+| Q2 | [1639, 2558] | 0.732 | 0.220 | +51 pp |
+| Q3 (longest) | [2558, 22038] | 0.775 | 0.242 | +53 pp |
+
+Length is essentially uncorrelated with the classifier's decision.
+
+**Result 2: Refusals are flagged *more* than compliances.**
+
+| Stratum | Adv FAR | Van FAR | Delta |
+|---------|---------|---------|-------|
+| Compliance | 0.746 | 0.207 | +54 pp |
+| **Refusal** | **0.898** | **0.376** | +52 pp |
+
+When an LLM *refuses* an adversarial query -- the literally safest
+possible response -- the bio classifier still flags it as UNSAFE 90%
+of the time. The classifier is reacting to the adversarial framing in
+the query, not the safety of the response.
+
+**Result 3: The biggest deltas are on benign and bio-irrelevant
+subcategories.**
+
+| Subcategory | Adv FAR | Van FAR | Delta |
+|-------------|---------|---------|-------|
+| benign (n=960) | 0.711 | 0.064 | **+65 pp** |
+| copyright_violations | 0.905 | 0.000 | +91 pp |
+| private_information | 0.792 | 0.123 | +67 pp |
+| sensitive_org_info | 0.920 | 0.417 | +50 pp |
+| cyberattack | 0.968 | 0.941 | +3 pp (saturated) |
+| violence | 0.909 | 0.778 | +13 pp (saturated) |
+
+The largest interaction effect is on **benign content (delta +65 pp)**:
+explicitly safe items get flagged at 71% under adversarial framing vs
+6% in vanilla. The smallest deltas are on intrinsically harmful-looking
+categories (cyberattack, violence, disinformation) that already trigger
+the classifier at high vanilla FAR -- they have no headroom for
+adversarial inflation.
+
+**Result 4: Probability distribution is sharply bimodal.**
+
+Median probability_UNSAFE:
+- Adversarial: **0.986** (saturated UNSAFE)
+- Vanilla: **0.003** (saturated SAFE)
+
+The classifier is not making borderline judgments; it is binarizing on
+the adversarial flag.
+
+**Result 5: High-confidence flags are dominated by non-harmful items.**
+
+Of 742 items flagged with probability >= 0.9, **545 (73%) are labelled
+unharmful by WildGuard**, and 295 (40%) are refusals. The classifier
+is firing at near-maximal confidence on non-harmful refusals of
+adversarial queries -- the safest content in the benchmark.
+
+**Refined diagnosis.** The original 6.8 framing ("learned adversarial
+style") was directionally correct but imprecise. 6.8b shows:
+
+1. The signal driving most UNSAFE predictions is presence of
+   adversarial framing in the query, independent of content
+2. This signal saturates the probability distribution (median 0.986
+   under adversarial framing)
+3. The "general harm intent" signal from 6.8 (AUROC 0.70 vs WildGuard
+   labels) is a secondary effect; the primary effect is content-
+   independent framing reflex
+4. The classifier's behavior is consistent with a textbook **shortcut
+   learning** pattern (Geirhos et al. 2020): the training data
+   correlates content (bio hazard) with framing (adversarial wrapper),
+   and the model learned the easier signal (framing)
+
+**Implication.** The classifier cannot be deployed in its current
+form. False alarm rate is 71% on benign adversarial content and 90% on
+refusals of adversarial queries -- a deployed bio safety classifier
+that misclassifies refusals as unsafe is operationally backwards.
+
+**Mechanism (hypothesised).** Training data was generated by prompting
+Claude separately for UNSAFE and SAFE examples. UNSAFE prompts likely
+elicited "adversarial-looking" content (red-team framings, urgency,
+roleplay), while SAFE prompts elicited plain technical responses. The
+two signals -- bio content and adversarial framing -- were correlated
+in training, indistinguishable by the model, and the shorter learning
+path (framing) won.
+
 ### 6.6 Summary of Corrective Findings
 
-Five corrective experiments complete (6.1, 6.2, 6.3, 6.7, 6.8). Each
-broke a different ceiling, and together they reveal what the
+Six corrective experiments complete (6.1, 6.2, 6.3, 6.7, 6.8, 6.8b).
+Each broke a different ceiling, and together they reveal what the
 classifier actually learned:
 
-1. **The classifier learned adversarial style, not bio content** (6.8).
-   On WildGuardMix (1,709 non-bio adversarial items), false alarm rate
-   is 51% overall and **79% on adversarial-flagged content**. Bio-
-   keyword presence contributes only 5 pp to FAR -- meaning bio-
-   specific features are NOT what the classifier responds to. The
-   median probability on adversarial items is **0.986**: the classifier
-   makes false-positive errors with near-maximal confidence. This is
-   the single most important diagnosis of the project: synthetic
-   training taught the model to flag *adversarial-looking surface
-   features*, not actual biological hazard.
+1. **The classifier learned adversarial framing, not bio content**
+   (6.8 + 6.8b). On WildGuardMix (1,709 non-bio adversarial items),
+   false alarm rate is 51% overall and **79% on adversarial-flagged
+   content**. The stratified diagnosis in 6.8b is conclusive:
+   - **Length is not a confound** (Spearman rho = -0.044, p = 0.07)
+   - **Refusals are flagged more than compliances** (90% vs 75% under
+     adversarial framing) -- the safest response gets the highest
+     false alarm rate
+   - **Benign content shows the largest adversarial inflation**
+     (+65 pp delta, from 6% vanilla to 71% adversarial)
+   - **Median probability under adversarial framing = 0.986** -- the
+     classifier binarizes on framing presence
+   This is the single most important diagnosis of the project: synthetic
+   training taught the model a **shortcut feature** (Geirhos et al.
+   2020) -- adversarial framing presence -- rather than the intended
+   target concept (biological hazard content).
 
 2. **The synthetic data ceiling is real but bounded** (6.1 + 6.7).
    WMDP-Bio AUROC of 0.4993 looked catastrophic; BioThreat-Eval
@@ -957,6 +1076,7 @@ BioGuard repository. Training data is withheld per the project safety policy
 | 6.3 Pre-preprocessing results | `results/metrics/adversarial_pre_preprocessing.json` |
 | 6.7 BioThreat-Eval OOD evaluation | `results/metrics/corrective_6_7_biothreat_ood.json` |
 | 6.8 WildGuardMix cross-domain OOD | `results/metrics/corrective_6_8_wildguard_adversarial.json` |
+| 6.8b Stratified shortcut diagnosis | `results/metrics/corrective_6_8b_stratified.json` |
 | v2 research design | `docs/V2_DESIGN.md` |
 
 ---
@@ -990,8 +1110,8 @@ BioGuard repository. Training data is withheld per the project safety policy
 
 ---
 
-*All four workstreams and corrective experiments 6.1--6.3, 6.7, 6.8
-complete. Future work: data regeneration with adversarial-style
+*All four workstreams and corrective experiments 6.1--6.3, 6.7, 6.8,
+6.8b complete. Future work: data regeneration with adversarial-style
 contrast pairs (revised 6.5), training-time recalibration to
 disentangle adversarial-style from domain features, multi-turn
 reconstruction attacks.*
