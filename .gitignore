@@ -34,3 +34,6 @@ uv.lock
 
 # OS
 .DS_Store
+
+# HPC run logs
+cayuga_*.log

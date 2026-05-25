@@ -1,0 +1,74 @@
+{
+  "B.1_vs_or_bench_health.jsonl": {
+    "eval_n": 740,
+    "train_block_n": 740,
+    "overlap_n": 740,
+    "overlap_pct_of_eval": 100.0,
+    "overlap_pct_of_train": 100.0,
+    "train_only_n": 0,
+    "eval_only_n": 0
+  },
+  "B.2_vs_harmbench_bio.jsonl": {
+    "eval_n": 59,
+    "train_block_n": 130,
+    "overlap_n": 59,
+    "overlap_pct_of_eval": 100.0,
+    "overlap_pct_of_train": 45.38,
+    "train_only_n": 71,
+    "eval_only_n": 0
+  },
+  "B.2_vs_advbench_bio.jsonl": {
+    "eval_n": 21,
+    "train_block_n": 130,
+    "overlap_n": 21,
+    "overlap_pct_of_eval": 100.0,
+    "overlap_pct_of_train": 16.15,
+    "train_only_n": 109,
+    "eval_only_n": 0
+  },
+  "B.2_vs_jailbreakbench_bio.jsonl": {
+    "eval_n": 2,
+    "train_block_n": 130,
+    "overlap_n": 2,
+    "overlap_pct_of_eval": 100.0,
+    "overlap_pct_of_train": 1.54,
+    "train_only_n": 128,
+    "eval_only_n": 0
+  },
+  "B.2_vs_saladbench_cbrn.jsonl": {
+    "eval_n": 2268,
+    "train_block_n": 130,
+    "overlap_n": 66,
+    "overlap_pct_of_eval": 2.91,
+    "overlap_pct_of_train": 50.77,
+    "train_only_n": 64,
+    "eval_only_n": 2202
+  },
+  "B.3_vs_lab_bench.jsonl": {
+    "eval_n": 1305,
+    "train_block_n": 136,
+    "overlap_n": 136,
+    "overlap_pct_of_eval": 10.42,
+    "overlap_pct_of_train": 100.0,
+    "train_only_n": 0,
+    "eval_only_n": 1169
+  },
+  "B.4_vs_saladbench_cbrn.jsonl": {
+    "eval_n": 2268,
+    "train_block_n": 491,
+    "overlap_n": 219,
+    "overlap_pct_of_eval": 9.66,
+    "overlap_pct_of_train": 44.6,
+    "train_only_n": 272,
+    "eval_only_n": 2049
+  },
+  "B.4_vs_beavertails_subset.jsonl": {
+    "eval_n": 2526,
+    "train_block_n": 491,
+    "overlap_n": 285,
+    "overlap_pct_of_eval": 11.28,
+    "overlap_pct_of_train": 58.04,
+    "train_only_n": 206,
+    "eval_only_n": 2241
+  }
+}

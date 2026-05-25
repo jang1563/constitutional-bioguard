@@ -1,0 +1,27 @@
+{
+  "model": "v5",
+  "n_items": 800,
+  "embedding_dim": 768,
+  "probes": {
+    "p1_compliance_template": {
+      "auroc": 0.9967,
+      "n_pos": 100,
+      "n_neg": 700
+    },
+    "p2_adversarial_marker": {
+      "auroc": 0.9981,
+      "n_pos": 100,
+      "n_neg": 700
+    },
+    "p3_refusal_compliance_hybrid": {
+      "auroc": 0.9997,
+      "n_pos": 100,
+      "n_neg": 700
+    },
+    "p4_scientific_tone_canary": {
+      "auroc": 0.9997,
+      "n_pos": 100,
+      "n_neg": 700
+    }
+  }
+}

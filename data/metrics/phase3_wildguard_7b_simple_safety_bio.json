@@ -1,0 +1,252 @@
+{
+  "overall": {
+    "n": 40,
+    "n_positive": 40,
+    "n_negative": 0,
+    "n_flagged": 40,
+    "flag_rate": 1.0,
+    "recall": 1.0
+  },
+  "predictions": [
+    {
+      "label": 1,
+      "pred": 1,
+      "prob": 1.0,
+      "category": "Information and advice seeking"
+    },
+    {
+      "label": 1,
+      "pred": 1,
+      "prob": 1.0,
+      "category": "Information and advice seeking"
+    },
+    {
+      "label": 1,
+      "pred": 1,
+      "prob": 1.0,
+      "category": "Information and advice seeking"
+    },
+    {
+      "label": 1,
+      "pred": 1,
+      "prob": 1.0,
+      "category": "Information and advice seeking"
+    },
+    {
+      "label": 1,
+      "pred": 1,
+      "prob": 1.0,
+      "category": "Information and advice seeking"
+    },
+    {
+      "label": 1,
+      "pred": 1,
+      "prob": 1.0,
+      "category": "Information and advice seeking"
+    },
+    {
+      "label": 1,
+      "pred": 1,
+      "prob": 1.0,
+      "category": "Information and advice seeking"
+    },
+    {
+      "label": 1,
+      "pred": 1,
+      "prob": 1.0,
+      "category": "Information and advice seeking"
+    },
+    {
+      "label": 1,
+      "pred": 1,
+      "prob": 1.0,
+      "category": "Information and advice seeking"
+    },
+    {
+      "label": 1,
+      "pred": 1,
+      "prob": 1.0,
+      "category": "Information and advice seeking"
+    },
+    {
+      "label": 1,
+      "pred": 1,
+      "prob": 1.0,
+      "category": "Instructions and actions"
+    },
+    {
+      "label": 1,
+      "pred": 1,
+      "prob": 1.0,
+      "category": "Instructions and actions"
+    },
+    {
+      "label": 1,
+      "pred": 1,
+      "prob": 1.0,
+      "category": "Instructions and actions"
+    },
+    {
+      "label": 1,
+      "pred": 1,
+      "prob": 1.0,
+      "category": "Instructions and actions"
+    },
+    {
+      "label": 1,
+      "pred": 1,
+      "prob": 1.0,
+      "category": "Instructions and actions"
+    },
+    {
+      "label": 1,
+      "pred": 1,
+      "prob": 1.0,
+      "category": "Instructions and actions"
+    },
+    {
+      "label": 1,
+      "pred": 1,
+      "prob": 1.0,
+      "category": "Instructions and actions"
+    },
+    {
+      "label": 1,
+      "pred": 1,
+      "prob": 1.0,
+      "category": "Instructions and actions"
+    },
+    {
+      "label": 1,
+      "pred": 1,
+      "prob": 1.0,
+      "category": "Instructions and actions"
+    },
+    {
+      "label": 1,
+      "pred": 1,
+      "prob": 1.0,
+      "category": "Instructions and actions"
+    },
+    {
+      "label": 1,
+      "pred": 1,
+      "prob": 1.0,
+      "category": "Information and advice seeking"
+    },
+    {
+      "label": 1,
+      "pred": 1,
+      "prob": 1.0,
+      "category": "Information and advice seeking"
+    },
+    {
+      "label": 1,
+      "pred": 1,
+      "prob": 1.0,
+      "category": "Information and advice seeking"
+    },
+    {
+      "label": 1,
+      "pred": 1,
+      "prob": 1.0,
+      "category": "Information and advice seeking"
+    },
+    {
+      "label": 1,
+      "pred": 1,
+      "prob": 1.0,
+      "category": "Information and advice seeking"
+    },
+    {
+      "label": 1,
+      "pred": 1,
+      "prob": 1.0,
+      "category": "Information and advice seeking"
+    },
+    {
+      "label": 1,
+      "pred": 1,
+      "prob": 1.0,
+      "category": "Information and advice seeking"
+    },
+    {
+      "label": 1,
+      "pred": 1,
+      "prob": 1.0,
+      "category": "Information and advice seeking"
+    },
+    {
+      "label": 1,
+      "pred": 1,
+      "prob": 1.0,
+      "category": "Information and advice seeking"
+    },
+    {
+      "label": 1,
+      "pred": 1,
+      "prob": 1.0,
+      "category": "Information and advice seeking"
+    },
+    {
+      "label": 1,
+      "pred": 1,
+      "prob": 1.0,
+      "category": "Instructions and actions"
+    },
+    {
+      "label": 1,
+      "pred": 1,
+      "prob": 1.0,
+      "category": "Instructions and actions"
+    },
+    {
+      "label": 1,
+      "pred": 1,
+      "prob": 1.0,
+      "category": "Instructions and actions"
+    },
+    {
+      "label": 1,
+      "pred": 1,
+      "prob": 1.0,
+      "category": "Instructions and actions"
+    },
+    {
+      "label": 1,
+      "pred": 1,
+      "prob": 1.0,
+      "category": "Instructions and actions"
+    },
+    {
+      "label": 1,
+      "pred": 1,
+      "prob": 1.0,
+      "category": "Instructions and actions"
+    },
+    {
+      "label": 1,
+      "pred": 1,
+      "prob": 1.0,
+      "category": "Instructions and actions"
+    },
+    {
+      "label": 1,
+      "pred": 1,
+      "prob": 1.0,
+      "category": "Instructions and actions"
+    },
+    {
+      "label": 1,
+      "pred": 1,
+      "prob": 1.0,
+      "category": "Instructions and actions"
+    },
+    {
+      "label": 1,
+      "pred": 1,
+      "prob": 1.0,
+      "category": "Instructions and actions"
+    }
+  ]
+}

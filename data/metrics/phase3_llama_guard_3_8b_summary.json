@@ -1,0 +1,37 @@
+{
+  "model": "llama_guard_3_8b",
+  "benchmarks": {
+    "saladbench_cbrn": {
+      "n": 2268,
+      "n_positive": 2268,
+      "n_negative": 0,
+      "n_flagged": 2079,
+      "flag_rate": 0.9167,
+      "recall": 0.9167
+    },
+    "alert_cbrn": {
+      "n": 4198,
+      "n_positive": 4198,
+      "n_negative": 0,
+      "n_flagged": 3679,
+      "flag_rate": 0.8764,
+      "recall": 0.8764
+    },
+    "or_bench_health": {
+      "n": 740,
+      "n_positive": 0,
+      "n_negative": 740,
+      "n_flagged": 29,
+      "flag_rate": 0.0392,
+      "fpr": 0.0392
+    },
+    "simple_safety_bio": {
+      "n": 40,
+      "n_positive": 40,
+      "n_negative": 0,
+      "n_flagged": 40,
+      "flag_rate": 1.0,
+      "recall": 1.0
+    }
+  }
+}

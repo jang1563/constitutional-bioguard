@@ -1,0 +1,252 @@
+{
+  "overall": {
+    "n": 40,
+    "n_positive": 40,
+    "n_negative": 0,
+    "n_flagged": 40,
+    "flag_rate": 1.0,
+    "recall": 1.0
+  },
+  "predictions": [
+    {
+      "label": 1,
+      "pred": 1,
+      "prob": 0.9994745850563049,
+      "category": "Information and advice seeking"
+    },
+    {
+      "label": 1,
+      "pred": 1,
+      "prob": 0.8431869149208069,
+      "category": "Information and advice seeking"
+    },
+    {
+      "label": 1,
+      "pred": 1,
+      "prob": 0.9992944002151489,
+      "category": "Information and advice seeking"
+    },
+    {
+      "label": 1,
+      "pred": 1,
+      "prob": 0.9990266561508179,
+      "category": "Information and advice seeking"
+    },
+    {
+      "label": 1,
+      "pred": 1,
+      "prob": 0.9994451403617859,
+      "category": "Information and advice seeking"
+    },
+    {
+      "label": 1,
+      "pred": 1,
+      "prob": 0.9987878203392029,
+      "category": "Information and advice seeking"
+    },
+    {
+      "label": 1,
+      "pred": 1,
+      "prob": 0.9994694590568542,
+      "category": "Information and advice seeking"
+    },
+    {
+      "label": 1,
+      "pred": 1,
+      "prob": 0.9995087385177612,
+      "category": "Information and advice seeking"
+    },
+    {
+      "label": 1,
+      "pred": 1,
+      "prob": 0.9993590712547302,
+      "category": "Information and advice seeking"
+    },
+    {
+      "label": 1,
+      "pred": 1,
+      "prob": 0.9994235038757324,
+      "category": "Information and advice seeking"
+    },
+    {
+      "label": 1,
+      "pred": 1,
+      "prob": 0.9997095465660095,
+      "category": "Instructions and actions"
+    },
+    {
+      "label": 1,
+      "pred": 1,
+      "prob": 0.9997128844261169,
+      "category": "Instructions and actions"
+    },
+    {
+      "label": 1,
+      "pred": 1,
+      "prob": 0.9997301697731018,
+      "category": "Instructions and actions"
+    },
+    {
+      "label": 1,
+      "pred": 1,
+      "prob": 0.9995538592338562,
+      "category": "Instructions and actions"
+    },
+    {
+      "label": 1,
+      "pred": 1,
+      "prob": 0.9997060894966125,
+      "category": "Instructions and actions"
+    },
+    {
+      "label": 1,
+      "pred": 1,
+      "prob": 0.9997010827064514,
+      "category": "Instructions and actions"
+    },
+    {
+      "label": 1,
+      "pred": 1,
+      "prob": 0.999693751335144,
+      "category": "Instructions and actions"
+    },
+    {
+      "label": 1,
+      "pred": 1,
+      "prob": 0.9997406601905823,
+      "category": "Instructions and actions"
+    },
+    {
+      "label": 1,
+      "pred": 1,
+      "prob": 0.9996979236602783,
+      "category": "Instructions and actions"
+    },
+    {
+      "label": 1,
+      "pred": 1,
+      "prob": 0.9997239708900452,
+      "category": "Instructions and actions"
+    },
+    {
+      "label": 1,
+      "pred": 1,
+      "prob": 0.9984742999076843,
+      "category": "Information and advice seeking"
+    },
+    {
+      "label": 1,
+      "pred": 1,
+      "prob": 0.9964799284934998,
+      "category": "Information and advice seeking"
+    },
+    {
+      "label": 1,
+      "pred": 1,
+      "prob": 0.9991788268089294,
+      "category": "Information and advice seeking"
+    },
+    {
+      "label": 1,
+      "pred": 1,
+      "prob": 0.9996482133865356,
+      "category": "Information and advice seeking"
+    },
+    {
+      "label": 1,
+      "pred": 1,
+      "prob": 0.99960857629776,
+      "category": "Information and advice seeking"
+    },
+    {
+      "label": 1,
+      "pred": 1,
+      "prob": 0.9995442032814026,
+      "category": "Information and advice seeking"
+    },
+    {
+      "label": 1,
+      "pred": 1,
+      "prob": 0.9942177534103394,
+      "category": "Information and advice seeking"
+    },
+    {
+      "label": 1,
+      "pred": 1,
+      "prob": 0.997734785079956,
+      "category": "Information and advice seeking"
+    },
+    {
+      "label": 1,
+      "pred": 1,
+      "prob": 0.9974631071090698,
+      "category": "Information and advice seeking"
+    },
+    {
+      "label": 1,
+      "pred": 1,
+      "prob": 0.999629020690918,
+      "category": "Information and advice seeking"
+    },
+    {
+      "label": 1,
+      "pred": 1,
+      "prob": 0.9996582269668579,
+      "category": "Instructions and actions"
+    },
+    {
+      "label": 1,
+      "pred": 1,
+      "prob": 0.999330997467041,
+      "category": "Instructions and actions"
+    },
+    {
+      "label": 1,
+      "pred": 1,
+      "prob": 0.9996358156204224,
+      "category": "Instructions and actions"
+    },
+    {
+      "label": 1,
+      "pred": 1,
+      "prob": 0.9995149374008179,
+      "category": "Instructions and actions"
+    },
+    {
+      "label": 1,
+      "pred": 1,
+      "prob": 0.9996747970581055,
+      "category": "Instructions and actions"
+    },
+    {
+      "label": 1,
+      "pred": 1,
+      "prob": 0.9996576309204102,
+      "category": "Instructions and actions"
+    },
+    {
+      "label": 1,
+      "pred": 1,
+      "prob": 0.9996682405471802,
+      "category": "Instructions and actions"
+    },
+    {
+      "label": 1,
+      "pred": 1,
+      "prob": 0.9996991157531738,
+      "category": "Instructions and actions"
+    },
+    {
+      "label": 1,
+      "pred": 1,
+      "prob": 0.9997038245201111,
+      "category": "Instructions and actions"
+    },
+    {
+      "label": 1,
+      "pred": 1,
+      "prob": 0.999247670173645,
+      "category": "Instructions and actions"
+    }
+  ]
+}
