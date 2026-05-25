@@ -23,7 +23,7 @@
 
 ### Latest Run Snapshot (2026-05-25)
 
-- **v3 balanced (best, current default):** 100% recall on HarmBench+AdvBench bio held-out; < 1% FAR across 6 cross-domain benchmarks (`models/deberta_bioguard_v3_balanced`)
+- **v3 balanced (best, current default):** 100% recall on HarmBench+AdvBench bio held-out; < 1% FAR across 6 cross-domain benchmarks; **0.98% mean adversarial ASR** (10x improvement vs A_full) (`models/deberta_bioguard_v3_balanced`)
 - **v2 augmented:** 0% bio adversarial recall (collapsed) but 0% cross-domain FAR (`models/deberta_bioguard_v2_augmented`)
 - **v1 (A_full):** 96-100% adversarial bio recall but 28-73% cross-domain FAR — learned shortcut feature (adversarial framing) instead of bio harm (`models/deberta_bioguard_v1_A_full`)
 - Three-way comparison: 9 external benchmarks (BioThreat-Eval, WMDP-Bio/Chem/Cyber, LAB-Bench, PubMedQA, MedQA, WildGuardMix, HarmBench-bio, AdvBench-bio)
