@@ -166,11 +166,16 @@ def train(
             max_length=max_seq_length,
         )
 
-    cols_to_remove = ["text"]
-    if has_pairs:
-        cols_to_remove.extend(["query", "response"])
-    train_dataset = train_dataset.map(tokenize_fn, batched=True, remove_columns=cols_to_remove)
-    val_dataset = val_dataset.map(tokenize_fn, batched=True, remove_columns=cols_to_remove)
+    # Only remove columns that actually exist (v2 augmented data may lack 'text')
+    candidate_cols = ["text", "query", "response"] if has_pairs else ["text"]
+    cols_to_remove_train = [c for c in candidate_cols if c in train_dataset.column_names]
+    cols_to_remove_val = [c for c in candidate_cols if c in val_dataset.column_names]
+    train_dataset = train_dataset.map(
+        tokenize_fn, batched=True, remove_columns=cols_to_remove_train,
+    )
+    val_dataset = val_dataset.map(
+        tokenize_fn, batched=True, remove_columns=cols_to_remove_val,
+    )
 
     # Remove metadata columns (keep only input_ids, attention_mask, label)
     metadata_cols = [
