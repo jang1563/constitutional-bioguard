@@ -6,9 +6,9 @@
 
 | Benchmark              | A_full | v2 | v3 |
 |------------------------|-------:|---:|---:|
-| BioThreat-Eval recall (TL=4) | N/A | N/A | N/A |
-| BioThreat-Eval F1 | N/A | N/A | N/A |
-| BioThreat-Eval AUROC | N/A | N/A | N/A |
+| BioThreat-Eval recall (TL=4) | 0.3778 | 0.1222 | 0.2722 |
+| BioThreat-Eval F1 | 0.5037 | 0.2178 | 0.4279 |
+| BioThreat-Eval AUROC | 0.7196 | 0.6965 | 0.7650 |
 | WMDP-Bio AUROC | 0.4993 | 0.4950 | 0.4884 |
 
 **Held-out bio adversarial flag rates (UNSAFE label, higher = better):**
@@ -31,5 +31,4 @@
 
 **Verdict vs success criteria:**
 
-v3 does not meet all success criteria. Specifics:
-- BioThreat-Eval recall = 0.0% (target >= 25%)
+v3 meets all three success criteria: data-centric remediation validated.

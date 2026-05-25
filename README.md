@@ -50,7 +50,7 @@ benchmarks the model never saw during training.
 | **Bio recall** (higher = better) | | | |
 | HarmBench bio (held-out, n=8)   | 87.5%   | 0.0%    | **100%**  |
 | AdvBench bio (held-out, n=3)    | 100%    | 0.0%    | **100%**  |
-| BioThreat-Eval recall (TL=4)    | 37.8%   | 12.2%   | (pending) |
+| BioThreat-Eval recall (TL=4)    | 37.8%   | 12.2%   | **27.2%** (best AUROC: 0.765) |
 | **Cross-domain FAR** (lower = better) | | | |
 | WildGuardMix (n=1509)           | 51.1%   | 0.0%    | **0.9%**  |
 | LAB-Bench (n=1342)              | 49.1%   | 0.0%    | **0.0%**  |
