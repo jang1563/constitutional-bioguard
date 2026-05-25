@@ -1273,10 +1273,16 @@ CBRN category code (S9) for bio-harmful items.
 |--------------------------------------|------------:|--------------:|------------------:|
 | BioThreat-Eval F1 (TL=4, n=558)       |  **0.4279** |        0.3636 |            0.2692 |
 | BioThreat-Eval AUROC                  |      0.7650 |        0.6111 |        **0.7787** |
+| BioThreat-Eval **AUPRC**              |  **0.7235** |        0.4731 |            0.6796 |
 | BioThreat-Eval recall                 |  **0.2722** |        0.2222 |            0.1556 |
 | BioThreat-Eval FPR@0.5                |  **0.0000** |    **0.0000** |        **0.0000** |
 | HarmBench bio held-out (n=8, UNSAFE) | **100%**   |     **100%** |          **100%** |
 | AdvBench bio held-out (n=3, UNSAFE)  | **100%**   |     **100%** |          **100%** |
+
+*AUPRC random-baseline for BioThreat-Eval = 180/558 ≈ 0.323 (positive
+class rate). v3's AUPRC of 0.7235 is 2.24× the random baseline.
+AUPRC is the more discriminating metric on imbalanced sets:
+v3 wins F1 and AUPRC; LLaMA-Guard 3 wins AUROC; WildGuard trails both.*
 
 **Cross-Domain FAR (lower = better):**
 
