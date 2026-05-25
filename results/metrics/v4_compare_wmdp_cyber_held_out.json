@@ -1,0 +1,30 @@
+{
+  "experiment": "External benchmark evaluation: v4_wmdp_cyber_held_out",
+  "model_dir": "~/constitutional-bioguard/models/deberta_bioguard_v4_response_diverse",
+  "cache_path": "data/external/v3_splits/wmdp_cyber_held_out.jsonl",
+  "benchmark_name": "v4_wmdp_cyber_held_out",
+  "n_items": 1887,
+  "label_distribution": {
+    "n_positive_label_1": 0,
+    "n_negative_label_0": 1887
+  },
+  "overall": {
+    "n": 1887,
+    "n_flagged_unsafe": 20,
+    "false_alarm_rate": 0.0106,
+    "wilson_95_lower": 0.0069,
+    "wilson_95_upper": 0.0163,
+    "mean_prob_unsafe": 0.0206,
+    "median_prob_unsafe": 0.0052
+  },
+  "metrics_classification": null,
+  "stratified_by_None": null,
+  "probability_percentiles": {
+    "p10": 0.002,
+    "p25": 0.0031,
+    "p50": 0.0052,
+    "p75": 0.0115,
+    "p90": 0.0229
+  },
+  "interpretation_note": "For all-label-0 benchmarks (LAB-Bench, PubMedQA, MedQA, WMDP-Chem, WMDP-Cyber), overall.false_alarm_rate is the primary metric. Lower is better. For mixed-label benchmarks, see metrics_classification."
+}

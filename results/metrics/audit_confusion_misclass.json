@@ -1,0 +1,616 @@
+{
+  "v3": {
+    "phase2/harmbench_full": {
+      "tp": 400,
+      "fp": 0,
+      "tn": 0,
+      "fn": 0,
+      "n": 400
+    },
+    "phase2/advbench_full": {
+      "tp": 482,
+      "fp": 0,
+      "tn": 0,
+      "fn": 38,
+      "n": 520
+    },
+    "phase2/xstest": {
+      "tp": 196,
+      "fp": 235,
+      "tn": 15,
+      "fn": 4,
+      "n": 450
+    },
+    "phase2/beavertails": {
+      "tp": 6,
+      "fp": 1,
+      "tn": 1287,
+      "fn": 1727,
+      "n": 3021
+    },
+    "phase2/wildguard_native": {
+      "tp": 15,
+      "fp": 1,
+      "tn": 939,
+      "fn": 734,
+      "n": 1689
+    }
+  },
+  "wildguard_7b": {
+    "biothreat": {
+      "tp": 40,
+      "fp": 0,
+      "tn": 378,
+      "fn": 140,
+      "n": 558
+    },
+    "harmbench_bio_ho": {
+      "tp": 8,
+      "fp": 0,
+      "tn": 0,
+      "fn": 0,
+      "n": 8
+    },
+    "advbench_bio_ho": {
+      "tp": 3,
+      "fp": 0,
+      "tn": 0,
+      "fn": 0,
+      "n": 3
+    },
+    "wildguard_test_ho": {
+      "tp": 0,
+      "fp": 604,
+      "tn": 905,
+      "fn": 0,
+      "n": 1509
+    },
+    "lab_bench_ho": {
+      "tp": 0,
+      "fp": 0,
+      "tn": 1342,
+      "fn": 0,
+      "n": 1342
+    },
+    "phase2/harmbench_full": {
+      "tp": 395,
+      "fp": 0,
+      "tn": 0,
+      "fn": 5,
+      "n": 400
+    },
+    "phase2/xstest": {
+      "tp": 187,
+      "fp": 21,
+      "tn": 229,
+      "fn": 13,
+      "n": 450
+    },
+    "phase2/beavertails": {
+      "tp": 1562,
+      "fp": 718,
+      "tn": 570,
+      "fn": 171,
+      "n": 3021
+    },
+    "phase2/wildguard_native": {
+      "tp": 629,
+      "fp": 51,
+      "tn": 889,
+      "fn": 120,
+      "n": 1689
+    }
+  },
+  "llama_guard_3_8b": {
+    "biothreat": {
+      "tp": 28,
+      "fp": 0,
+      "tn": 378,
+      "fn": 152,
+      "n": 558
+    },
+    "harmbench_bio_ho": {
+      "tp": 8,
+      "fp": 0,
+      "tn": 0,
+      "fn": 0,
+      "n": 8
+    },
+    "advbench_bio_ho": {
+      "tp": 3,
+      "fp": 0,
+      "tn": 0,
+      "fn": 0,
+      "n": 3
+    },
+    "wildguard_test_ho": {
+      "tp": 0,
+      "fp": 185,
+      "tn": 1324,
+      "fn": 0,
+      "n": 1509
+    },
+    "lab_bench_ho": {
+      "tp": 0,
+      "fp": 17,
+      "tn": 1325,
+      "fn": 0,
+      "n": 1342
+    },
+    "phase2/harmbench_full": {
+      "tp": 386,
+      "fp": 0,
+      "tn": 0,
+      "fn": 14,
+      "n": 400
+    },
+    "phase2/advbench_full": {
+      "tp": 507,
+      "fp": 0,
+      "tn": 0,
+      "fn": 13,
+      "n": 520
+    },
+    "phase2/xstest": {
+      "tp": 173,
+      "fp": 60,
+      "tn": 190,
+      "fn": 27,
+      "n": 450
+    },
+    "phase2/beavertails": {
+      "tp": 909,
+      "fp": 45,
+      "tn": 1243,
+      "fn": 824,
+      "n": 3021
+    },
+    "phase2/wildguard_native": {
+      "tp": 199,
+      "fp": 16,
+      "tn": 924,
+      "fn": 550,
+      "n": 1689
+    }
+  },
+  "v3_subgroups": {
+    "beavertails": {
+      "discrimination,stereotype,injustice": {
+        "tp": 0,
+        "fp": 0,
+        "tn": 0,
+        "fn": 287,
+        "n": 287,
+        "fpr": 0,
+        "fnr": 1.0
+      },
+      "non_violent_unethical_behavior": {
+        "tp": 0,
+        "fp": 0,
+        "tn": 0,
+        "fn": 266,
+        "n": 266,
+        "fpr": 0,
+        "fnr": 1.0
+      },
+      "financial_crime,property_crime,theft": {
+        "tp": 0,
+        "fp": 0,
+        "tn": 0,
+        "fn": 251,
+        "n": 251,
+        "fpr": 0,
+        "fnr": 1.0
+      },
+      "violence,aiding_and_abetting,incitement": {
+        "tp": 0,
+        "fp": 0,
+        "tn": 0,
+        "fn": 224,
+        "n": 224,
+        "fpr": 0,
+        "fnr": 1.0
+      },
+      "drug_abuse,weapons,banned_substance": {
+        "tp": 4,
+        "fp": 0,
+        "tn": 0,
+        "fn": 141,
+        "n": 145,
+        "fpr": 0,
+        "fnr": 0.9724137931034482
+      },
+      "hate_speech,offensive_language": {
+        "tp": 0,
+        "fp": 0,
+        "tn": 0,
+        "fn": 134,
+        "n": 134,
+        "fpr": 0,
+        "fnr": 1.0
+      },
+      "privacy_violation": {
+        "tp": 0,
+        "fp": 0,
+        "tn": 0,
+        "fn": 119,
+        "n": 119,
+        "fpr": 0,
+        "fnr": 1.0
+      },
+      "controversial_topics,politics": {
+        "tp": 0,
+        "fp": 0,
+        "tn": 0,
+        "fn": 95,
+        "n": 95,
+        "fpr": 0,
+        "fnr": 1.0
+      },
+      "sexually_explicit,adult_content": {
+        "tp": 0,
+        "fp": 0,
+        "tn": 0,
+        "fn": 56,
+        "n": 56,
+        "fpr": 0,
+        "fnr": 1.0
+      },
+      "misinformation_regarding_ethics,laws_and_safety": {
+        "tp": 0,
+        "fp": 0,
+        "tn": 0,
+        "fn": 53,
+        "n": 53,
+        "fpr": 0,
+        "fnr": 1.0
+      },
+      "animal_abuse": {
+        "tp": 0,
+        "fp": 0,
+        "tn": 0,
+        "fn": 44,
+        "n": 44,
+        "fpr": 0,
+        "fnr": 1.0
+      },
+      "child_abuse": {
+        "tp": 1,
+        "fp": 0,
+        "tn": 0,
+        "fn": 26,
+        "n": 27,
+        "fpr": 0,
+        "fnr": 0.9629629629629629
+      },
+      "terrorism,organized_crime": {
+        "tp": 1,
+        "fp": 0,
+        "tn": 0,
+        "fn": 22,
+        "n": 23,
+        "fpr": 0,
+        "fnr": 0.9565217391304348
+      },
+      "self_harm": {
+        "tp": 0,
+        "fp": 0,
+        "tn": 0,
+        "fn": 9,
+        "n": 9,
+        "fpr": 0,
+        "fnr": 1.0
+      },
+      "uncategorized": {
+        "tp": 0,
+        "fp": 1,
+        "tn": 1287,
+        "fn": 0,
+        "n": 1288,
+        "fpr": 0.0007763975155279503,
+        "fnr": 0
+      }
+    },
+    "xstest": {
+      "safe_contexts": {
+        "tp": 0,
+        "fp": 25,
+        "tn": 0,
+        "fn": 0,
+        "n": 25,
+        "fpr": 1.0,
+        "fnr": 0
+      },
+      "definitions": {
+        "tp": 0,
+        "fp": 25,
+        "tn": 0,
+        "fn": 0,
+        "n": 25,
+        "fpr": 1.0,
+        "fnr": 0
+      },
+      "nons_group_real_discr": {
+        "tp": 0,
+        "fp": 25,
+        "tn": 0,
+        "fn": 0,
+        "n": 25,
+        "fpr": 1.0,
+        "fnr": 0
+      },
+      "real_group_nons_discr": {
+        "tp": 0,
+        "fp": 25,
+        "tn": 0,
+        "fn": 0,
+        "n": 25,
+        "fpr": 1.0,
+        "fnr": 0
+      },
+      "historical_events": {
+        "tp": 0,
+        "fp": 25,
+        "tn": 0,
+        "fn": 0,
+        "n": 25,
+        "fpr": 1.0,
+        "fnr": 0
+      },
+      "privacy_fictional": {
+        "tp": 0,
+        "fp": 25,
+        "tn": 0,
+        "fn": 0,
+        "n": 25,
+        "fpr": 1.0,
+        "fnr": 0
+      },
+      "figurative_language": {
+        "tp": 0,
+        "fp": 23,
+        "tn": 2,
+        "fn": 0,
+        "n": 25,
+        "fpr": 0.92,
+        "fnr": 0
+      },
+      "privacy_public": {
+        "tp": 0,
+        "fp": 22,
+        "tn": 3,
+        "fn": 0,
+        "n": 25,
+        "fpr": 0.88,
+        "fnr": 0
+      },
+      "safe_targets": {
+        "tp": 0,
+        "fp": 21,
+        "tn": 4,
+        "fn": 0,
+        "n": 25,
+        "fpr": 0.84,
+        "fnr": 0
+      },
+      "homonyms": {
+        "tp": 0,
+        "fp": 19,
+        "tn": 6,
+        "fn": 0,
+        "n": 25,
+        "fpr": 0.76,
+        "fnr": 0
+      },
+      "contrast_discr": {
+        "tp": 23,
+        "fp": 0,
+        "tn": 0,
+        "fn": 2,
+        "n": 25,
+        "fpr": 0,
+        "fnr": 0.08
+      },
+      "contrast_privacy": {
+        "tp": 23,
+        "fp": 0,
+        "tn": 0,
+        "fn": 2,
+        "n": 25,
+        "fpr": 0,
+        "fnr": 0.08
+      },
+      "contrast_homonyms": {
+        "tp": 25,
+        "fp": 0,
+        "tn": 0,
+        "fn": 0,
+        "n": 25,
+        "fpr": 0,
+        "fnr": 0.0
+      },
+      "contrast_figurative_language": {
+        "tp": 25,
+        "fp": 0,
+        "tn": 0,
+        "fn": 0,
+        "n": 25,
+        "fpr": 0,
+        "fnr": 0.0
+      },
+      "contrast_safe_targets": {
+        "tp": 25,
+        "fp": 0,
+        "tn": 0,
+        "fn": 0,
+        "n": 25,
+        "fpr": 0,
+        "fnr": 0.0
+      },
+      "contrast_safe_contexts": {
+        "tp": 25,
+        "fp": 0,
+        "tn": 0,
+        "fn": 0,
+        "n": 25,
+        "fpr": 0,
+        "fnr": 0.0
+      },
+      "contrast_definitions": {
+        "tp": 25,
+        "fp": 0,
+        "tn": 0,
+        "fn": 0,
+        "n": 25,
+        "fpr": 0,
+        "fnr": 0.0
+      },
+      "contrast_historical_events": {
+        "tp": 25,
+        "fp": 0,
+        "tn": 0,
+        "fn": 0,
+        "n": 25,
+        "fpr": 0,
+        "fnr": 0.0
+      }
+    },
+    "wildguard_native": {
+      "others": {
+        "tp": 2,
+        "fp": 0,
+        "tn": 0,
+        "fn": 96,
+        "n": 98,
+        "fpr": 0,
+        "fnr": 0.9795918367346939
+      },
+      "private_information_individual": {
+        "tp": 0,
+        "fp": 0,
+        "tn": 0,
+        "fn": 81,
+        "n": 81,
+        "fpr": 0,
+        "fnr": 1.0
+      },
+      "social_stereotypes_and_unfair_discrimination": {
+        "tp": 0,
+        "fp": 0,
+        "tn": 0,
+        "fn": 76,
+        "n": 76,
+        "fpr": 0,
+        "fnr": 1.0
+      },
+      "fraud_assisting_illegal_activities": {
+        "tp": 2,
+        "fp": 0,
+        "tn": 0,
+        "fn": 58,
+        "n": 60,
+        "fpr": 0,
+        "fnr": 0.9666666666666667
+      },
+      "sensitive_information_organization_government": {
+        "tp": 0,
+        "fp": 0,
+        "tn": 0,
+        "fn": 49,
+        "n": 49,
+        "fpr": 0,
+        "fnr": 1.0
+      },
+      "sexual_content": {
+        "tp": 1,
+        "fp": 0,
+        "tn": 0,
+        "fn": 46,
+        "n": 47,
+        "fpr": 0,
+        "fnr": 0.9787234042553191
+      },
+      "defamation_encouraging_unethical_or_unsafe_actions": {
+        "tp": 0,
+        "fp": 0,
+        "tn": 0,
+        "fn": 46,
+        "n": 46,
+        "fpr": 0,
+        "fnr": 1.0
+      },
+      "causing_material_harm_by_disseminating_misinformation": {
+        "tp": 0,
+        "fp": 0,
+        "tn": 0,
+        "fn": 45,
+        "n": 45,
+        "fpr": 0,
+        "fnr": 1.0
+      },
+      "mental_health_over-reliance_crisis": {
+        "tp": 1,
+        "fp": 0,
+        "tn": 0,
+        "fn": 44,
+        "n": 45,
+        "fpr": 0,
+        "fnr": 0.9777777777777777
+      },
+      "disseminating_false_or_misleading_information_encouraging_disinformation_campaigns": {
+        "tp": 1,
+        "fp": 0,
+        "tn": 0,
+        "fn": 42,
+        "n": 43,
+        "fpr": 0,
+        "fnr": 0.9767441860465116
+      },
+      "cyberattack": {
+        "tp": 7,
+        "fp": 0,
+        "tn": 0,
+        "fn": 41,
+        "n": 48,
+        "fpr": 0,
+        "fnr": 0.8541666666666666
+      },
+      "toxic_language_hate_speech": {
+        "tp": 0,
+        "fp": 0,
+        "tn": 0,
+        "fn": 41,
+        "n": 41,
+        "fpr": 0,
+        "fnr": 1.0
+      },
+      "violence_and_physical_harm": {
+        "tp": 1,
+        "fp": 0,
+        "tn": 0,
+        "fn": 39,
+        "n": 40,
+        "fpr": 0,
+        "fnr": 0.975
+      },
+      "copyright_violations": {
+        "tp": 0,
+        "fp": 0,
+        "tn": 0,
+        "fn": 30,
+        "n": 30,
+        "fpr": 0,
+        "fnr": 1.0
+      },
+      "benign": {
+        "tp": 0,
+        "fp": 1,
+        "tn": 939,
+        "fn": 0,
+        "n": 940,
+        "fpr": 0.0010638297872340426,
+        "fnr": 0
+      }
+    }
+  }
+}
