@@ -1,0 +1,36 @@
+{
+  "n_items": 100,
+  "n_unsafe": 50,
+  "n_safe": 50,
+  "flag_rates": {
+    "original": 0.2,
+    "compliance": 1.0,
+    "refusal": 0.26,
+    "deflection": 0.14
+  },
+  "flip_rates_vs_original": {
+    "compliance": 0.8,
+    "refusal": 0.06,
+    "deflection": 0.06
+  },
+  "content_score": {
+    "compliance": {
+      "n_unsafe": 50,
+      "n_flag_when_label_unsafe": 50,
+      "n_safe": 50,
+      "n_flag_when_label_safe": 50
+    },
+    "refusal": {
+      "n_unsafe": 50,
+      "n_flag_when_label_unsafe": 26,
+      "n_safe": 50,
+      "n_flag_when_label_safe": 0
+    },
+    "deflection": {
+      "n_unsafe": 50,
+      "n_flag_when_label_unsafe": 14,
+      "n_safe": 50,
+      "n_flag_when_label_safe": 0
+    }
+  }
+}
