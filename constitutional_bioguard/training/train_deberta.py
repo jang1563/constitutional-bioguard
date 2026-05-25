@@ -177,13 +177,14 @@ def train(
         tokenize_fn, batched=True, remove_columns=cols_to_remove_val,
     )
 
-    # Remove metadata columns (keep only input_ids, attention_mask, label)
-    metadata_cols = [
-        c for c in train_dataset.column_names
-        if c not in ("input_ids", "attention_mask", "token_type_ids", "label")
-    ]
-    train_dataset = train_dataset.remove_columns(metadata_cols)
-    val_dataset_clean = val_dataset.remove_columns(metadata_cols)
+    # Remove metadata columns (keep only input_ids, attention_mask, label).
+    # Compute per-dataset since train and val may have different schemas
+    # (e.g., v2 augmentation adds 'source' to train but not val).
+    keep_cols = {"input_ids", "attention_mask", "token_type_ids", "label"}
+    train_metadata = [c for c in train_dataset.column_names if c not in keep_cols]
+    val_metadata = [c for c in val_dataset.column_names if c not in keep_cols]
+    train_dataset = train_dataset.remove_columns(train_metadata)
+    val_dataset_clean = val_dataset.remove_columns(val_metadata)
 
     train_dataset.set_format("torch")
     val_dataset_clean.set_format("torch")
