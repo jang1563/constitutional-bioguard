@@ -1,0 +1,74 @@
+{
+  "v3": {
+    "model": "v3",
+    "param_count_m": 184.4,
+    "load_time_s": 4.271,
+    "mem_after_load_mb": 704.7,
+    "batch1_latency_per_item_ms": 12.4,
+    "batch1_throughput_items_per_s": 80.64,
+    "batch32_latency_per_item_ms": 1.6,
+    "batch32_throughput_items_per_s": 623.49,
+    "mem_peak_mb": 2076.8
+  },
+  "v4": {
+    "model": "v4",
+    "param_count_m": 184.4,
+    "load_time_s": 1.355,
+    "mem_after_load_mb": 713.5,
+    "batch1_latency_per_item_ms": 12.29,
+    "batch1_throughput_items_per_s": 81.35,
+    "batch32_latency_per_item_ms": 1.62,
+    "batch32_throughput_items_per_s": 617.16,
+    "mem_peak_mb": 2077.8
+  },
+  "wildguard_7b": {
+    "model": "wildguard_7b",
+    "param_count_m": 7248.0,
+    "load_time_s": 36.542,
+    "mem_after_load_mb": 13832.6,
+    "batch1_latency_per_item_ms": 191.84,
+    "batch1_throughput_items_per_s": 5.21,
+    "mem_peak_mb": 13890.5,
+    "note": "max_new_tokens=8, fp16"
+  },
+  "llama_guard_3_8b": {
+    "model": "llama_guard_3_8b",
+    "param_count_m": 8030.3,
+    "load_time_s": 41.102,
+    "mem_after_load_mb": 15324.6,
+    "batch1_latency_per_item_ms": 82.28,
+    "batch1_throughput_items_per_s": 12.15,
+    "mem_peak_mb": 15400.8,
+    "note": "max_new_tokens=8, fp16"
+  },
+  "summary": {
+    "v3": {
+      "params_M": 184.4,
+      "load_time_s": 4.271,
+      "mem_peak_mb": 2076.8,
+      "batch1_latency_ms": 12.4,
+      "batch32_throughput_items_s": 623.49
+    },
+    "v4": {
+      "params_M": 184.4,
+      "load_time_s": 1.355,
+      "mem_peak_mb": 2077.8,
+      "batch1_latency_ms": 12.29,
+      "batch32_throughput_items_s": 617.16
+    },
+    "wildguard_7b": {
+      "params_M": 7248.0,
+      "load_time_s": 36.542,
+      "mem_peak_mb": 13890.5,
+      "batch1_latency_ms": 191.84,
+      "batch32_throughput_items_s": 5.21
+    },
+    "llama_guard_3_8b": {
+      "params_M": 8030.3,
+      "load_time_s": 41.102,
+      "mem_peak_mb": 15400.8,
+      "batch1_latency_ms": 82.28,
+      "batch32_throughput_items_s": 12.15
+    }
+  }
+}

@@ -1,0 +1,26 @@
+{
+  "n_items": 1400,
+  "embedding_dim": 768,
+  "probes": {
+    "bio_keyword_in_query": {
+      "auroc": 0.679,
+      "n_total": 1400,
+      "n_pos": 28
+    },
+    "bio_keyword_in_response": {
+      "auroc": 0.8723,
+      "n_total": 1400,
+      "n_pos": 26
+    },
+    "adversarial_marker_in_query": {
+      "auroc": 0.9734,
+      "n_total": 1400,
+      "n_pos": 94
+    },
+    "compliance_template_in_response": {
+      "auroc": 1.0,
+      "n_total": 1400,
+      "n_pos": 400
+    }
+  }
+}

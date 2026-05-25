@@ -333,6 +333,7 @@ def load_wildguard_with_native_labels(
 def _load_bio_keywords() -> list[str]:
     """Load bio relevance keywords (shared filter)."""
     import json as _json
+
     from constitutional_bioguard.config import CONFIGS_DIR
     with open(CONFIGS_DIR / "bio_keywords_adv.json") as f:
         return _json.load(f)["keywords"]
@@ -576,4 +577,166 @@ def cache_simple_safety_bio(limit: Optional[int] = None) -> Path:
 
     logger.info("SimpleSafetyTests bio-relevant: %d items cached to %s", n, cache_path)
     logger.info("By harm area: %s", by_area)
+    return cache_path
+
+
+# ---------------------------------------------------------------------------
+# v5-era benchmarks (added 2026-05-25 to fix G.1 train/eval leakage in v4)
+# ---------------------------------------------------------------------------
+
+def cache_false_reject(split: str = "train", limit: Optional[int] = None) -> Path:
+    """FalseReject (Zhang et al. COLM 2025, arXiv:2505.08054).
+
+    HF: AmazonScience/FalseReject. Native train (14624) / test (1187) splits,
+    so cleanly usable for both training augmentation and over-refusal eval.
+
+    Each item:
+      - prompt: benign but high-risk-looking query
+      - category_text: one of 44 safety category names
+      - instruct_response: structured SAFE response (train only)
+
+    For augmentation B.1: pair `prompt` with `instruct_response` as SAFE (label=0).
+    For eval: use `prompt` with synthetic compliance and check FPR.
+    """
+    from datasets import load_dataset
+
+    if split not in ("train", "test"):
+        raise ValueError(f"split must be train or test, got {split}")
+
+    logger.info("Loading AmazonScience/FalseReject split=%s...", split)
+    ds = load_dataset("AmazonScience/FalseReject", split=split)
+    logger.info("  Loaded %d items", len(ds))
+
+    DATA_EXTERNAL.mkdir(parents=True, exist_ok=True)
+    cache_path = DATA_EXTERNAL / f"false_reject_{split}.jsonl"
+    n = 0
+    by_cat: dict[str, int] = {}
+    with open(cache_path, "w", encoding="utf-8") as f:
+        for item in ds:
+            query = (item.get("prompt") or "").strip()
+            if not query:
+                continue
+            cat = str(item.get("category_text", "")).strip()
+            # For TRAIN split we have instruct_response; use it as SAFE response
+            # For TEST split we synthesize a compliance for over-refusal probe
+            if split == "train":
+                resp = (item.get("instruct_response") or "").strip()
+                if not resp:
+                    continue
+            else:
+                resp = COMPLIANCE_TEMPLATE
+            record = {
+                "query": query,
+                "response": resp,
+                "label": 0,  # FalseReject items are SAFE by design (false positives)
+                "source": f"false_reject_{split}",
+                "fr_category": cat,
+            }
+            f.write(json.dumps(record, ensure_ascii=False) + "\n")
+            n += 1
+            by_cat[cat] = by_cat.get(cat, 0) + 1
+            if limit and n >= limit:
+                break
+
+    logger.info("FalseReject %s: %d items cached to %s", split, n, cache_path)
+    logger.info("Top categories: %s", sorted(by_cat.items(), key=lambda x: -x[1])[:8])
+    return cache_path
+
+
+def cache_or_bench_hard_1k(limit: Optional[int] = None) -> Path:
+    """OR-Bench-Hard-1K (Cui et al. ICLR 2025).
+
+    A separate, harder subset of OR-Bench-80K (1320 items, never seen in v4
+    augmentation). Use as clean over-refusal eval for v5.
+
+    HF: bench-llm/or-bench, config 'or-bench-hard-1k'.
+    """
+    from datasets import load_dataset
+
+    logger.info("Loading bench-llm/or-bench config=or-bench-hard-1k...")
+    ds = load_dataset("bench-llm/or-bench", "or-bench-hard-1k", split="train")
+    logger.info("  Loaded %d items", len(ds))
+
+    DATA_EXTERNAL.mkdir(parents=True, exist_ok=True)
+    cache_path = DATA_EXTERNAL / "or_bench_hard_1k.jsonl"
+    n = 0
+    by_cat: dict[str, int] = {}
+    with open(cache_path, "w", encoding="utf-8") as f:
+        for item in ds:
+            query = (item.get("prompt") or "").strip()
+            if not query:
+                continue
+            cat = str(item.get("category", "")).strip()
+            record = {
+                "query": query,
+                "response": COMPLIANCE_TEMPLATE,
+                "label": 0,  # OR-Bench items are SAFE (over-refusal probes)
+                "source": "or_bench_hard_1k",
+                "or_category": cat,
+            }
+            f.write(json.dumps(record, ensure_ascii=False) + "\n")
+            n += 1
+            by_cat[cat] = by_cat.get(cat, 0) + 1
+            if limit and n >= limit:
+                break
+
+    logger.info("OR-Bench-Hard-1K: %d items cached to %s", n, cache_path)
+    logger.info("Categories: %s", sorted(by_cat.items(), key=lambda x: -x[1]))
+    return cache_path
+
+
+def cache_sorry_bench(limit: Optional[int] = None) -> Path:
+    """SORRY-Bench core 450 (Xie et al. NAACL 2024).
+
+    HF: sorry-bench/sorry-bench-202406. 450 unsafe instructions across 45
+    fine-grained safety categories (10 per category).
+
+    Use as eval for nuanced over-refusal — these are queries we WANT the
+    model to flag, providing a counterpart to FalseReject (which we want
+    the model to NOT flag).
+    """
+    from datasets import load_dataset
+
+    logger.info("Loading sorry-bench/sorry-bench-202406...")
+    try:
+        ds_all = load_dataset("sorry-bench/sorry-bench-202406")
+    except Exception as e:
+        logger.error("SORRY-Bench load failed: %s", e)
+        raise
+
+    first_split = list(ds_all.keys())[0]
+    ds = ds_all[first_split]
+    logger.info("  Loaded %d items (split=%s)", len(ds), first_split)
+
+    DATA_EXTERNAL.mkdir(parents=True, exist_ok=True)
+    cache_path = DATA_EXTERNAL / "sorry_bench.jsonl"
+    n = 0
+    by_cat: dict[str, int] = {}
+    with open(cache_path, "w", encoding="utf-8") as f:
+        for item in ds:
+            # SORRY-Bench schema: 'turns' is a list, or 'question' field
+            query = item.get("question") or item.get("prompt") or ""
+            if not query and "turns" in item and item["turns"]:
+                turns = item["turns"]
+                if isinstance(turns, list) and turns:
+                    query = turns[0] if isinstance(turns[0], str) else turns[0].get("content", "")
+            query = (query or "").strip()
+            if not query:
+                continue
+            cat = str(item.get("category", "") or item.get("category_name", "")).strip()
+            record = {
+                "query": query,
+                "response": COMPLIANCE_TEMPLATE,
+                "label": 1,  # SORRY-Bench items are UNSAFE (we WANT flag)
+                "source": "sorry_bench",
+                "sb_category": cat,
+            }
+            f.write(json.dumps(record, ensure_ascii=False) + "\n")
+            n += 1
+            by_cat[cat] = by_cat.get(cat, 0) + 1
+            if limit and n >= limit:
+                break
+
+    logger.info("SORRY-Bench: %d items cached to %s", n, cache_path)
+    logger.info("Top categories: %s", sorted(by_cat.items(), key=lambda x: -x[1])[:8])
     return cache_path

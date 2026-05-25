@@ -8,11 +8,11 @@ authors:
     orcid: "https://orcid.org/0000-0002-8733-9925"
     affiliation: "Weill Cornell Medicine"
     email: jak4013@med.cornell.edu
-version: "0.1.1"
-date-released: "2026-04-12"
+version: "0.2.0"
+date-released: "2026-05-25"
 license: MIT
 repository-code: "https://github.com/jang1563/constitutional-bioguard"
-url: "https://huggingface.co/jang1563/constitutional-bioguard-deberta-v1"
+url: "https://huggingface.co/jang1563/constitutional-bioguard-v4"
 keywords:
   - ai-safety
   - biosafety
@@ -22,10 +22,12 @@ keywords:
   - deberta
   - content-moderation
 abstract: >-
-  A prototype biological dual-use content classifier built using Anthropic's
-  Constitutional Classifiers methodology. Defines a 56-rule biosafety
-  constitution across 7 NSABB categories, generates ~4,500 synthetic training
-  examples via Claude API, and fine-tunes DeBERTa-v3-base for binary safe/unsafe
-  classification. Held-out F1 = 0.980, AUROC = 0.998, 0/325 over-refusal FPR;
-  9.79% mean adversarial ASR across 20 attack types. Intended as a research
-  artifact, not a production safeguard.
+  A research prototype biological dual-use content classifier built using
+  Anthropic's Constitutional Classifiers methodology. Defines a 56-rule
+  biosafety constitution across 7 NSABB categories, generates synthetic
+  training and corrective augmentation data, and fine-tunes DeBERTa-v3-base
+  for binary safe/unsafe classification. The v4 response-diverse checkpoint
+  is the recommended public model after a leakage audit and v5 non-release
+  decision; it reaches 2.1% FPR on OR-Bench-Hard-1K, 0% XSTest FPR, 32%
+  WildGuard native bio recall, and 0.45 BioThreat-Eval F1. Intended as a
+  research artifact, not a production safeguard.

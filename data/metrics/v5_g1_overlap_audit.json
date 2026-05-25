@@ -1,0 +1,86 @@
+{
+  "or_bench_hard_1k.jsonl": {
+    "label": "OR-Bench-Hard-1K (PRIMARY over-refusal eval)",
+    "eval_n": 1319,
+    "v5_aug_overlap_n": 0,
+    "overlap_pct_of_eval": 0.0,
+    "status": "CLEAN"
+  },
+  "false_reject_test.jsonl": {
+    "label": "FalseReject test (PRIMARY over-refusal eval)",
+    "eval_n": 1187,
+    "v5_aug_overlap_n": 0,
+    "overlap_pct_of_eval": 0.0,
+    "status": "CLEAN"
+  },
+  "xstest.jsonl": {
+    "label": "XSTest (SECONDARY over-refusal eval)",
+    "eval_n": 450,
+    "v5_aug_overlap_n": 0,
+    "overlap_pct_of_eval": 0.0,
+    "status": "CLEAN"
+  },
+  "or_bench_health.jsonl": {
+    "label": "or_bench_health (legacy v4 eval)",
+    "eval_n": 740,
+    "v5_aug_overlap_n": 0,
+    "overlap_pct_of_eval": 0.0,
+    "status": "CLEAN"
+  },
+  "simple_safety_bio.jsonl": {
+    "label": "SimpleSafetyTests bio (bio-recall eval)",
+    "eval_n": 40,
+    "v5_aug_overlap_n": 0,
+    "overlap_pct_of_eval": 0.0,
+    "status": "CLEAN"
+  },
+  "saladbench_cbrn.jsonl": {
+    "label": "SaladBench CBRN (broad OOD; partial B.2 source)",
+    "eval_n": 2268,
+    "v5_aug_overlap_n": 48,
+    "overlap_pct_of_eval": 2.12,
+    "status": "PARTIAL"
+  },
+  "alert_cbrn.jsonl": {
+    "label": "ALERT CBRN (broad OOD)",
+    "eval_n": 4083,
+    "v5_aug_overlap_n": 1,
+    "overlap_pct_of_eval": 0.02,
+    "status": "PARTIAL"
+  },
+  "wildguard_test.jsonl": {
+    "label": "WildGuard test (native bio eval)",
+    "eval_n": 1709,
+    "v5_aug_overlap_n": 0,
+    "overlap_pct_of_eval": 0.0,
+    "status": "CLEAN"
+  },
+  "harmbench_full.jsonl": {
+    "label": "HarmBench full",
+    "eval_n": 393,
+    "v5_aug_overlap_n": 59,
+    "overlap_pct_of_eval": 15.01,
+    "status": "PARTIAL"
+  },
+  "advbench_full.jsonl": {
+    "label": "AdvBench full",
+    "eval_n": 520,
+    "v5_aug_overlap_n": 19,
+    "overlap_pct_of_eval": 3.65,
+    "status": "PARTIAL"
+  },
+  "beavertails_subset.jsonl": {
+    "label": "BeaverTails (Phase 2 eval)",
+    "eval_n": 2526,
+    "v5_aug_overlap_n": 1,
+    "overlap_pct_of_eval": 0.04,
+    "status": "PARTIAL"
+  },
+  "lab_bench.jsonl": {
+    "label": "LAB-Bench (locked, never train)",
+    "eval_n": 1305,
+    "v5_aug_overlap_n": 138,
+    "overlap_pct_of_eval": 10.57,
+    "status": "PARTIAL"
+  }
+}

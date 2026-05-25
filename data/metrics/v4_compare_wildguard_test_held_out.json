@@ -1,0 +1,51 @@
+{
+  "experiment": "External benchmark evaluation: v4_wildguard_test_held_out",
+  "model_dir": "/home/fs01/jak4013/constitutional-bioguard/models/deberta_bioguard_v4_response_diverse",
+  "cache_path": "data/external/v3_splits/wildguard_test_held_out.jsonl",
+  "benchmark_name": "v4_wildguard_test_held_out",
+  "n_items": 1509,
+  "label_distribution": {
+    "n_positive_label_1": 0,
+    "n_negative_label_0": 1509
+  },
+  "overall": {
+    "n": 1509,
+    "n_flagged_unsafe": 330,
+    "false_alarm_rate": 0.2187,
+    "wilson_95_lower": 0.1986,
+    "wilson_95_upper": 0.2402,
+    "mean_prob_unsafe": 0.2296,
+    "median_prob_unsafe": 0.0127
+  },
+  "metrics_classification": null,
+  "stratified_by_adversarial": [
+    {
+      "adversarial": false,
+      "n": 805,
+      "n_flagged": 53,
+      "false_alarm_rate": 0.0658,
+      "wilson_95_lower": 0.0507,
+      "wilson_95_upper": 0.0851,
+      "mean_prob_unsafe": 0.0754,
+      "descriptive_only": false
+    },
+    {
+      "adversarial": true,
+      "n": 704,
+      "n_flagged": 277,
+      "false_alarm_rate": 0.3935,
+      "wilson_95_lower": 0.3581,
+      "wilson_95_upper": 0.43,
+      "mean_prob_unsafe": 0.406,
+      "descriptive_only": false
+    }
+  ],
+  "probability_percentiles": {
+    "p10": 0.0013,
+    "p25": 0.0019,
+    "p50": 0.0127,
+    "p75": 0.3319,
+    "p90": 0.9492
+  },
+  "interpretation_note": "For all-label-0 benchmarks (LAB-Bench, PubMedQA, MedQA, WMDP-Chem, WMDP-Cyber), overall.false_alarm_rate is the primary metric. Lower is better. For mixed-label benchmarks, see metrics_classification."
+}

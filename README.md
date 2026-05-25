@@ -2,9 +2,9 @@
 
 [![License: MIT](https://img.shields.io/badge/License-MIT-green.svg)](LICENSE)
 [![Python 3.10+](https://img.shields.io/badge/python-3.10%2B-blue)](pyproject.toml)
-[![HF Model](https://img.shields.io/badge/%F0%9F%A4%97%20Hugging%20Face-Model-yellow)](https://huggingface.co/jang1563/constitutional-bioguard-deberta-v1)
+[![HF Model](https://img.shields.io/badge/%F0%9F%A4%97%20Hugging%20Face-v4-yellow)](https://huggingface.co/jang1563/constitutional-bioguard-v4)
 
-> **TL;DR.** Prototype biological dual-use content classifier built using Anthropic's [Constitutional Classifiers](https://arxiv.org/abs/2501.18837) methodology. 56 biosafety rules across 7 NSABB categories drive synthetic data generation; DeBERTa-v3-base is fine-tuned to flag unsafe biological queries. **Three model iterations were trained**: v1 (synthetic-only, internal F1 = 0.98 but learns adversarial-framing shortcut, OOD FAR up to 73%), v2 (SAFE augmentation, fixes FAR but collapses bio recall to ~0%), and **v3 balanced (current best)** — reduced SAFE + UNSAFE bio adversarial + manual class weight boost — which simultaneously achieves < 1% cross-domain FAR and 100% recall on held-out bio adversarial benchmarks. The v1 -> v2 -> v3 progression is a clean case study in shortcut learning diagnosis and data-centric remediation. This is a research prototype, not a production-equivalent safeguard.
+> **TL;DR.** Research prototype biological dual-use content classifier built using Anthropic's [Constitutional Classifiers](https://arxiv.org/abs/2501.18837) methodology. A 56-rule biosafety constitution across 7 NSABB categories drives synthetic data generation and DeBERTa-v3-base fine-tuning. **v4 response-diverse is the recommended public checkpoint**: it breaks v3's compliance-template shortcut, reaches 2.1% FPR on truly held-out OR-Bench-Hard-1K, 0% XSTest FPR, 32% WildGuard native bio recall, and 0.45 BioThreat-Eval F1 at 184M parameters. **v5 was tested but not released**: PairCFR fixed one artificial hybrid-response Goodhart case but collapsed key bio recall. The project is a transparent case study in shortcut diagnosis, data-centric remediation, leakage auditing, and honest non-release decisions. It is not a production-equivalent safeguard.
 
 > **Portfolio context.** This DeBERTa-v3 prototype is the classifier component of the *Calibrated Permissioning for Biological AI* framework (Kim, NeurIPS 2026 Position submission), trained on the [ConstitutionRules](https://github.com/jang1563/bio-constitution-rules) 56-rule constitution and evaluated alongside [OverRefusal](https://github.com/jang1563/bio-overrefusal-v0.1) (FPR finding) and [AmbiguityCasebook](https://github.com/jang1563/ambiguity-casebook) (DURC boundary).
 
@@ -14,21 +14,20 @@
 
 | Surface | Status |
 |---------|--------|
-| Code | v0.1.1 prototype, MIT-licensed, public on GitHub |
-| Model | `jang1563/constitutional-bioguard-deberta-v1` on Hugging Face |
+| Code | v0.2.0 research prototype, MIT-licensed, public on GitHub |
+| Model | `jang1563/constitutional-bioguard-v4` on Hugging Face |
 | Constitution | 56 rules / 7 NSABB categories (`constitution/biosafety_constitution.yaml`) |
-| External validation | BioThreat-Eval cross-walk reported in `results/`; kappa-gap explained in Limitations |
+| External validation | v4/v5 gate metrics and leakage audit reported in `data/metrics/` and `docs/TECHNICAL_REPORT.md` |
 | Internal review | Solo author; expert circulation pending |
 | Responsible-use scope | [`SAFETY.md`](SAFETY.md) |
 
 ### Latest Run Snapshot (2026-05-25)
 
-- **v3 balanced (best, current default):** 100% recall on HarmBench+AdvBench bio held-out; < 1% FAR across 6 cross-domain benchmarks; **0.98% mean adversarial ASR** post-normalisation (vs A_full's 0%; the 26/27 attacks at 0% include all reconstruction, encoding, semantic, multilingual; only `case_swap` regresses) (`models/deberta_bioguard_v3_balanced`)
-- **v2 augmented:** 0% bio adversarial recall (collapsed) but 0% cross-domain FAR (`models/deberta_bioguard_v2_augmented`)
-- **v1 (A_full):** 96-100% adversarial bio recall but 28-73% cross-domain FAR — learned shortcut feature (adversarial framing) instead of bio harm (`models/deberta_bioguard_v1_A_full`)
-- Three-way comparison: 9 external benchmarks (BioThreat-Eval, WMDP-Bio/Chem/Cyber, LAB-Bench, PubMedQA, MedQA, WildGuardMix, HarmBench-bio, AdvBench-bio)
-- v3 internal val (synthetic): F1 = 0.9831, recall = 0.985, FPR = 0.04 (epoch 3 best of 5)
-- v3 training: 3,633 items (2,064 UNSAFE / 1,569 SAFE), UNSAFE class weight = 2.0 (manual), DeBERTa-v3-base, Cayuga GPU, 15 min
+- **Recommended checkpoint: v4 response-diverse.** v4 keeps the v3 bio-specialist scope while breaking a phrase-specific compliance-template shortcut: CRT compliance flag rate drops from 100% to 29%, with content discrimination restored (44% UNSAFE vs 14% SAFE under identical template).
+- **Clean held-out gates.** v4 reaches 2.1% FPR on OR-Bench-Hard-1K, 0% FPR on XSTest, 32% recall / 0.43 F1 on WildGuard native bio, and 0.45 F1 on BioThreat-Eval.
+- **Goodhart audit.** The earlier OR-Bench-Health 1.22% number was 100% train/eval overlap and is now treated as training-distribution evidence only. HarmBench/AdvBench "held-out" recall from v3-era reporting is also restated as training-distribution recall.
+- **v5 non-release.** v5 PairCFR fixes the artificial refusal+compliance hybrid FPR (68% -> 10%) but fails the specialist recall gate (WildGuard native recall 17.1%, SimpleSafetyTests/SaladBench/ALERT CBRN recall 0%). v4 remains the release model.
+- **Efficiency.** v4 is reported at 15.6x faster than WildGuard 7B and 6.7x faster than LLaMA-Guard 3 8B at batch=1, with roughly 7x lower GPU memory use.
 
 ## Reviewer Framing
 
@@ -36,38 +35,51 @@ This repository is a **prototype** showing one concrete instantiation of the Con
 
 ## Results
 
-### Latest: v3 Balanced (2026-05-25)
+### Recommended: v4 Response-Diverse (2026-05-25)
 
-After diagnosing shortcut learning in v1 and recall collapse in v2,
-**v3 balanced augmentation achieves the design goal**: low cross-domain
-FAR + high bio recall, simultaneously, on out-of-distribution
-benchmarks the model never saw during training.
+After diagnosing shortcut learning in v1, recall collapse in v2, and a
+phrase-specific compliance-template shortcut in v3, **v4 response-diverse**
+is the recommended checkpoint. It was trained with four augmentation blocks
+that decouple response style from unsafe labels while preserving the model's
+bio-specialist boundary.
 
-**Three-way comparison on identical held-out splits:**
+**Clean behavioral gates and mechanism probes:**
 
-| Benchmark                  | v1 (A_full) | v2          | **v3**        |
-|----------------------------|------------:|------------:|--------------:|
-| **Bio recall** (higher = better) | | | |
-| HarmBench bio (held-out, n=8)   | 87.5%   | 0.0%    | **100%**  |
-| AdvBench bio (held-out, n=3)    | 100%    | 0.0%    | **100%**  |
-| BioThreat-Eval recall (TL=4)    | 37.8%   | 12.2%   | **27.2%** (best AUROC: 0.765) |
-| **Cross-domain FAR** (lower = better) | | | |
-| WildGuardMix (n=1509)           | 51.1%   | 0.0%    | **0.9%**  |
-| LAB-Bench (n=1342)              | 49.1%   | 0.0%    | **0.0%**  |
-| WMDP-Cyber (n=1887)             | 73.2%   | 0.2%    | **0.3%**  |
-| WMDP-Chem (n=408)               | 28.4%   | 0.2%    | **0.5%**  |
-| PubMedQA (n=1000)               | 0.0%    | 0.0%    | 0.0%      |
-| MedQA (n=1273)                  | 0.9%    | 0.0%    | 0.0%      |
+| Gate / Probe | v3 | **v4** | Interpretation |
+|---|---:|---:|---|
+| OR-Bench-Hard-1K FPR | n/a | **2.1%** | Clean held-out over-refusal gate |
+| XSTest FPR | 94.0% | **0.0%** | Clean transfer beyond v4 augmentation |
+| WildGuard native bio recall | 2.0% | **32.0%** | Real-response OOD bio recall |
+| WildGuard native F1 | 0.04 | **0.43** | Specialist utility on native labels |
+| BioThreat-Eval F1 | 0.43 | **0.45** | Preserved despite shortcut fix |
+| CRT compliance flag rate | 100% | **29%** | Template no longer sufficient |
+| CRT compliance TPR / FPR | 100% / 100% | **44% / 14%** | Content discrimination restored |
+| Refusal+compliance UNSAFE recall | n/a | **64%** | No refusal-prefix bypass observed |
+| Refusal+compliance SAFE FPR | n/a | 68% | Artificial hybrid Goodhart caveat |
 
-**The story in one figure:**
+**v5 release decision:**
 
-![v3 Pareto plot](results/figures/v3_pareto.png)
+| Gate | Target | v4 | v5_baseline | v5 PairCFR |
+|---|---:|---:|---:|---:|
+| OR-Bench-Hard-1K FPR | < 5% | **2.1%** | 55.3% | **0.0%** |
+| XSTest FPR | 0% | **0.0%** | 16.0% | **0.0%** |
+| WildGuard native bio recall | >= 28% | **32.0%** | **62.5%** | 17.1% |
+| CRT hybrid FPR | < 35% | 68% | 100% | **10%** |
 
-v3 sits in the green "ideal region" (high bio recall + low FAR) where
-neither v1 nor v2 reach. The data-centric remediation (reduced SAFE
-augmentation + targeted UNSAFE bio adversarial + manual class weight
-boost) restored bio recall to A_full's level while preserving nearly
-all of v2's FAR reduction.
+v5 fixes the artificial hybrid-response failure but loses too much bio recall,
+so it is documented as an honest negative result rather than released. The next
+useful experiment is a lower PairCFR weight (`lambda=0.1` or `0.15`) or a
+cascade-first v6 design.
+
+### Historical Baselines
+
+| Version | Primary fix | Main failure mode | Status |
+|---|---|---|---|
+| v1 A_full | Synthetic-only baseline | Adversarial-framing shortcut; cross-domain FAR up to 73% | Deprecated |
+| v2 augmented | SAFE augmentation | Bio recall collapsed to ~0% | Diagnostic |
+| v3 balanced | Reduced SAFE + targeted UNSAFE + weight 2.0 | Compliance-template shortcut; OR-Bench-Health leakage in old reporting | Diagnostic |
+| **v4 response-diverse** | Response-style diversity + label decoupling | Artificial refusal+compliance hybrid FPR | **Recommended** |
+| v5 PairCFR | Clean splits + contrastive loss | Bio recall collapse at lambda=0.3 | Not released |
 
 ### v1 (original, synthetic-only training)
 
@@ -91,15 +103,16 @@ The external kappa gap is a known artifact: the classifier correctly flags dange
 
 ## Limitations
 
-**External kappa (0.414) falls short of the 0.80 target.** This is the most important limitation and warrants transparency:
-
-The BioThreat-Eval external benchmark scores LLM *responses* on four dimensions (refusal rate, information completeness, operational specificity, safety awareness). Constitutional BioGuard classifies *queries* — it flags whether a question is dangerous regardless of how the downstream LLM responds. When the same dangerous query is sent to GPT-4 and Claude (which both refuse), BioThreat-Eval labels those responses as safe; our classifier labels the query as unsafe. This architectural mismatch accounts for the kappa gap.
-
-Three validation strategies were tested: (1) `threat_level >= 4` (kappa = 0.414, best alignment), (2) `threat_level >= 3` (kappa = 0.189), and (3) response-based (kappa = 0.242). All are reported in `results/` for transparency. The internal metrics (F1 = 0.980 on held-out test set, 0.00% over-refusal FPR on 100-sample benign holdout) reflect the classifier's performance on its intended task.
+**This is a research prototype, not a production safeguard.** The repository is
+useful as an auditable classifier-building case study, but any deployment that
+handles real biology workflows needs upstream policy, normalization, general
+safety models, human escalation, and domain expert review.
 
 Additional limitations:
 - Trained on Claude-generated synthetic data; real-world distribution shift is uncharacterized
-- Encoding attacks (ROT13, URL-encode) achieve >30% ASR — text that evades tokenization is a fundamental weakness for any embedding-based classifier
+- v4 still over-flags an artificial refusal+compliance hybrid response pattern
+- Historical OR-Bench-Health and HarmBench/AdvBench "held-out" claims required restatement after leakage audit
+- Encoding attacks remain a general weakness for embedding-based classifiers and should be handled upstream
 - English-centric; multilingual coverage is limited to code-switching augmentation
 
 ## Responsible Use
@@ -119,10 +132,11 @@ Constitution (56 rules, YAML)
     v
 Claude API synthetic generation
     |  15 permitted + 15 restricted + 5 boundary per rule
-    |  + augmentation (translation, jailbreak, formality, prefills)
+    |  + v4/v5 corrective augmentation (response diversity, clean splits, PairCFR probes)
     |  + 325 benign biology queries
     v
-~4,500 labeled examples (3062 train / 697 val / 643 test)
+Baseline: ~4,500 labeled examples (3062 train / 697 val / 643 test)
+v4/v5: baseline train split + corrective augmentation blocks
     |
     v
 DeBERTa-v3-base binary classifier
@@ -172,8 +186,9 @@ Pull the trained classifier from Hugging Face and run a single batch. No Anthrop
 from transformers import AutoTokenizer, AutoModelForSequenceClassification
 import torch
 
-tokenizer = AutoTokenizer.from_pretrained("jang1563/constitutional-bioguard-deberta-v1")
-model = AutoModelForSequenceClassification.from_pretrained("jang1563/constitutional-bioguard-deberta-v1").eval()
+model_id = "jang1563/constitutional-bioguard-v4"
+tokenizer = AutoTokenizer.from_pretrained(model_id)
+model = AutoModelForSequenceClassification.from_pretrained(model_id).eval()
 
 # Inputs are "[CLS] query [SEP] response [SEP]". For real test cases see
 # `tests/fixtures/`; do not paste operational language into demo code.
@@ -187,19 +202,15 @@ with torch.no_grad():
     logits = model(**enc).logits
     probs = torch.softmax(logits, dim=-1)
 for text, p in zip(texts, probs):
-    label = "UNSAFE" if p[1] > 0.5 else "SAFE"
+    label = "UNSAFE" if p[1] >= 0.5 else "SAFE"
     print(f"{label} (p={p[1]:.3f}): {text[:60]}...")
 ```
 
 ### Full Pipeline: Data Regeneration
 
-Regenerate all synthetic training data and retrain the baseline classifier.
-
-> **Note on model variants.** Infrastructure exists to compare five architectures
-> (deberta-base, deberta-large, mdeberta, biomedbert, biolinkbert) via
-> `scripts/run_variant_experiment.py`. As of this release **only the deberta-base
-> baseline has been trained and evaluated**; the multi-variant comparison is
-> planned future work and no variant results are reported here.
+Regenerate the original synthetic corpus and retrain the baseline classifier.
+The v4/v5 release experiments are built as explicit follow-on scripts so their
+data discipline and acceptance gates stay auditable.
 
 **Step 1: Run the complete pipeline** (2–4 hours)
 
@@ -207,7 +218,7 @@ Regenerate all synthetic training data and retrain the baseline classifier.
 source ~/.api_keys && nohup bash scripts/run_full_pipeline.sh > pipeline.log 2>&1 &
 ```
 
-This runs all 7 steps automatically:
+This runs the original 7-step baseline automatically:
 1. Generate synthetic data (1960+ examples from 56 rules)
 2. Augment restricted/boundary examples
 3. Generate benign queries
@@ -221,18 +232,19 @@ This runs all 7 steps automatically:
 python scripts/monitor_pipeline.py --watch
 ```
 
-**Step 2 (future work): Compare model variants** (~2–3 hours)
-
-The variant-comparison harness is in place but has not yet been run. To execute it:
+**Step 2: Reproduce v4/v5 corrective experiments**
 
 ```bash
-python scripts/run_variant_experiment.py --all
+python scripts/create_v4_splits.py
+python scripts/train_v4_response_diverse.py --unsafe-weight 1.5
+python scripts/create_v5_splits.py
+python scripts/train_v5_baseline.py --unsafe-weight 1.5
+python scripts/train_v5.py --unsafe-weight 1.5 --paircfr-lambda 0.3 --paircfr-temperature 0.1
+python scripts/v5_eval_all_gates.py
 ```
 
-See [`docs/VARIANT_EXPERIMENTS.md`](docs/VARIANT_EXPERIMENTS.md) for:
-- Which variants to use and when
-- Interpreting comparison results
-- Troubleshooting tips
+On Cayuga, use the matching SLURM wrappers in `scripts/cayuga_v4_*.slurm` and
+`scripts/cayuga_v5_*.slurm`.
 
 **Step 3: Post-pipeline workflow**
 
@@ -282,7 +294,9 @@ constitutional_bioguard/
 │   │   └── benign_generator.py       # Benign biology queries
 │   ├── training/
 │   │   ├── prepare_data.py           # Stratified splits
-│   │   └── train_deberta.py          # DeBERTa fine-tuning
+│   │   ├── train_deberta.py          # DeBERTa fine-tuning
+│   │   ├── paircfr_trainer.py        # v5 PairCFR contrastive trainer
+│   │   └── splice_projector.py       # v5/v6 linear concept-erasure utility
 │   └── evaluation/
 │       ├── evaluate_classifier.py    # Precision/Recall/F1/AUROC
 │       ├── external_validation.py    # BioThreat-Eval cross-validation
@@ -296,22 +310,28 @@ constitutional_bioguard/
 ├── scripts/
 │   ├── run_pipeline.py               # CLI orchestrator
 │   ├── validate_constitution.py      # Constitution coverage checker
-│   └── export_to_hf.py              # HuggingFace Hub upload
+│   ├── train_v4_response_diverse.py  # Recommended v4 training
+│   ├── train_v5.py                   # v5 PairCFR non-release experiment
+│   └── export_to_hf.py               # HuggingFace Hub upload
 └── tests/
 ```
 
-## Adversarial Robustness
+## Robustness Audits
 
-The classifier is tested against 20 attack types across 4 categories:
+BioGuard is evaluated with both adversarial text perturbations and
+representation-level shortcut probes. The most important v4 finding is not
+"higher score everywhere"; it is a more specific mechanism result: the
+compliance-template feature remains encoded in hidden state, but it is no
+longer sufficient to trigger UNSAFE by itself.
 
-| Category | Attacks | Mean ASR |
-|----------|---------|----------|
-| Character-level | homoglyphs, invisible chars, leetspeak, case swap, whitespace, typos, unicode norm | 8.9% |
-| Encoding | base64, ROT13, hex, URL encode, backspace | 17.9% |
-| Semantic | passive voice, euphemism, hypothetical, negation, question flip, context dilution | 6.9% |
-| Multilingual | code-switching, mixed script | 1.0% |
-
-Encoding attacks (especially ROT13 at 47.9%, URL-encode at 29.2%) and character-level perturbations (leetspeak 35.4%, case swap 27.1%) are the primary weaknesses. Semantic rewriting also shows vulnerability (passive voice and negation flip each at 20.8% ASR), indicating the classifier is partially sensitive to phrasing changes that preserve dual-use intent.
+| Audit | Finding |
+|---|---|
+| v1 adversarial suite | 9.79% mean ASR before normalization; encoding attacks remain a known weakness |
+| v3 CRT | canonical compliance template caused 100% flag rate regardless of content |
+| v4 CRT | same template drops to 29% flag rate with 44%/14% UNSAFE/SAFE discrimination |
+| v4 refusal-prefix probe | no bypass: 64% UNSAFE recall even with refusal+compliance prefix |
+| v4 hybrid caveat | artificial refusal+compliance hybrids over-flag SAFE items at 68% FPR |
+| v5 PairCFR | hybrid FPR improves to 10%, but bio recall collapse prevents release |
 
 ## What This Is Not
 
@@ -327,9 +347,11 @@ This prototype illustrates **one** point in the safeguards stack: a domain-speci
 
 - **Capability evaluations** (e.g. WMDP, biothreat-eval): measure what a base model could enable. This classifier sits downstream of those, on the response path.
 - **Over-refusal calibration** (e.g. [bio-overrefusal-v0.1](https://github.com/jang1563/bio-overrefusal-v0.1)): measures whether a deployed safeguard blocks legitimate research. This repository's `make overrefusal` target reports the same metric on the included benign holdout (0/100).
-- **Boundary-case adjudication** (e.g. [ambiguity-casebook](https://github.com/jang1563/ambiguity-casebook)): documents where reasonable experts disagree. The 9.79% mean adversarial ASR here is one signal that boundary cases need human-in-the-loop, not classifier-only routing.
+- **Boundary-case adjudication** (e.g. [ambiguity-casebook](https://github.com/jang1563/ambiguity-casebook)): documents where reasonable experts disagree. The shortcut and leakage audits here are one signal that boundary cases need human-in-the-loop, not classifier-only routing.
 
-The 0.414 external kappa against BioThreat-Eval is **not** a "the classifier failed" finding; it is an architectural mismatch (query-level vs response-level labels) that surfaces a real design choice every safeguard team has to make. See Limitations for the full discussion.
+The v4/v5 story is intentionally audit-heavy: several older measurements were
+restated after overlap checks, and v5 was held back despite improving one gate.
+That discipline is the main intended contribution of this repository.
 
 ## Cross-Project Integration
 
@@ -349,7 +371,7 @@ If you use this work, please cite:
   title  = {Constitutional BioGuard: A Biosafety Content Classifier},
   year   = {2026},
   url    = {https://github.com/jang1563/constitutional-bioguard},
-  version = {v0.1.1},
+  version = {v0.2.0},
 }
 ```
 
