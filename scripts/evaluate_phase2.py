@@ -263,8 +263,24 @@ def evaluate_model(model: str) -> dict:
             "overall": overall,
             "by_category": per_cat,
         }
-        # Save per-item predictions for cascade simulation
-        result["predictions"] = list(zip(true_labels, pred_labels, probs))
+        # Save per-item predictions WITH metadata for cascade simulation.
+        # Critical: include category fields so downstream routing can use the
+        # actual semantic category (NOT the model's own confidence) as the
+        # gate signal — avoids circular dependency in calibrated routing.
+        result["predictions"] = [
+            {
+                "label": t,
+                "pred": p,
+                "prob": float(pr),
+                "category": r.get(cat_field, "") if cat_field else "",
+                "subcategory": r.get("subcategory", ""),
+                "semantic_category": r.get("semantic_category", ""),
+                "primary_category": r.get("primary_category", ""),
+                "type": r.get("type", ""),
+                "adversarial": r.get("adversarial", False),
+            }
+            for r, t, p, pr in zip(rows, true_labels, pred_labels, probs)
+        ]
 
         out_path = METRICS_DIR / f"phase2_{model}_{bench_name}.json"
         with open(out_path, "w") as f:
