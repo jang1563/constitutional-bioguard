@@ -174,13 +174,26 @@ MIT
 
     # Create repo if needed, then upload
     api.create_repo(repo_id=repo_id, repo_type="model", exist_ok=True, private=private)
-    api.upload_folder(
-        folder_path=str(model_dir),
-        repo_id=repo_id,
-        repo_type="model",
-        create_pr=False,
-        ignore_patterns=["checkpoint-*", ".model.safetensors.*", "*.tmp"],
-    )
+    ignore_patterns = ["checkpoint-*", ".model.safetensors.*", "*.tmp"]
+    if hasattr(api, "upload_large_folder"):
+        api.upload_large_folder(
+            folder_path=str(model_dir),
+            repo_id=repo_id,
+            repo_type="model",
+            private=private,
+            ignore_patterns=ignore_patterns,
+            num_workers=1,
+            print_report=True,
+            print_report_every=60,
+        )
+    else:
+        api.upload_folder(
+            folder_path=str(model_dir),
+            repo_id=repo_id,
+            repo_type="model",
+            create_pr=False,
+            ignore_patterns=ignore_patterns,
+        )
 
     logger.info("Model uploaded to: https://huggingface.co/%s", repo_id)
     return f"https://huggingface.co/{repo_id}"
