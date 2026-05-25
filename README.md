@@ -4,7 +4,7 @@
 [![Python 3.10+](https://img.shields.io/badge/python-3.10%2B-blue)](pyproject.toml)
 [![HF Model](https://img.shields.io/badge/%F0%9F%A4%97%20Hugging%20Face-Model-yellow)](https://huggingface.co/jang1563/constitutional-bioguard-deberta-v1)
 
-> **TL;DR.** Prototype biological dual-use content classifier built using Anthropic's [Constitutional Classifiers](https://arxiv.org/abs/2501.18837) methodology. 56 biosafety rules across 7 NSABB categories drive synthetic data generation; DeBERTa-v3-base is fine-tuned to flag unsafe biological queries. HPC evaluation reports held-out F1 = 0.9807, AUROC = 0.9980, over-refusal FPR = 0.00% (100 benign), adversarial mean ASR = 9.79% (20 attacks, pre-preprocessing; encoding attacks are mitigated by input normalization). This is a domain-extension prototype, not a production-equivalent safeguard.
+> **TL;DR.** Prototype biological dual-use content classifier built using Anthropic's [Constitutional Classifiers](https://arxiv.org/abs/2501.18837) methodology. 56 biosafety rules across 7 NSABB categories drive synthetic data generation; DeBERTa-v3-base is fine-tuned to flag unsafe biological queries. **Three model iterations were trained**: v1 (synthetic-only, internal F1 = 0.98 but learns adversarial-framing shortcut, OOD FAR up to 73%), v2 (SAFE augmentation, fixes FAR but collapses bio recall to ~0%), and **v3 balanced (current best)** — reduced SAFE + UNSAFE bio adversarial + manual class weight boost — which simultaneously achieves < 1% cross-domain FAR and 100% recall on held-out bio adversarial benchmarks. The v1 -> v2 -> v3 progression is a clean case study in shortcut learning diagnosis and data-centric remediation. This is a research prototype, not a production-equivalent safeguard.
 
 > **Portfolio context.** This DeBERTa-v3 prototype is the classifier component of the *Calibrated Permissioning for Biological AI* framework (Kim, NeurIPS 2026 Position submission), trained on the [ConstitutionRules](https://github.com/jang1563/bio-constitution-rules) 56-rule constitution and evaluated alongside [OverRefusal](https://github.com/jang1563/bio-overrefusal-v0.1) (FPR finding) and [AmbiguityCasebook](https://github.com/jang1563/ambiguity-casebook) (DURC boundary).
 
@@ -21,13 +21,14 @@
 | Internal review | Solo author; expert circulation pending |
 | Responsible-use scope | [`SAFETY.md`](SAFETY.md) |
 
-### Latest Run Snapshot (2026-05-21)
+### Latest Run Snapshot (2026-05-25)
 
-- Internal eval: F1 0.980676, AUROC 0.997961, FPR 0.0090 on 643 samples (models/deberta_bioguard_v1)
-- Calibration: optimal threshold = 0.10, best_score = 0.9852, n_val_samples = 697
-- Adversarial suite: 20 attacks, mean ASR = 9.79% (pre-preprocessing); encoding attacks mitigated by input normalization
-- Over-refusal: FPR = 0.00% on 100-sample benign holdout
-- External validation: cohen kappa = 0.414 (threat_level>=4), f1 = 0.5143
+- **v3 balanced (best, current default):** 100% recall on HarmBench+AdvBench bio held-out; < 1% FAR across 6 cross-domain benchmarks (`models/deberta_bioguard_v3_balanced`)
+- **v2 augmented:** 0% bio adversarial recall (collapsed) but 0% cross-domain FAR (`models/deberta_bioguard_v2_augmented`)
+- **v1 (A_full):** 96-100% adversarial bio recall but 28-73% cross-domain FAR — learned shortcut feature (adversarial framing) instead of bio harm (`models/deberta_bioguard_v1_A_full`)
+- Three-way comparison: 9 external benchmarks (BioThreat-Eval, WMDP-Bio/Chem/Cyber, LAB-Bench, PubMedQA, MedQA, WildGuardMix, HarmBench-bio, AdvBench-bio)
+- v3 internal val (synthetic): F1 = 0.9831, recall = 0.985, FPR = 0.04 (epoch 3 best of 5)
+- v3 training: 3,633 items (2,064 UNSAFE / 1,569 SAFE), UNSAFE class weight = 2.0 (manual), DeBERTa-v3-base, Cayuga GPU, 15 min
 
 ## Reviewer Framing
 
@@ -35,14 +36,54 @@ This repository is a **prototype** showing one concrete instantiation of the Con
 
 ## Results
 
+### Latest: v3 Balanced (2026-05-25)
+
+After diagnosing shortcut learning in v1 and recall collapse in v2,
+**v3 balanced augmentation achieves the design goal**: low cross-domain
+FAR + high bio recall, simultaneously, on out-of-distribution
+benchmarks the model never saw during training.
+
+**Three-way comparison on identical held-out splits:**
+
+| Benchmark                  | v1 (A_full) | v2          | **v3**        |
+|----------------------------|------------:|------------:|--------------:|
+| **Bio recall** (higher = better) | | | |
+| HarmBench bio (held-out, n=8)   | 87.5%   | 0.0%    | **100%**  |
+| AdvBench bio (held-out, n=3)    | 100%    | 0.0%    | **100%**  |
+| BioThreat-Eval recall (TL=4)    | 37.8%   | 12.2%   | (pending) |
+| **Cross-domain FAR** (lower = better) | | | |
+| WildGuardMix (n=1509)           | 51.1%   | 0.0%    | **0.9%**  |
+| LAB-Bench (n=1342)              | 49.1%   | 0.0%    | **0.0%**  |
+| WMDP-Cyber (n=1887)             | 73.2%   | 0.2%    | **0.3%**  |
+| WMDP-Chem (n=408)               | 28.4%   | 0.2%    | **0.5%**  |
+| PubMedQA (n=1000)               | 0.0%    | 0.0%    | 0.0%      |
+| MedQA (n=1273)                  | 0.9%    | 0.0%    | 0.0%      |
+
+**The story in one figure:**
+
+![v3 Pareto plot](results/figures/v3_pareto.png)
+
+v3 sits in the green "ideal region" (high bio recall + low FAR) where
+neither v1 nor v2 reach. The data-centric remediation (reduced SAFE
+augmentation + targeted UNSAFE bio adversarial + manual class weight
+boost) restored bio recall to A_full's level while preserving nearly
+all of v2's FAR reduction.
+
+### v1 (original, synthetic-only training)
+
 | Metric | Value | Target |
 |--------|-------|--------|
-| F1 | 0.9807 | >= 0.90 |
-| AUROC | 0.9980 | -- |
-| Precision / Recall | 0.9951 / 0.9667 | -- |
+| F1 (synthetic test) | 0.9807 | >= 0.90 |
+| AUROC (synthetic) | 0.9980 | -- |
+| Precision / Recall (synthetic) | 0.9951 / 0.9667 | -- |
 | Over-refusal FPR | 0.00% (100 benign) | < 2% |
 | Adversarial mean ASR | 9.79% (20 attacks, pre-preprocessing) | < 15% |
-| External kappa (TL>=4) | 0.414 | >= 0.80 |
+| External kappa (BioThreat-Eval, TL>=4) | 0.414 | >= 0.80 |
+
+These v1 internal metrics were misleading: the model achieved them by
+learning a **shortcut feature** (adversarial framing) rather than the
+intended bio-harm concept. See Section 6.8/6.8b of the technical
+report for the diagnostic chain that exposed this.
 
 Per-category F1 scores range from 0.931 (confer_resistance) to 1.000 (enhance_harm, alter_host_range, enhance_susceptibility). 6 of 7 NSABB categories are above 0.95; confer_resistance is 0.931.
 
