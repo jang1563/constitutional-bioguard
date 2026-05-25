@@ -51,15 +51,30 @@ class BaselineClassifier(ABC):
         self, queries: list[str], responses: list[str],
     ) -> list[tuple[int, float]]:
         """Default batch implementation: just loop. Subclasses can override."""
+        import traceback
         results = []
+        n_errors = 0
         for i, (q, r) in enumerate(zip(queries, responses)):
             if i and i % 50 == 0:
                 logger.info("  %s progress: %d / %d", self.name, i, len(queries))
             try:
                 results.append(self.predict_one(q, r))
             except Exception as e:
-                logger.warning("  %s: prediction failed on item %d: %s", self.name, i, e)
+                n_errors += 1
+                # Show full traceback for the first 3 errors per benchmark
+                # (helps diagnose without flooding the log)
+                if n_errors <= 3:
+                    logger.warning(
+                        "  %s: prediction FAILED on item %d (type=%s, repr=%r):\n%s",
+                        self.name, i, type(e).__name__, e,
+                        traceback.format_exc(),
+                    )
                 results.append((0, 0.0))
+        if n_errors:
+            logger.warning(
+                "  %s: %d / %d predictions failed (defaulted to (0, 0.0))",
+                self.name, n_errors, len(queries),
+            )
         return results
 
     def unload(self) -> None:
@@ -76,9 +91,9 @@ class BaselineClassifier(ABC):
 class LlamaGuard3(BaselineClassifier):
     """Meta's LLaMA-Guard 3 8B safety classifier.
 
-    Uses the official chat template. Output format:
-        First line: 'safe' or 'unsafe'
-        Second line (if unsafe): comma-separated category list
+    Uses next-token logits (not .generate()) for both decision and probability,
+    matching the official model card's intent that the first generated token
+    is "safe" or "unsafe". Avoids generate-kwarg compatibility issues.
     """
 
     name = "llama_guard_3_8b"
@@ -96,11 +111,64 @@ class LlamaGuard3(BaselineClassifier):
         )
         self.model.eval()
 
+        # Cache the token IDs we need for probability extraction.
+        # LLaMA-Guard 3's first generated token is "safe" or "unsafe" — get
+        # both single-token IDs upfront (may be multi-token; use first piece).
+        safe_ids = self.tokenizer.encode("safe", add_special_tokens=False)
+        unsafe_ids = self.tokenizer.encode("unsafe", add_special_tokens=False)
+        if not safe_ids or not unsafe_ids:
+            raise RuntimeError(
+                "LLaMA-Guard 3 tokenizer cannot tokenize 'safe'/'unsafe'"
+            )
+        self._safe_id = safe_ids[0]
+        self._unsafe_id = unsafe_ids[0]
+        logger.info(
+            "  LLaMA-Guard 3: safe_id=%d, unsafe_id=%d",
+            self._safe_id, self._unsafe_id,
+        )
+
+        # Smoke test: ensure forward pass + chat template works on a trivial input.
+        try:
+            test_messages = [
+                {"role": "user", "content": "Hello"},
+                {"role": "assistant", "content": "Hi there!"},
+            ]
+            input_ids = self._chat_to_input_ids(test_messages)
+            with torch.no_grad():
+                logits = self.model(input_ids).logits[:, -1, :]
+            assert logits.shape[-1] > max(self._safe_id, self._unsafe_id)
+            logger.info(
+                "  LLaMA-Guard 3 smoke test PASSED (input_ids shape %s, logits shape %s)",
+                input_ids.shape, logits.shape,
+            )
+        except Exception as e:
+            import traceback
+            logger.error("LLaMA-Guard 3 smoke test FAILED: %r", e)
+            logger.error(traceback.format_exc())
+            raise
+
+    def _chat_to_input_ids(self, messages):
+        """Return input_ids tensor, robust across transformers versions.
+
+        Newer transformers' apply_chat_template can return a Tensor OR a
+        BatchEncoding-like dict, depending on return_dict default. Handle both.
+        """
+        out = self.tokenizer.apply_chat_template(
+            messages, return_tensors="pt", add_generation_prompt=True,
+        )
+        if hasattr(out, "input_ids"):  # BatchEncoding
+            input_ids = out.input_ids
+        elif isinstance(out, dict):
+            input_ids = out["input_ids"]
+        else:
+            input_ids = out  # already a tensor
+        return input_ids.to(self.model.device)
+
     def predict_one(self, query: str, response: str) -> tuple[int, float]:
         import torch
-        if not query and not response:
+        if not (query or response):
             return 0, 0.0
-        # LLaMA-Guard expects either user-only or user+assistant
+        # LLaMA-Guard 3 expects user-only OR user+assistant. Always pass both.
         if response.strip():
             messages = [
                 {"role": "user", "content": query},
@@ -109,41 +177,26 @@ class LlamaGuard3(BaselineClassifier):
         else:
             messages = [{"role": "user", "content": query}]
 
-        input_ids = self.tokenizer.apply_chat_template(
-            messages, return_tensors="pt"
-        ).to(self.model.device)
+        # Truncate to avoid pathological-length prompts. LLaMA-Guard supports
+        # up to 8k tokens; safety cap at 4k to leave room for chat template.
+        # apply_chat_template adds significant overhead so cap raw text ~3k chars.
+        if len(query) > 4000:
+            messages[0]["content"] = query[:4000]
+        if len(messages) > 1 and len(messages[1]["content"]) > 4000:
+            messages[1]["content"] = messages[1]["content"][:4000]
+
+        input_ids = self._chat_to_input_ids(messages)
 
         with torch.no_grad():
-            out = self.model.generate(
-                input_ids,
-                max_new_tokens=20,
-                pad_token_id=self.tokenizer.eos_token_id,
-                do_sample=False,
-                return_dict_in_generate=True,
-                output_scores=True,
-            )
+            logits = self.model(input_ids).logits[:, -1, :]
 
-        # Decode generated tokens
-        gen_tokens = out.sequences[0][input_ids.shape[-1]:]
-        text = self.tokenizer.decode(gen_tokens, skip_special_tokens=True).strip()
-
-        # Parse "safe" vs "unsafe"
-        first_word = text.split("\n")[0].strip().lower()
-        label = 1 if first_word.startswith("unsafe") else 0
-
-        # Probability via first-token logits
-        # The model's first generated token is "safe" or "unsafe"
-        first_token_logits = out.scores[0][0]
-        # Get token IDs for "safe" and "unsafe"
-        safe_id = self.tokenizer.encode("safe", add_special_tokens=False)[0]
-        unsafe_id = self.tokenizer.encode("unsafe", add_special_tokens=False)[0]
-        # Softmax over just these two
-        relevant = torch.tensor([
-            first_token_logits[safe_id].item(),
-            first_token_logits[unsafe_id].item(),
-        ])
-        probs = torch.softmax(relevant, dim=0)
+        # Probability via softmax over just safe/unsafe tokens (constrained)
+        relevant = logits[0, [self._safe_id, self._unsafe_id]].float()
+        probs = torch.softmax(relevant, dim=-1)
         prob_unsafe = float(probs[1].item())
+
+        # Label = argmax over the same two tokens
+        label = 1 if prob_unsafe >= 0.5 else 0
         return label, prob_unsafe
 
 
