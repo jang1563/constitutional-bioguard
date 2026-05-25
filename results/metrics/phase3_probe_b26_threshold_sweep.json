@@ -1,0 +1,63 @@
+{
+  "v3": [
+    {
+      "benchmark": "WildGuardTest native",
+      "best_threshold": 0.05,
+      "best_f1": 0.08662420382165605
+    },
+    {
+      "benchmark": "BeaverTails",
+      "best_threshold": 0.05,
+      "best_f1": 0.04049493813273341
+    },
+    {
+      "benchmark": "XSTest",
+      "best_threshold": 0.6500000000000002,
+      "best_f1": 0.6261980830670927
+    }
+  ],
+  "wildguard_7b": [
+    {
+      "benchmark": "BioThreat-Eval",
+      "best_threshold": 0.05,
+      "best_f1": 0.36363636363636365
+    },
+    {
+      "benchmark": "WildGuardTest native",
+      "best_threshold": 0.05,
+      "best_f1": 0.8803358992302309
+    },
+    {
+      "benchmark": "BeaverTails",
+      "best_threshold": 0.05,
+      "best_f1": 0.7784699725890855
+    },
+    {
+      "benchmark": "XSTest",
+      "best_threshold": 0.05,
+      "best_f1": 0.9166666666666666
+    }
+  ],
+  "llama_guard_3_8b": [
+    {
+      "benchmark": "BioThreat-Eval",
+      "best_threshold": 0.05,
+      "best_f1": 0.4628099173553719
+    },
+    {
+      "benchmark": "WildGuardTest native",
+      "best_threshold": 0.05,
+      "best_f1": 0.5291005291005291
+    },
+    {
+      "benchmark": "BeaverTails",
+      "best_threshold": 0.05,
+      "best_f1": 0.7451381780962129
+    },
+    {
+      "benchmark": "XSTest",
+      "best_threshold": 0.8500000000000003,
+      "best_f1": 0.8113695090439277
+    }
+  ]
+}
