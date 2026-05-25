@@ -416,16 +416,19 @@ def cache_pubmed_qa(
 
 
 def cache_med_qa(
-    language: str = "english",
+    split: str = "test",
     limit: Optional[int] = None,
 ) -> Path:
-    """Cache MedQA (medical board exam QA) locally.
+    """Cache MedQA-USMLE (medical board exam QA) locally.
 
+    Uses GBaker/MedQA-USMLE-4-options-hf (parquet-based, no script needed).
     All items labelled SAFE -- clinical medical knowledge, used as
     auxiliary FPR test.
 
+    Schema: sent1 (question), ending0/1/2/3 (4 options), label (correct idx).
+
     Args:
-        language: 'english', 'simplified_chinese', or 'traditional_chinese'.
+        split: 'train', 'validation', or 'test'.
         limit: optional cap.
 
     Returns:
@@ -433,51 +436,26 @@ def cache_med_qa(
     """
     from datasets import load_dataset
 
-    logger.info("Loading MedQA: %s", language)
-    # MedQA bigbio has multiple configs; load_dataset with config matching language
-    config_map = {
-        "english": "med_qa_en_source",
-        "simplified_chinese": "med_qa_zh_source",
-        "traditional_chinese": "med_qa_tw_source",
-    }
-    config = config_map.get(language, "med_qa_en_source")
-
-    try:
-        ds = load_dataset(
-            "bigbio/med_qa", name=config, split="test",
-            trust_remote_code=True,
-        )
-    except Exception:
-        # Fall back to train if test not available
-        ds = load_dataset(
-            "bigbio/med_qa", name=config, split="train",
-            trust_remote_code=True,
-        )
+    logger.info("Loading MedQA-USMLE (%s split)", split)
+    ds = load_dataset(
+        "GBaker/MedQA-USMLE-4-options-hf", split=split,
+    )
 
     if limit is not None:
         ds = ds.select(range(min(limit, len(ds))))
 
     DATA_EXTERNAL.mkdir(parents=True, exist_ok=True)
-    cache_path = DATA_EXTERNAL / f"med_qa_{language}.jsonl"
+    cache_path = DATA_EXTERNAL / f"med_qa_{split}.jsonl"
 
     n_written = 0
     with open(cache_path, "w", encoding="utf-8") as f:
         for item in ds:
-            question = item.get("question", "")
-            # MedQA bigbio schema: 'options' is list of {'key': ..., 'value': ...}
-            # and 'answer_idx' or 'answer' points to correct
-            options = item.get("options", [])
-            correct_text = ""
-            answer_key = item.get("answer_idx") or item.get("answer", "")
-            for opt in options:
-                if isinstance(opt, dict):
-                    if opt.get("key") == answer_key:
-                        correct_text = opt.get("value", "")
-                        break
-            if not correct_text and options:
-                # Fallback: use first option text
-                opt0 = options[0]
-                correct_text = opt0.get("value", "") if isinstance(opt0, dict) else str(opt0)
+            question = item.get("sent1", "")
+            label = int(item.get("label", 0))
+            endings = [
+                item.get(f"ending{i}", "") for i in range(4)
+            ]
+            correct_text = endings[label] if 0 <= label < 4 else ""
 
             if not question.strip() or not correct_text.strip():
                 continue
@@ -485,8 +463,8 @@ def cache_med_qa(
                 "query": question,
                 "response": correct_text,
                 "label": 0,  # SAFE: clinical content
-                "source": "med_qa",
-                "language": language,
+                "source": "med_qa_usmle",
+                "split": split,
             }
             f.write(json.dumps(record, ensure_ascii=False) + "\n")
             n_written += 1

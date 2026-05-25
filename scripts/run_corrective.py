@@ -145,7 +145,7 @@ def main():
         elif args.cache_external == "pubmed_qa":
             p = cache_pubmed_qa("pqa_labeled")
         elif args.cache_external == "med_qa":
-            p = cache_med_qa("english")
+            p = cache_med_qa("test")
         elif args.cache_external == "all_external":
             paths = []
             for name, fn in [
@@ -153,7 +153,7 @@ def main():
                 ("wmdp_cyber", lambda: cache_wmdp_subset("wmdp-cyber")),
                 ("lab_bench", lambda: cache_lab_bench()),
                 ("pubmed_qa", lambda: cache_pubmed_qa("pqa_labeled")),
-                ("med_qa", lambda: cache_med_qa("english")),
+                ("med_qa", lambda: cache_med_qa("test")),
             ]:
                 try:
                     p = fn()
