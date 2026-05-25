@@ -3,7 +3,7 @@
 **JangKeun Kim**
 Weill Cornell Medicine | jak4013@med.cornell.edu
 
-**Version:** 1.10 (2026-05-25) | **Status:** All workstreams + corrective experiments 6.1--6.3, 6.7, 6.8, 6.8b, 6.9 (v2), 6.10 (v3), 6.11 (CC++ re-analysis on v3), 6.12 (external baselines), 6.13 (extended Phase 2: 5 additional benchmarks) complete. v3 wins F1+AUPRC on BioThreat-Eval at 38-43x smaller parameter count. Phase 2 reveals v3 as a **response-driven exchange classifier** (vs WildGuard/LLaMA-Guard 3 query-driven design) — visible on compliance-template paired benchmarks where v3 conservatively flags ambiguous queries.
+**Version:** 1.11 (2026-05-25) | **Status:** Phase 1 baseline + Phase 2 extended + Phase 2.5 OOD distribution sensitivity all complete (Sections 6.1-6.14). v3 wins F1+AUPRC on BioThreat-Eval at 38-43x smaller parameter count; identifiable as a response-driven exchange classifier; OOD analysis (Section 6.14) shows ranking signal (AUROC 0.80 on WildGuard bio subset) but distribution-specific threshold calibration. Phase 3 planning document (docs/PHASE3_OOD_SHORTCUT_PLAN.md) outlines SaladBench / ALERT / OR-Bench OOD evaluations plus seven shortcut-investigation probes.
 
 ---
 
@@ -1451,6 +1451,97 @@ detail levels) to break the template confound, or (b) generate a
 realistic LLM response for each behaviour using a held-out LLM and
 evaluate v3 against that. Option (b) is the production-realistic
 test and is queued as Phase 3.
+
+### 6.14 Distribution Sensitivity Analysis: OOD Bio Evaluation
+
+A critical question raised by a reviewer of Section 6.12:
+*"Could v3's F1 dominance on BioThreat-Eval reflect distributional
+similarity to v3's training, rather than genuine bio-detection
+capability?"*
+
+This section addresses that concern with a targeted OOD analysis.
+
+**Training-data contamination check.** v3 was trained on:
+- 3,062 synthetic items (Claude-generated from our biosafety
+  constitution)
+- 571 augmentation items: 200 WildGuard SAFE + 200 LAB-Bench SAFE +
+  100 WMDP-Cyber SAFE + 51 HarmBench-bio UNSAFE + 18 AdvBench-bio
+  UNSAFE + 2 JailbreakBench-bio UNSAFE
+
+**BioThreat-Eval was held out** — none of its 558 items appear in v3's
+training. However, both v3's training data and BioThreat-Eval were
+curated within the same broad safety-research vocabulary
+(constitution-driven generation; expert biosafety prompts). Even
+without item-level overlap, distributional similarity is plausible.
+
+**True-OOD test: WildGuardTest bio-keyword filtered subset.**
+
+The WildGuardTest 1,689-item set was curated independently by AI2
+for general safety evaluation, with no relationship to our
+constitution. Filtering by bio keywords yields 69 items (39 UNSAFE /
+30 SAFE per WildGuard's native `prompt_harm_label`) — a small but
+fully OOD bio-safety eval that v3 has never seen distributionally.
+
+**Three-way comparison on WildGuard bio subset:**
+
+| Model | F1 | AUROC | AUPRC | Recall | FPR |
+|-------|---:|------:|------:|-------:|----:|
+| v3 (184M)             | 0.0952 | **0.8043** | **0.8114** | 0.0513 | 0.0333 |
+| WildGuard (7B)        | **0.8732** | 0.8808 | 0.8860 | **0.7949** | 0.0333 |
+| LLaMA-Guard 3 (8B)    | 0.6071 | 0.8141 | 0.8686 | 0.4359 | 0.0000 |
+
+*AUPRC random baseline on this set = 39/69 = 0.565. All three models
+clear baseline, indicating bio detection signal exists.*
+
+**Interpretation: ranking signal vs threshold calibration.**
+
+v3's behaviour on this OOD set decomposes cleanly:
+
+1. **Bio signal IS present in v3, even on this OOD distribution.**
+   AUROC = 0.8043 is competitive with the 7-8B baselines (WildGuard
+   0.8808, LLaMA-Guard 3 0.8141). AUPRC = 0.8114 confirms above-baseline
+   precision-recall area. v3 *ranks* OOD bio items correctly.
+
+2. **v3's default threshold (0.5) is calibrated to BioThreat-style
+   distribution.** On WildGuard bio queries, v3's recall collapses to
+   5.1% because the probability mass on these out-of-distribution items
+   sits below 0.5 even when the ranking is correct. Generalists trained
+   on broader distributions surface these items at threshold 0.5.
+
+3. **The user's instinct is partly correct.** v3's F1 dominance on
+   BioThreat-Eval reflects (a) genuine bio detection capability
+   (validated by OOD AUROC/AUPRC) AND (b) threshold calibration to
+   that specific distribution. On a distributionally distant set
+   (WildGuardTest bio subset), v3's F1 dramatically underperforms
+   despite competitive ranking.
+
+**Implications:**
+
+- **Reported F1 on BioThreat-Eval is correct but distribution-specific.**
+  The 0.4279 result is real, but generalising it to "v3 dominates on bio
+  detection in production" requires the production distribution to look
+  like BioThreat-Eval.
+
+- **For broader bio coverage, v3 needs per-distribution threshold
+  calibration.** A single 0.5 threshold cannot serve every bio
+  distribution. The technical fix is either (a) calibrate per
+  deployment, (b) use v3 in a cascade where the routing model handles
+  distribution-shift detection, or (c) train v3 on a more
+  distributionally diverse bio set.
+
+- **The cascade story still holds.** In a Stage 1 + Stage 2 setup, a
+  query-driven generalist (WildGuard, LLaMA-Guard 3) surfaces bio
+  candidates regardless of distribution; v3 then ranks them. AUROC
+  competitiveness means v3's ranking signal is usable even where its
+  threshold is not.
+
+**Planned follow-up (Phase 3, Section 6.15):**
+
+To definitively separate "genuine bio capability" from "distributional
+shortcut," we plan three additional independent OOD bio benchmarks
+(SaladBench CBRN, ALERT CBRN, SimpleSafetyTests bio) and a suite of
+shortcut probes (counterfactual response test, lexical ablation,
+embedding analysis, threshold sweep across distributions).
 
 ### 6.6 Summary of Corrective Findings
 
