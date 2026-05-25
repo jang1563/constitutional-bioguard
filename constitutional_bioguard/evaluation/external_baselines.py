@@ -178,8 +178,7 @@ class LlamaGuard3(BaselineClassifier):
             messages = [{"role": "user", "content": query}]
 
         # Truncate to avoid pathological-length prompts. LLaMA-Guard supports
-        # up to 8k tokens; safety cap at 4k to leave room for chat template.
-        # apply_chat_template adds significant overhead so cap raw text ~3k chars.
+        # up to 8k tokens; safety cap at 4k chars per field to stay within budget.
         if len(query) > 4000:
             messages[0]["content"] = query[:4000]
         if len(messages) > 1 and len(messages[1]["content"]) > 4000:
@@ -187,17 +186,42 @@ class LlamaGuard3(BaselineClassifier):
 
         input_ids = self._chat_to_input_ids(messages)
 
+        # CRITICAL: LLaMA-Guard 3's first generated token is "\n\n" (id 271),
+        # NOT "safe" or "unsafe". The safe/unsafe token comes at position 1.
+        # Use .generate() to step past the "\n\n" then read scores at position 1.
         with torch.no_grad():
-            logits = self.model(input_ids).logits[:, -1, :]
+            out = self.model.generate(
+                input_ids,
+                max_new_tokens=3,  # enough to see "\n\nsafe" or "\n\nunsafe"
+                pad_token_id=self.tokenizer.eos_token_id,
+                do_sample=False,
+                return_dict_in_generate=True,
+                output_scores=True,
+            )
 
-        # Probability via softmax over just safe/unsafe tokens (constrained)
-        relevant = logits[0, [self._safe_id, self._unsafe_id]].float()
+        # scores[i] = logits at i-th generated token position
+        # scores[0] = predicting "\n\n", scores[1] = predicting "safe"/"unsafe"
+        if len(out.scores) < 2:
+            # Fallback: shouldn't happen but be safe
+            return 0, 0.0
+        second_token_logits = out.scores[1][0]
+        relevant = second_token_logits[
+            [self._safe_id, self._unsafe_id]
+        ].float()
         probs = torch.softmax(relevant, dim=-1)
         prob_unsafe = float(probs[1].item())
 
-        # Label = argmax over the same two tokens
-        label = 1 if prob_unsafe >= 0.5 else 0
-        return label, prob_unsafe
+        # Cross-check label from actual generation (more robust than threshold)
+        gen_tokens = out.sequences[0][input_ids.shape[-1]:]
+        gen_text = self.tokenizer.decode(gen_tokens, skip_special_tokens=True)
+        # First non-empty line
+        lines = [l.strip() for l in gen_text.split("\n") if l.strip()]
+        label_from_text = (
+            1 if lines and lines[0].lower().startswith("unsafe") else 0
+        )
+        # Prefer text-based label (less sensitive to prob calibration);
+        # use prob_unsafe for AUROC ranking
+        return label_from_text, prob_unsafe
 
 
 class WildGuard(BaselineClassifier):
