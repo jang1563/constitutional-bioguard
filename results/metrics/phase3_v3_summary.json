@@ -1,0 +1,22 @@
+{
+  "model": "v3",
+  "benchmarks": {
+    "saladbench_cbrn": {
+      "error": "empty"
+    },
+    "alert_cbrn": {
+      "error": "cache not found"
+    },
+    "or_bench_health": {
+      "n": 740,
+      "n_positive": 0,
+      "n_negative": 740,
+      "n_flagged": 729,
+      "flag_rate": 0.9851,
+      "fpr": 0.9851
+    },
+    "simple_safety_bio": {
+      "error": "empty"
+    }
+  }
+}
