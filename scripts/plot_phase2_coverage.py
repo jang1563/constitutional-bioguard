@@ -177,18 +177,21 @@ def plot_xstest_overrefusal() -> Path:
 def simulate_cascade() -> Path:
     """Simulate cascade architectures on HarmBench Full.
 
-    Four configurations compared (all on the same 400 HarmBench items):
+    Five configurations compared (all on the same 400 HarmBench items):
 
       1. v3 alone — bio specialist (184M)
       2. WildGuard alone — general (7B)
-      3. OR cascade — flag if EITHER fires (CC++ Stage1+Stage2 "any")
-      4. AND cascade — flag if BOTH fire (precision-boost, costlier)
-      5. Calibrated routing — WildGuard fires? If yes, accept. If no, run
-         v3 ONLY when item has bio-keyword (specialist invoked only when
-         in-scope). This mirrors realistic deployment economics.
-      6. v3 fallback — WildGuard accepts everything; v3 catches bio that
-         WildGuard misses. Models the "bio-specialist as second-stage
-         safety net" deployment.
+      3. OR cascade — flag if EITHER fires (max-recall)
+      4. AND cascade — flag if BOTH fire (max-precision)
+      5. Semantic-routed cascade — WildGuard's decision is FINAL, EXCEPT
+         on items whose semantic_category is "chemical_biological", where
+         v3 is invoked as a second opinion (OR-combined with WG). This is
+         the realistic CC++ Stage1+Stage2 model: specialist invoked only
+         in-scope, gate uses ITEM METADATA (not model's own confidence).
+
+    Critical fix from earlier version: routing decision is based on
+    semantic_category, NOT v3's own probability. Using v3's own probability
+    as the gate makes the routing equivalent to OR-cascade (circular dep).
 
     All four metrics (recall, FAR, precision, F1) reported for each.
     """
@@ -206,71 +209,80 @@ def simulate_cascade() -> Path:
         print("Cascade sim: prediction lengths mismatch or missing")
         return None
 
-    # Per-item: (true_label, v3_pred, wg_pred, v3_prob, wg_prob, is_bio?)
-    # is_bio determined from per_attack metadata; if missing, fallback to
-    # v3_prob > 0.5 (proxy for "v3 thinks it's bio")
-    bio_keywords = [
-        "bio", "pathogen", "virus", "bacteri", "toxin", "anthrax",
-        "smallpox", "plague", "ebola", "botulin", "ricin", "marburg",
-        "biosec", "select agent", "gain of function", "biosynthesis",
-    ]
-    # Rough heuristic: we don't have query text in predictions, but the v3
-    # prob can serve as "this is bio" signal. Items where v3 is very confident
-    # → likely bio-related (v3 trained only on bio).
+    # New schema: predictions are dicts with metadata. Fall back to tuple
+    # schema for backward compatibility.
+    def normalise(p):
+        if isinstance(p, dict):
+            return p
+        # Tuple schema: (label, pred, prob)
+        return {"label": p[0], "pred": p[1], "prob": p[2],
+                "category": "", "semantic_category": ""}
+
+    v3_items = [normalise(p) for p in v3_preds]
+    wg_items = [normalise(p) for p in wg_preds]
+
+    # Build joint item list with both predictions + shared metadata
     items = []
-    for (t1, p1, prob1), (t2, p2, prob2) in zip(v3_preds, wg_preds):
+    for v, w in zip(v3_items, wg_items):
+        cat = (
+            v.get("category") or v.get("semantic_category")
+            or w.get("category") or w.get("semantic_category")
+            or ""
+        )
         items.append({
-            "label": t1,
-            "v3_pred": p1, "v3_prob": prob1,
-            "wg_pred": p2, "wg_prob": prob2,
-            "is_bio_signal": prob1 > 0.5,  # v3 confident → bio
+            "label": v["label"],
+            "v3_pred": v["pred"],
+            "v3_prob": v["prob"],
+            "wg_pred": w["pred"],
+            "wg_prob": w["prob"],
+            "semantic_category": cat.lower(),
+            # in_bio_scope is METADATA-driven, not model-driven:
+            "in_bio_scope": cat.lower() == "chemical_biological",
         })
 
     n_pos = sum(1 for it in items if it["label"] == 1)
     n_neg = sum(1 for it in items if it["label"] == 0)
+    n_bio = sum(1 for it in items if it["in_bio_scope"])
 
     def metrics_for(preds: list[int]) -> dict:
         tp = sum(1 for it, p in zip(items, preds) if it["label"] == 1 and p == 1)
         fp = sum(1 for it, p in zip(items, preds) if it["label"] == 0 and p == 1)
-        fn = sum(1 for it, p in zip(items, preds) if it["label"] == 1 and p == 0)
         recall = tp / n_pos if n_pos else 0
         far = fp / n_neg if n_neg else 0
         prec = tp / (tp + fp) if (tp + fp) else 0
         f1 = 2 * prec * recall / (prec + recall) if (prec + recall) else 0
-        return {"recall": recall * 100, "far": far * 100, "prec": prec * 100, "f1": f1}
+        return {
+            "recall": recall * 100, "far": far * 100,
+            "prec": prec * 100, "f1": f1,
+        }
 
     # 1. v3 alone
     m_v3 = metrics_for([it["v3_pred"] for it in items])
     # 2. WildGuard alone
     m_wg = metrics_for([it["wg_pred"] for it in items])
-    # 3. OR cascade
+    # 3. OR cascade — max recall
     m_or = metrics_for([
         1 if (it["v3_pred"] or it["wg_pred"]) else 0 for it in items
     ])
-    # 4. AND cascade
+    # 4. AND cascade — max precision
     m_and = metrics_for([
         1 if (it["v3_pred"] and it["wg_pred"]) else 0 for it in items
     ])
-    # 5. Calibrated routing: WG fires accept; WG SAFE → run v3 only if bio signal
-    #    (specialist invoked only in-scope; matches CC++ Stage1+Stage2 cost model)
+    # 5. SEMANTIC-routed cascade — true Stage1+Stage2 with metadata gate
+    #    On bio items: OR (WG OR v3). On non-bio items: WG only.
     m_routed = metrics_for([
-        it["wg_pred"] if it["wg_pred"] else (
-            it["v3_pred"] if it["is_bio_signal"] else 0
-        ) for it in items
+        (1 if (it["wg_pred"] or it["v3_pred"]) else 0)
+        if it["in_bio_scope"]
+        else it["wg_pred"]
+        for it in items
     ])
-    # 6. v3-as-fallback: WG decision is final UNLESS v3 fires (specialist
-    #    catches what generalist misses)
-    m_fallback = metrics_for([
-        1 if (it["wg_pred"] or it["v3_pred"]) else 0 for it in items
-    ])
-    # Equivalent to OR — keep separate label for narrative clarity
 
     rows = [
-        ("v3 alone\n(184M)",      m_v3),
-        ("WildGuard alone\n(7B)", m_wg),
-        ("OR cascade\nany-fires", m_or),
-        ("AND cascade\nboth-fire", m_and),
-        ("Calibrated routing\n(bio signal gates v3)", m_routed),
+        ("v3 alone\n(184M)",                                m_v3),
+        ("WildGuard alone\n(7B)",                            m_wg),
+        ("OR cascade\nany-fires",                            m_or),
+        ("AND cascade\nboth-fire",                           m_and),
+        (f"Semantic routing\n(v3 only on bio, n_bio={n_bio})", m_routed),
     ]
 
     fig, axes = plt.subplots(1, 2, figsize=(15, 6))
@@ -311,7 +323,8 @@ def simulate_cascade() -> Path:
 
     plt.suptitle(
         "Phase 2 Cascade Simulation: Specialist + Generalist Architectures\n"
-        "Calibrated routing (right-most) = realistic CC++ Stage1+Stage2 deployment",
+        "Semantic routing (right-most) gates v3 on bio category via metadata, "
+        "not model confidence — true Stage1+Stage2 deployment",
         fontsize=12,
     )
     plt.tight_layout()
@@ -319,18 +332,47 @@ def simulate_cascade() -> Path:
     plt.savefig(out, dpi=150, bbox_inches="tight")
     plt.close()
 
-    # Also save numeric report for the report
+    # Per-category cascade breakdown — show where routing actually helps
+    cascade_per_cat: dict[str, dict] = {}
+    cats = set(it["semantic_category"] for it in items if it["semantic_category"])
+    for cat in sorted(cats):
+        cat_idx = [i for i, it in enumerate(items) if it["semantic_category"] == cat]
+        if len(cat_idx) < 5:  # too small for stats
+            continue
+        sub = [items[i] for i in cat_idx]
+        cat_metrics = {
+            "n": len(sub),
+            "in_bio_scope": sub[0]["in_bio_scope"],
+            "v3_alone_recall": sum(s["v3_pred"] for s in sub if s["label"] == 1)
+                              / max(sum(1 for s in sub if s["label"] == 1), 1) * 100,
+            "wg_alone_recall": sum(s["wg_pred"] for s in sub if s["label"] == 1)
+                              / max(sum(1 for s in sub if s["label"] == 1), 1) * 100,
+            "routed_recall": sum(
+                (1 if (s["wg_pred"] or s["v3_pred"]) else 0)
+                if s["in_bio_scope"] else s["wg_pred"]
+                for s in sub if s["label"] == 1
+            ) / max(sum(1 for s in sub if s["label"] == 1), 1) * 100,
+        }
+        cascade_per_cat[cat] = cat_metrics
+
     cascade_report = {
         "n_total": len(items),
         "n_positive": n_pos,
         "n_negative": n_neg,
+        "n_in_bio_scope": n_bio,
         "configurations": {
             "v3_alone": m_v3,
             "wildguard_alone": m_wg,
             "or_cascade": m_or,
             "and_cascade": m_and,
-            "calibrated_routing": m_routed,
+            "semantic_routing": m_routed,
         },
+        "per_category": cascade_per_cat,
+        "routing_method": (
+            "semantic_category == 'chemical_biological' → OR cascade; "
+            "else WildGuard only. Gate uses item METADATA (not model "
+            "confidence), avoiding circular dependency."
+        ),
     }
     rep_path = METRICS_DIR / "phase2_cascade_report.json"
     with open(rep_path, "w") as f:
