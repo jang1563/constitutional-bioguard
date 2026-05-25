@@ -3,7 +3,7 @@
 **JangKeun Kim**
 Weill Cornell Medicine | jak4013@med.cornell.edu
 
-**Version:** 1.8 (2026-05-25) | **Status:** All workstreams + corrective experiments 6.1--6.3, 6.7, 6.8, 6.8b, 6.9 (v2), 6.10 (v3), 6.11 (CC++ re-analysis on v3) complete. v3 PASSes all three success criteria, strictly Pareto-dominates v1 and v2, AND achieves 10x lower adversarial ASR (0.98% vs A_full's 9.79%) as a side effect of the data-centric fix.
+**Version:** 1.8 (2026-05-25) | **Status:** All workstreams + corrective experiments 6.1--6.3, 6.7, 6.8, 6.8b, 6.9 (v2), 6.10 (v3), 6.11 (CC++ re-analysis on v3) complete. v3 PASSes all three success criteria and strictly Pareto-dominates v1 and v2 on the bio-recall-vs-FAR plane. Post-normalisation adversarial robustness: v3 0.98% ASR vs A_full 0% (case_swap regression; all other 26 attacks defeated). External-baseline comparison (LLaMA-Guard 3 + WildGuard) in progress.
 
 ---
 
@@ -1177,29 +1177,44 @@ to 49 UNSAFE test items each. Production setting (normalize=True).
 | Reconstruction |    0.0%  |     0 / 343          |
 | **Overall**    | **0.98%**|   **13 / 1,323**     |
 
-**v3 mean ASR (0.98%) is 10x lower than A_full's (9.79% pre-norm,
-~5% post-norm).** 26 of 27 attacks achieve 0% ASR. The only attack
-that succeeds is `case_swap` (26.5% ASR) — a tokenization quirk where
-mixed-case text creates out-of-vocabulary subwords that DeBERTa
-handles less well. All reconstruction attacks (the class CC++ flags
-as critical, including fragment-across-context and template-variable)
-are completely defeated.
+26 of 27 attacks achieve 0% ASR on v3. The only attack that succeeds
+is `case_swap` (26.5% ASR, 13/49) — text like "How To SyNtHeSiZe
+AnThRaX" creates out-of-vocabulary subwords that DeBERTa's tokenizer
+handles less robustly than the trained subword space.
 
-**Interpretation.** Adversarial robustness improved as a side effect
-of the data-centric fix, not as a direct training objective.
-Hypothesis: A_full's shortcut feature (adversarial framing detection)
-made it inherently brittle — adversarial perturbations specifically
-target that signal. v3 was forced to learn semantic content of bio
-threats, which is more invariant to surface perturbations. This is
-a non-obvious benefit and suggests the standard "more data + bigger
-model" approach to adversarial robustness may be missing a cheaper
-path: fix the shortcut, and adversarial robustness comes along for
-free.
+**Apples-to-apples comparison with A_full (post-normalization).**
+A_full's `adversarial_results.json` (the production reference for
+WS-4) shows **0% ASR on all 27 attacks** after normalization (text is
+lowercased, Unicode-normalized, zero-width chars stripped, base/hex/
+ROT13 decoded back to plaintext before classification). v3's 0.98%
+mean ASR is therefore slightly worse than A_full's 0% in the post-
+normalized setting — entirely driven by the `case_swap` regression.
+
+The original A_full pre-norm number of 9.79% (Section 3.4) was measured
+across a different 20-attack set without normalization; comparing it
+directly to v3's post-norm 0.98% would be misleading. A pre-norm v3
+run is needed for a fair comparison and is planned as a follow-up.
+
+**Interpretation.** Post-normalization, both A_full and v3 are robust
+to virtually all attacks. v3's case_swap regression suggests that the
+data-centric fix made the model slightly more sensitive to tokenization
+noise, plausibly because the new SAFE/UNSAFE augmentation data is
+case-normalized and case variation now correlates less strongly with
+the bio-harm label than it did in A_full's shortcut-driven regime. This
+is a small, identified failure mode with a clear mitigation
+(case-normalize before tokenization, or augment training with
+case-swapped variants).
+
+Reconstruction attacks — the class CC++ flags as critical — are
+completely defeated on v3 (0% ASR). This matches A_full's behaviour
+and indicates that the exchange-classifier format itself (rather than
+the shortcut feature) is what defeats fragment-across-context and
+template-variable attacks.
 
 **Vulnerability Discovery Rate (CC++ reporting convention):**
-9.83 vulnerabilities per 1,000 adversarial queries on v3, down from
-~98 per 1,000 on A_full. A reduction by an order of magnitude with
-no architectural changes and no adversarial training.
+9.83 vulnerabilities per 1,000 adversarial queries on v3 (post-norm).
+A_full's post-norm VDR is 0.0/1000 (no vulnerabilities in this
+configuration). The v3 increase is concentrated entirely in case_swap.
 
 ### 6.6 Summary of Corrective Findings
 
