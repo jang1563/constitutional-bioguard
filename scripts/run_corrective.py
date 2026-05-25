@@ -71,6 +71,31 @@ def parse_args() -> argparse.Namespace:
         help="Download and cache WMDP-Bio data locally, then exit",
     )
     parser.add_argument(
+        "--cache-external",
+        type=str,
+        choices=[
+            "wmdp_chem", "wmdp_cyber", "lab_bench",
+            "pubmed_qa", "med_qa", "all_external",
+        ],
+        default=None,
+        help="Download and cache an external benchmark, then exit.",
+    )
+    parser.add_argument(
+        "--eval-external",
+        type=str,
+        default=None,
+        help=(
+            "Path to a cached external benchmark JSONL. Runs the unified "
+            "external evaluator (FAR + stratification)."
+        ),
+    )
+    parser.add_argument(
+        "--strat-field",
+        type=str,
+        default=None,
+        help="Optional stratification field for --eval-external (e.g., 'subtask').",
+    )
+    parser.add_argument(
         "--skip",
         type=str,
         nargs="*",
@@ -88,11 +113,16 @@ def main():
     args = parse_args()
 
     from constitutional_bioguard.evaluation.corrective_experiments import (
+        cache_lab_bench,
+        cache_med_qa,
+        cache_pubmed_qa,
         cache_wmdp_bio,
+        cache_wmdp_subset,
         run_adversarial_comparison,
         run_all_corrective,
         run_biothreat_ood_evaluation,
         run_bootstrap_kappa,
+        run_external_benchmark_evaluation,
         run_ood_evaluation,
         run_wildguard_adversarial_ood,
         run_wildguard_stratified_diagnosis,
@@ -102,6 +132,67 @@ def main():
     if args.cache_wmdp:
         path = cache_wmdp_bio(limit=args.wmdp_limit)
         print(f"WMDP-Bio cached to: {path}")
+        return
+
+    # Handle --cache-external
+    if args.cache_external:
+        if args.cache_external == "wmdp_chem":
+            p = cache_wmdp_subset("wmdp-chem")
+        elif args.cache_external == "wmdp_cyber":
+            p = cache_wmdp_subset("wmdp-cyber")
+        elif args.cache_external == "lab_bench":
+            p = cache_lab_bench()
+        elif args.cache_external == "pubmed_qa":
+            p = cache_pubmed_qa("pqa_labeled")
+        elif args.cache_external == "med_qa":
+            p = cache_med_qa("english")
+        elif args.cache_external == "all_external":
+            paths = []
+            for name, fn in [
+                ("wmdp_chem", lambda: cache_wmdp_subset("wmdp-chem")),
+                ("wmdp_cyber", lambda: cache_wmdp_subset("wmdp-cyber")),
+                ("lab_bench", lambda: cache_lab_bench()),
+                ("pubmed_qa", lambda: cache_pubmed_qa("pqa_labeled")),
+                ("med_qa", lambda: cache_med_qa("english")),
+            ]:
+                try:
+                    p = fn()
+                    paths.append((name, p))
+                    print(f"  {name}: {p}")
+                except Exception as e:
+                    print(f"  {name}: FAILED ({e})")
+            print(f"\nCached {len(paths)} external benchmarks.")
+            return
+        print(f"{args.cache_external} cached to: {p}")
+        return
+
+    # Handle --eval-external
+    if args.eval_external:
+        from pathlib import Path as _P
+        cache_path = _P(args.eval_external)
+        if not cache_path.exists():
+            print(f"ERROR: cache not found at {cache_path}")
+            return
+        results = run_external_benchmark_evaluation(
+            cache_path=cache_path,
+            model_dir=args.model_a,
+            stratification_field=args.strat_field,
+        )
+        o = results["overall"]
+        print(f"\n{results['benchmark_name']} ({results['n_items']} items)")
+        print(f"  FAR: {o['false_alarm_rate']:.4f} "
+              f"[Wilson 95% {o['wilson_95_lower']:.4f}, "
+              f"{o['wilson_95_upper']:.4f}] "
+              f"(n_flagged={o['n_flagged_unsafe']}/{o['n']})")
+        print(f"  Mean prob_UNSAFE: {o['mean_prob_unsafe']:.4f}")
+        print(f"  Median prob_UNSAFE: {o['median_prob_unsafe']:.4f}")
+        strat_key = f"stratified_by_{args.strat_field}"
+        if results.get(strat_key):
+            print(f"\n  Stratified by {args.strat_field}:")
+            for s in sorted(results[strat_key], key=lambda x: -x["false_alarm_rate"]):
+                desc = " (descriptive)" if s.get("descriptive_only") else ""
+                print(f"    {s[args.strat_field]:30s} FAR={s['false_alarm_rate']:.4f} "
+                      f"(n={s['n']}){desc}")
         return
 
     # Run selected experiment(s)
