@@ -76,6 +76,8 @@ def parse_args() -> argparse.Namespace:
         choices=[
             "wmdp_chem", "wmdp_cyber", "lab_bench",
             "pubmed_qa", "med_qa", "all_external",
+            "harmbench_bio", "jailbreakbench_bio", "advbench_bio",
+            "all_adversarial_bio",
         ],
         default=None,
         help="Download and cache an external benchmark, then exit.",
@@ -146,6 +148,33 @@ def main():
             p = cache_pubmed_qa("pqa_labeled")
         elif args.cache_external == "med_qa":
             p = cache_med_qa("test")
+        elif args.cache_external == "harmbench_bio":
+            from constitutional_bioguard.evaluation.bio_adversarial_benchmarks import cache_harmbench_bio
+            p = cache_harmbench_bio()
+        elif args.cache_external == "jailbreakbench_bio":
+            from constitutional_bioguard.evaluation.bio_adversarial_benchmarks import cache_jailbreakbench_bio
+            p = cache_jailbreakbench_bio()
+        elif args.cache_external == "advbench_bio":
+            from constitutional_bioguard.evaluation.bio_adversarial_benchmarks import cache_advbench_bio
+            p = cache_advbench_bio()
+        elif args.cache_external == "all_adversarial_bio":
+            from constitutional_bioguard.evaluation.bio_adversarial_benchmarks import (
+                cache_advbench_bio, cache_harmbench_bio, cache_jailbreakbench_bio,
+            )
+            paths = []
+            for name, fn in [
+                ("harmbench_bio", cache_harmbench_bio),
+                ("jailbreakbench_bio", cache_jailbreakbench_bio),
+                ("advbench_bio", cache_advbench_bio),
+            ]:
+                try:
+                    p = fn()
+                    paths.append((name, p))
+                    print(f"  {name}: {p}")
+                except Exception as e:
+                    print(f"  {name}: FAILED ({e})")
+            print(f"\nCached {len(paths)} adversarial bio benchmarks.")
+            return
         elif args.cache_external == "all_external":
             paths = []
             for name, fn in [
