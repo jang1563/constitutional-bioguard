@@ -1,0 +1,91 @@
+{
+  "experiment": "External benchmark evaluation: v4_lab_bench_held_out",
+  "model_dir": "/home/fs01/jak4013/constitutional-bioguard/models/deberta_bioguard_v4_response_diverse",
+  "cache_path": "data/external/v3_splits/lab_bench_held_out.jsonl",
+  "benchmark_name": "v4_lab_bench_held_out",
+  "n_items": 1342,
+  "label_distribution": {
+    "n_positive_label_1": 0,
+    "n_negative_label_0": 1342
+  },
+  "overall": {
+    "n": 1342,
+    "n_flagged_unsafe": 0,
+    "false_alarm_rate": 0.0,
+    "wilson_95_lower": 0.0,
+    "wilson_95_upper": 0.0029,
+    "mean_prob_unsafe": 0.0025,
+    "median_prob_unsafe": 0.0015
+  },
+  "metrics_classification": null,
+  "stratified_by_subtask": [
+    {
+      "subtask": "CloningScenarios",
+      "n": 17,
+      "n_flagged": 0,
+      "false_alarm_rate": 0.0,
+      "wilson_95_lower": 0.0,
+      "wilson_95_upper": 0.1843,
+      "mean_prob_unsafe": 0.0015,
+      "descriptive_only": true
+    },
+    {
+      "subtask": "DbQA",
+      "n": 470,
+      "n_flagged": 0,
+      "false_alarm_rate": 0.0,
+      "wilson_95_lower": 0.0,
+      "wilson_95_upper": 0.0081,
+      "mean_prob_unsafe": 0.0014,
+      "descriptive_only": false
+    },
+    {
+      "subtask": "LitQA2",
+      "n": 199,
+      "n_flagged": 0,
+      "false_alarm_rate": 0.0,
+      "wilson_95_lower": 0.0,
+      "wilson_95_upper": 0.0189,
+      "mean_prob_unsafe": 0.003,
+      "descriptive_only": false
+    },
+    {
+      "subtask": "ProtocolQA",
+      "n": 74,
+      "n_flagged": 0,
+      "false_alarm_rate": 0.0,
+      "wilson_95_lower": 0.0,
+      "wilson_95_upper": 0.0493,
+      "mean_prob_unsafe": 0.0141,
+      "descriptive_only": false
+    },
+    {
+      "subtask": "SeqQA",
+      "n": 500,
+      "n_flagged": 0,
+      "false_alarm_rate": 0.0,
+      "wilson_95_lower": 0.0,
+      "wilson_95_upper": 0.0076,
+      "mean_prob_unsafe": 0.0016,
+      "descriptive_only": false
+    },
+    {
+      "subtask": "SuppQA",
+      "n": 82,
+      "n_flagged": 0,
+      "false_alarm_rate": 0.0,
+      "wilson_95_lower": 0.0,
+      "wilson_95_upper": 0.0448,
+      "mean_prob_unsafe": 0.0033,
+      "descriptive_only": false
+    }
+  ],
+  "probability_percentiles": {
+    "p10": 0.0012,
+    "p25": 0.0014,
+    "p50": 0.0015,
+    "p75": 0.002,
+    "p90": 0.0031
+  },
+  "interpretation_note": "For all-label-0 benchmarks (LAB-Bench, PubMedQA, MedQA, WMDP-Chem, WMDP-Cyber), overall.false_alarm_rate is the primary metric. Lower is better. For mixed-label benchmarks, see metrics_classification."
+}
