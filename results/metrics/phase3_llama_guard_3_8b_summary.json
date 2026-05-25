@@ -1,0 +1,22 @@
+{
+  "model": "llama_guard_3_8b",
+  "benchmarks": {
+    "saladbench_cbrn": {
+      "error": "empty"
+    },
+    "alert_cbrn": {
+      "error": "cache not found"
+    },
+    "or_bench_health": {
+      "n": 740,
+      "n_positive": 0,
+      "n_negative": 740,
+      "n_flagged": 29,
+      "flag_rate": 0.0392,
+      "fpr": 0.0392
+    },
+    "simple_safety_bio": {
+      "error": "empty"
+    }
+  }
+}
