@@ -59,11 +59,11 @@ v3 has the highest AUROC across the three iterations on the expert-labelled BioT
 
 | Model | Params | BioThreat-Eval F1 | BioThreat-Eval AUROC |
 |---|---|---|---|
-| **v3 (this)** | **184M** | **0.4279** | **0.7650** |
+| **v3 (this)** | **184M** | **0.4279** | 0.7650 |
 | WildGuard 7B (AI2) | 7B (38× larger) | 0.3636 | 0.6111 |
-| LLaMA-Guard 3 8B (Meta) | 8B (43× larger) | (pending) | (pending) |
+| LLaMA-Guard 3 8B (Meta) | 8B (43× larger) | 0.2692 | **0.7787** |
 
-v3 outperforms 7B WildGuard on bio domain at ~38× smaller scale, demonstrating the value of domain specialisation in safety classifier design.
+v3 outperforms BOTH 7-8B published baselines on BioThreat-Eval F1 (the practical-decision metric), at 38-43× smaller scale. LLaMA-Guard 3 achieves slightly higher AUROC (better ranking ability), but uses a much more conservative default threshold and produces lower F1 and recall at threshold 0.5. v3 delivers ~45-68× higher F1-per-billion-parameter than the published baselines on bio content.
 
 ## Quick Start
 
