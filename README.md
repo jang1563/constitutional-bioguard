@@ -6,6 +6,8 @@
 
 > **TL;DR.** Prototype biological dual-use content classifier built using Anthropic's [Constitutional Classifiers](https://arxiv.org/abs/2501.18837) methodology. 56 biosafety rules across 7 NSABB categories drive synthetic data generation; DeBERTa-v3-base is fine-tuned to flag unsafe biological queries. HPC evaluation reports held-out F1 = 0.9807, AUROC = 0.9980, over-refusal FPR = 0.00% (100 benign), adversarial mean ASR = 9.79% (20 attacks, pre-preprocessing; encoding attacks are mitigated by input normalization). This is a domain-extension prototype, not a production-equivalent safeguard.
 
+> **Portfolio context.** This DeBERTa-v3 prototype is the classifier component of the *Calibrated Permissioning for Biological AI* framework (Kim, NeurIPS 2026 Position submission), trained on the [ConstitutionRules](https://github.com/jang1563/bio-constitution-rules) 56-rule constitution and evaluated alongside [OverRefusal](https://github.com/jang1563/bio-overrefusal-v0.1) (FPR finding) and [AmbiguityCasebook](https://github.com/jang1563/ambiguity-casebook) (DURC boundary).
+
 **Author:** JangKeun Kim, Weill Cornell Medicine (jak4013@med.cornell.edu)
 
 ## Release Status
