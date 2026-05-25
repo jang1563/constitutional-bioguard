@@ -1801,7 +1801,8 @@ def run_external_benchmark_evaluation(
     rows = load_jsonl_cache(cache_path)
     logger.info("Loaded %d items from %s", len(rows), cache_path)
 
-    queries = [r["query"] for r in rows]
+    # Schema fallback: WildGuard cache uses 'prompt'; everything else uses 'query'
+    queries = [r.get("query") or r.get("prompt", "") for r in rows]
     responses = [r["response"] for r in rows]
     labels = np.array([int(r.get("label", 0)) for r in rows])
     strat_values = (
