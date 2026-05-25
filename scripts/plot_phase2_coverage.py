@@ -381,14 +381,86 @@ def simulate_cascade() -> Path:
     return out
 
 
+def plot_beavertails_heatmap() -> Path:
+    """BeaverTails uses REAL LLM responses — shows v3's true domain boundary."""
+    summaries = {m: load_summary(m) for m, _, _ in MODELS}
+
+    # Use top categories by N
+    all_cats: set[str] = set()
+    cat_n: dict[str, int] = {}
+    for s in summaries.values():
+        bench = s.get("benchmarks", {}).get("beavertails", {})
+        cats = bench.get("by_category", {}) or {}
+        for c, m in cats.items():
+            all_cats.add(c)
+            cat_n[c] = max(cat_n.get(c, 0), m.get("n", 0))
+    # Pick top 8 categories by n
+    categories = sorted(
+        [c for c in all_cats if cat_n.get(c, 0) >= 50],
+        key=lambda c: -cat_n[c],
+    )[:8]
+
+    M = len(MODELS)
+    C = len(categories)
+    mat = np.full((M, C), np.nan)
+    sample_sizes = np.zeros((M, C), dtype=int)
+    for mi, (model_key, _, _) in enumerate(MODELS):
+        s = summaries.get(model_key, {})
+        bench = s.get("benchmarks", {}).get("beavertails", {})
+        cats = bench.get("by_category", {}) or {}
+        for ci, cat in enumerate(categories):
+            m = cats.get(cat, {})
+            sample_sizes[mi, ci] = m.get("n", 0)
+            if "flag_rate" in m:
+                mat[mi, ci] = m["flag_rate"] * 100
+
+    fig, ax = plt.subplots(figsize=(max(10, 1.0 * C + 3), 0.9 * M + 2.5))
+    im = ax.imshow(mat, cmap="RdYlGn_r", vmin=0, vmax=100, aspect="auto")
+    # RdYlGn_r: 0 = green (good for SAFE-ish), 100 = red (bad if items mostly SAFE)
+    # BeaverTails items are mixed; for SAFE category items, low flag rate = good.
+
+    for mi in range(M):
+        for ci in range(C):
+            if not np.isnan(mat[mi, ci]):
+                color = "white" if mat[mi, ci] > 50 else "black"
+                ax.text(
+                    ci, mi, f"{mat[mi, ci]:.1f}%\n(n={sample_sizes[mi, ci]})",
+                    ha="center", va="center", color=color, fontsize=9,
+                )
+
+    ax.set_xticks(range(C))
+    ax.set_xticklabels(
+        [c.replace(",", "\n")[:25] for c in categories],
+        rotation=20, ha="right", fontsize=8,
+    )
+    ax.set_yticks(range(M))
+    ax.set_yticklabels([lbl for _, lbl, _ in MODELS])
+
+    # Mark v3's stated coverage with green border (none of these
+    # categories overlap with v3's bio scope, so no boxes)
+    ax.set_title(
+        "BeaverTails Flag Rate per Category (REAL LLM responses)\n"
+        "v3 is silent on non-bio harm (by design); generalists fire broadly",
+        fontsize=11,
+    )
+    fig.colorbar(im, ax=ax, label="Flag Rate (%)")
+    plt.tight_layout()
+    out = FIGURES_DIR / "phase2_beavertails_heatmap.png"
+    plt.savefig(out, dpi=150, bbox_inches="tight")
+    plt.close()
+    return out
+
+
 def main():
     p1 = plot_harmbench_heatmap()
     p2 = plot_xstest_overrefusal()
     p3 = simulate_cascade()
-    print(f"Saved heatmap: {p1}")
+    p4 = plot_beavertails_heatmap()
+    print(f"Saved heatmap (HarmBench, all UNSAFE w/ compliance template): {p1}")
     print(f"Saved xstest plot: {p2}")
     if p3:
         print(f"Saved cascade sim: {p3}")
+    print(f"Saved heatmap (BeaverTails, real responses): {p4}")
 
 
 if __name__ == "__main__":
