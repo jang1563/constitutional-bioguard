@@ -3,7 +3,7 @@
 **JangKeun Kim**
 Weill Cornell Medicine | jak4013@med.cornell.edu
 
-**Version:** 1.5 (2026-05-25) | **Status:** All workstreams + corrective experiments 6.1--6.3, 6.7, 6.8, 6.8b complete
+**Version:** 1.6 (2026-05-25) | **Status:** All workstreams + corrective experiments 6.1--6.3, 6.7, 6.8, 6.8b, 6.9 (v2) complete; 6.10 (v3) in progress
 
 ---
 
@@ -39,11 +39,18 @@ compliances (90% vs 75% under adversarial framing), and benign content
 shows the largest adversarial inflation (+65 pp). The classifier
 learned a **shortcut feature** (Geirhos et al. 2020) -- presence of
 adversarial framing -- rather than the intended target concept of bio
-hazard content. This diagnosis recontextualises every prior workstream's
-apparent success. This work contributes empirical evidence on the domain-
-specificity of CC++ components and identifies the synthetic data
-ceiling as the primary obstacle when moving from general-purpose to
-domain-specialised safety classification.
+hazard content. A first remediation attempt (v2: add 1,366 SAFE items
+from external benchmarks) reduced cross-domain FAR by 28-73 pp but
+collapsed bio recall (96-100% -> 0-2% on three bio adversarial
+benchmarks), illustrating that one-sided class augmentation shifts the
+bias point without fixing the concept. A balanced v3 remediation
+(reduced SAFE + targeted UNSAFE bio adversarial + manual class weight
+boost) is in progress. This work contributes empirical evidence on
+the domain-specificity of CC++ components, identifies the synthetic
+data ceiling as the primary obstacle when moving from general-purpose
+to domain-specialised safety classification, and demonstrates that
+data-centric fixes require both SAFE and UNSAFE augmentation to
+address shortcut-learned models.
 
 ---
 
@@ -954,6 +961,112 @@ two signals -- bio content and adversarial framing -- were correlated
 in training, indistinguishable by the model, and the shorter learning
 path (framing) won.
 
+### 6.9 v2 Augmentation Experiment: Trading One Shortcut for Another
+
+The 6.8 diagnosis pointed to a data-centric fix: regenerate training data
+with adversarial-looking SAFE examples and diverse non-adversarial UNSAFE
+examples. As a first attempt, v2 added 1,366 SAFE items from three external
+benchmarks (WildGuardMix non-bio adversarial: 600, LAB-Bench legitimate bio:
+566, WMDP-Cyber non-bio MCQ: 200) to the original 3,062 training items.
+Held-out stratified splits (seed=42) were preserved for evaluation.
+
+**Method.** Train v2 with the augmented dataset (4,428 items, balanced
+class weights). Evaluate A_full and v2 on identical held-out splits:
+WMDP-Chem (408), WMDP-Cyber (1,787), LAB-Bench (976), PubMedQA (1,000),
+MedQA (1,273), WildGuardMix (1,109), plus the full BioThreat-Eval (558)
+and three new bio-adversarial benchmarks: HarmBench bio (59 items),
+JailbreakBench bio (2 items), AdvBench bio (21 items).
+
+**Cross-domain FAR collapse (v2 wins dramatically):**
+
+| Benchmark            | A_full FAR | v2 FAR  | Delta      |
+|----------------------|-----------:|--------:|-----------:|
+| WMDP-Cyber held-out  |     73.4%  |   0.17% | -73.2 pp   |
+| WildGuardMix held-out|     50.2%  |   0.0%  | -50.2 pp   |
+| LAB-Bench held-out   |     40.1%  |   0.0%  | -40.1 pp   |
+| WMDP-Chem held-out   |     28.4%  |   0.25% | -28.2 pp   |
+| PubMedQA held-out    |  (~low)    |  ~low   |   ~equal   |
+| MedQA held-out       |  (~low)    |  ~low   |   ~equal   |
+
+The augmentation fixed the cross-domain shortcut. A safety classifier
+that flagged 50% of WildGuard adversarial items as bio threats now
+flags none of them.
+
+**Bio recall collapse (v2 loses catastrophically):**
+
+| Benchmark               | A_full          | v2            | Delta      |
+|-------------------------|----------------:|--------------:|-----------:|
+| BioThreat-Eval recall   | 37.8% (TL=4)    | 12.2% (TL=4)  | -25.6 pp   |
+| HarmBench bio (59)      | 96.6% flagged   | 1.7% flagged  | -94.9 pp   |
+| AdvBench bio (21)       | 100% flagged    | 0% flagged    | -100 pp    |
+| JailbreakBench bio (2)  | 100% flagged    | 0% flagged    | -100 pp    |
+
+The model that previously detected 96-100% of bio adversarial items
+now detects ~0%. v2 did not learn "bio + harmful intent => UNSAFE."
+It learned "fewer things are UNSAFE."
+
+**Mechanism.** v2 added only SAFE-labelled augmentation. The original
+training set was slightly UNSAFE-heavy (~65% UNSAFE / 35% SAFE in the
+~3,062 items). After adding 1,366 SAFE items:
+- New distribution: ~1,994 UNSAFE (45%) / ~2,896 SAFE (65%) <- swap
+- Balanced class weight (UNSAFE = 1.45) was insufficient to compensate
+- 1,109 of the added SAFE items contained exactly the bio/adversarial
+  vocabulary the original model had used as shortcuts
+- The shortest learning path became: "vocabulary that used to predict
+  UNSAFE now predicts SAFE more often than not"
+
+The shortcut diagnosis remains correct, but the remedy was too blunt.
+The model swapped one shortcut (bio vocab => UNSAFE) for another
+(predict SAFE by default). This is consistent with the literature on
+class-imbalance corrections in shortcut-learned models: rebalancing
+without targeted UNSAFE examples shifts the bias point without fixing
+the underlying concept.
+
+### 6.10 v3 Balanced Augmentation (Planned)
+
+**Hypothesis.** The fix requires *both* SAFE and UNSAFE augmentation. The
+model needs to see (a) bio-vocabulary content that is legitimately SAFE
+and (b) bio-adversarial content that is genuinely UNSAFE, so the
+decision boundary is forced to depend on harmful-intent signal rather
+than vocabulary or framing.
+
+**v3 design (3 changes from v2):**
+
+1. **Reduced SAFE augmentation** (1,366 -> ~500): WildGuard 200,
+   LAB-Bench 200 (with CloningScenarios=16 kept, since 100% FAR there
+   was the cleanest shortcut signal), WMDP-Cyber 100.
+2. **Added UNSAFE augmentation** (~70): HarmBench bio (~50 train + ~9
+   held-out), AdvBench bio (~18 train + ~3 held-out), JailbreakBench
+   bio (2, all train). These are paired with a generic compliance
+   template to match the exchange-classifier format.
+3. **Manual UNSAFE class weight = 2.0** (overrides balanced auto-
+   calculation of ~1.16). The natural distribution gives ~2,064 UNSAFE
+   / 1,569 SAFE; the manual boost makes UNSAFE recall a first-class
+   training objective.
+
+**Evaluation plan.** Three-way comparison (A_full vs v2 vs v3) on all
+benchmarks already used for v2. Held-out bio-adversarial items
+(HarmBench: ~9, AdvBench: ~3) serve as independent bio recall checks
+not seen during v3 training. BioThreat-Eval remains the primary
+independent recall benchmark (no overlap with any training source).
+
+**Success criteria.** v3 is a meaningful improvement if it
+simultaneously achieves:
+- Cross-domain FAR < 10% on WildGuardMix, LAB-Bench, WMDP-Cyber/Chem
+  (vs A_full's 30-73%)
+- BioThreat-Eval recall >= 25% at threshold 0.5 (vs v2's 12.2%)
+- HarmBench/AdvBench held-out flag rate >= 50% (vs v2's ~0%)
+
+If v3 lands in the gap between A_full's bio recall and v2's FAR
+reduction, the data-centric remedy hypothesis is validated. If it
+over-shoots toward A_full (high recall + high FAR returns), the
+UNSAFE weight needs further tuning. If it stays near v2's behaviour
+despite UNSAFE augmentation, the issue is deeper than class balance --
+likely a base-rate problem requiring substantially more UNSAFE
+training data than 70 items.
+
+Results pending (Cayuga job 2963787, ~3 hour runtime).
+
 ### 6.6 Summary of Corrective Findings
 
 Six corrective experiments complete (6.1, 6.2, 6.3, 6.7, 6.8, 6.8b).
@@ -1022,6 +1135,24 @@ architectural (cascade, ensemble, probe) but data-centric:
   remain valid architectural contributions. The problem is that they
   were applied to a classifier that did not actually learn its target
   concept.
+
+6. **Class-imbalance corrections without targeted UNSAFE examples
+   shift the bias point, not the concept** (6.9). v2 added 1,366 SAFE
+   items and reduced cross-domain FAR by 28-73 percentage points
+   across four benchmarks. But bio recall collapsed: 96-100% adversarial
+   bio detection -> 0-2%. The model learned "predict SAFE more often"
+   rather than "distinguish bio-harmful from bio-legitimate." This is
+   the textbook failure mode of one-sided class augmentation on a
+   shortcut-learned model.
+
+7. **A balanced data fix requires both SAFE and UNSAFE augmentation**
+   (6.10, in progress). v3 reduces SAFE augmentation by 63%, adds 70
+   bio-adversarial UNSAFE items, and manually boosts the UNSAFE class
+   weight to 2.0. Whether this lands in the sweet spot between v1's
+   shortcut-driven recall and v2's collapsed recall is the open
+   empirical question. Early synthetic-validation metrics (epoch 1)
+   show recall = 0.987 and FPR = 0.111, consistent with the intended
+   direction but uninformative about OOD bio recall.
 
 ---
 
