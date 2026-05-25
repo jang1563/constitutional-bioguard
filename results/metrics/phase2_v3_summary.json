@@ -11,19 +11,11 @@
         "recall": 1.0
       },
       "by_category": {
-        "harassment_bullying": {
-          "n": 25,
-          "n_positive": 25,
+        "misinformation_disinformation": {
+          "n": 65,
+          "n_positive": 65,
           "n_negative": 0,
-          "n_flagged": 25,
-          "flag_rate": 1.0,
-          "recall": 1.0
-        },
-        "copyright": {
-          "n": 100,
-          "n_positive": 100,
-          "n_negative": 0,
-          "n_flagged": 100,
+          "n_flagged": 65,
           "flag_rate": 1.0,
           "recall": 1.0
         },
@@ -35,19 +27,11 @@
           "flag_rate": 1.0,
           "recall": 1.0
         },
-        "illegal": {
-          "n": 65,
-          "n_positive": 65,
+        "harassment_bullying": {
+          "n": 25,
+          "n_positive": 25,
           "n_negative": 0,
-          "n_flagged": 65,
-          "flag_rate": 1.0,
-          "recall": 1.0
-        },
-        "misinformation_disinformation": {
-          "n": 65,
-          "n_positive": 65,
-          "n_negative": 0,
-          "n_flagged": 65,
+          "n_flagged": 25,
           "flag_rate": 1.0,
           "recall": 1.0
         },
@@ -66,11 +50,35 @@
           "n_flagged": 56,
           "flag_rate": 1.0,
           "recall": 1.0
+        },
+        "illegal": {
+          "n": 65,
+          "n_positive": 65,
+          "n_negative": 0,
+          "n_flagged": 65,
+          "flag_rate": 1.0,
+          "recall": 1.0
+        },
+        "copyright": {
+          "n": 100,
+          "n_positive": 100,
+          "n_negative": 0,
+          "n_flagged": 100,
+          "flag_rate": 1.0,
+          "recall": 1.0
         }
       }
     },
     "advbench_full": {
-      "error": "Run: python scripts/cache_phase2_data.py advbench_full"
+      "overall": {
+        "n": 520,
+        "n_positive": 520,
+        "n_negative": 0,
+        "n_flagged": 482,
+        "flag_rate": 0.9269,
+        "recall": 0.9269
+      },
+      "by_category": null
     },
     "xstest": {
       "overall": {
@@ -88,13 +96,13 @@
         "auprc_random_baseline": 0.4444
       },
       "by_category": {
-        "homonyms": {
+        "safe_contexts": {
           "n": 25,
           "n_positive": 0,
           "n_negative": 25,
-          "n_flagged": 19,
-          "flag_rate": 0.76,
-          "fpr": 0.76
+          "n_flagged": 25,
+          "flag_rate": 1.0,
+          "fpr": 1.0
         },
         "privacy_public": {
           "n": 25,
@@ -104,21 +112,21 @@
           "flag_rate": 0.88,
           "fpr": 0.88
         },
-        "contrast_privacy": {
-          "n": 25,
-          "n_positive": 25,
-          "n_negative": 0,
-          "n_flagged": 23,
-          "flag_rate": 0.92,
-          "recall": 0.92
-        },
-        "safe_targets": {
+        "privacy_fictional": {
           "n": 25,
           "n_positive": 0,
           "n_negative": 25,
-          "n_flagged": 21,
-          "flag_rate": 0.84,
-          "fpr": 0.84
+          "n_flagged": 25,
+          "flag_rate": 1.0,
+          "fpr": 1.0
+        },
+        "homonyms": {
+          "n": 25,
+          "n_positive": 0,
+          "n_negative": 25,
+          "n_flagged": 19,
+          "flag_rate": 0.76,
+          "fpr": 0.76
         },
         "contrast_homonyms": {
           "n": 25,
@@ -128,7 +136,7 @@
           "flag_rate": 1.0,
           "recall": 1.0
         },
-        "contrast_safe_contexts": {
+        "contrast_figurative_language": {
           "n": 25,
           "n_positive": 25,
           "n_negative": 0,
@@ -136,31 +144,7 @@
           "flag_rate": 1.0,
           "recall": 1.0
         },
-        "real_group_nons_discr": {
-          "n": 25,
-          "n_positive": 0,
-          "n_negative": 25,
-          "n_flagged": 25,
-          "flag_rate": 1.0,
-          "fpr": 1.0
-        },
         "nons_group_real_discr": {
-          "n": 25,
-          "n_positive": 0,
-          "n_negative": 25,
-          "n_flagged": 25,
-          "flag_rate": 1.0,
-          "fpr": 1.0
-        },
-        "figurative_language": {
-          "n": 25,
-          "n_positive": 0,
-          "n_negative": 25,
-          "n_flagged": 23,
-          "flag_rate": 0.92,
-          "fpr": 0.92
-        },
-        "privacy_fictional": {
           "n": 25,
           "n_positive": 0,
           "n_negative": 25,
@@ -176,21 +160,13 @@
           "flag_rate": 0.92,
           "recall": 0.92
         },
-        "contrast_figurative_language": {
+        "contrast_historical_events": {
           "n": 25,
           "n_positive": 25,
           "n_negative": 0,
           "n_flagged": 25,
           "flag_rate": 1.0,
           "recall": 1.0
-        },
-        "historical_events": {
-          "n": 25,
-          "n_positive": 0,
-          "n_negative": 25,
-          "n_flagged": 25,
-          "flag_rate": 1.0,
-          "fpr": 1.0
         },
         "definitions": {
           "n": 25,
@@ -200,7 +176,23 @@
           "flag_rate": 1.0,
           "fpr": 1.0
         },
-        "contrast_definitions": {
+        "contrast_privacy": {
+          "n": 25,
+          "n_positive": 25,
+          "n_negative": 0,
+          "n_flagged": 23,
+          "flag_rate": 0.92,
+          "recall": 0.92
+        },
+        "historical_events": {
+          "n": 25,
+          "n_positive": 0,
+          "n_negative": 25,
+          "n_flagged": 25,
+          "flag_rate": 1.0,
+          "fpr": 1.0
+        },
+        "contrast_safe_contexts": {
           "n": 25,
           "n_positive": 25,
           "n_negative": 0,
@@ -216,7 +208,7 @@
           "flag_rate": 1.0,
           "recall": 1.0
         },
-        "safe_contexts": {
+        "real_group_nons_discr": {
           "n": 25,
           "n_positive": 0,
           "n_negative": 25,
@@ -224,7 +216,23 @@
           "flag_rate": 1.0,
           "fpr": 1.0
         },
-        "contrast_historical_events": {
+        "figurative_language": {
+          "n": 25,
+          "n_positive": 0,
+          "n_negative": 25,
+          "n_flagged": 23,
+          "flag_rate": 0.92,
+          "fpr": 0.92
+        },
+        "safe_targets": {
+          "n": 25,
+          "n_positive": 0,
+          "n_negative": 25,
+          "n_flagged": 21,
+          "flag_rate": 0.84,
+          "fpr": 0.84
+        },
+        "contrast_definitions": {
           "n": 25,
           "n_positive": 25,
           "n_negative": 0,
@@ -250,41 +258,17 @@
         "auprc_random_baseline": 0.5737
       },
       "by_category": {
+        "drug_abuse,weapons,banned_substance": {
+          "n": 145,
+          "n_positive": 145,
+          "n_negative": 0,
+          "n_flagged": 4,
+          "flag_rate": 0.0276,
+          "recall": 0.0276
+        },
         "privacy_violation": {
           "n": 119,
           "n_positive": 119,
-          "n_negative": 0,
-          "n_flagged": 0,
-          "flag_rate": 0.0,
-          "recall": 0.0
-        },
-        "financial_crime,property_crime,theft": {
-          "n": 251,
-          "n_positive": 251,
-          "n_negative": 0,
-          "n_flagged": 0,
-          "flag_rate": 0.0,
-          "recall": 0.0
-        },
-        "child_abuse": {
-          "n": 27,
-          "n_positive": 27,
-          "n_negative": 0,
-          "n_flagged": 1,
-          "flag_rate": 0.037,
-          "recall": 0.037
-        },
-        "misinformation_regarding_ethics,laws_and_safety": {
-          "n": 53,
-          "n_positive": 53,
-          "n_negative": 0,
-          "n_flagged": 0,
-          "flag_rate": 0.0,
-          "recall": 0.0
-        },
-        "hate_speech,offensive_language": {
-          "n": 134,
-          "n_positive": 134,
           "n_negative": 0,
           "n_flagged": 0,
           "flag_rate": 0.0,
@@ -298,41 +282,17 @@
           "flag_rate": 0.0,
           "recall": 0.0
         },
-        "sexually_explicit,adult_content": {
-          "n": 56,
-          "n_positive": 56,
-          "n_negative": 0,
-          "n_flagged": 0,
-          "flag_rate": 0.0,
-          "recall": 0.0
-        },
-        "terrorism,organized_crime": {
-          "n": 23,
-          "n_positive": 23,
-          "n_negative": 0,
+        "uncategorized": {
+          "n": 1288,
+          "n_positive": 0,
+          "n_negative": 1288,
           "n_flagged": 1,
-          "flag_rate": 0.0435,
-          "recall": 0.0435
+          "flag_rate": 0.0008,
+          "fpr": 0.0008
         },
-        "self_harm": {
-          "n": 9,
-          "n_positive": 9,
-          "n_negative": 0,
-          "n_flagged": 0,
-          "flag_rate": 0.0,
-          "recall": 0.0
-        },
-        "animal_abuse": {
-          "n": 44,
-          "n_positive": 44,
-          "n_negative": 0,
-          "n_flagged": 0,
-          "flag_rate": 0.0,
-          "recall": 0.0
-        },
-        "violence,aiding_and_abetting,incitement": {
-          "n": 224,
-          "n_positive": 224,
+        "financial_crime,property_crime,theft": {
+          "n": 251,
+          "n_positive": 251,
           "n_negative": 0,
           "n_flagged": 0,
           "flag_rate": 0.0,
@@ -346,21 +306,37 @@
           "flag_rate": 0.0,
           "recall": 0.0
         },
-        "uncategorized": {
-          "n": 1288,
-          "n_positive": 0,
-          "n_negative": 1288,
-          "n_flagged": 1,
-          "flag_rate": 0.0008,
-          "fpr": 0.0008
-        },
-        "drug_abuse,weapons,banned_substance": {
-          "n": 145,
-          "n_positive": 145,
+        "animal_abuse": {
+          "n": 44,
+          "n_positive": 44,
           "n_negative": 0,
-          "n_flagged": 4,
-          "flag_rate": 0.0276,
-          "recall": 0.0276
+          "n_flagged": 0,
+          "flag_rate": 0.0,
+          "recall": 0.0
+        },
+        "terrorism,organized_crime": {
+          "n": 23,
+          "n_positive": 23,
+          "n_negative": 0,
+          "n_flagged": 1,
+          "flag_rate": 0.0435,
+          "recall": 0.0435
+        },
+        "child_abuse": {
+          "n": 27,
+          "n_positive": 27,
+          "n_negative": 0,
+          "n_flagged": 1,
+          "flag_rate": 0.037,
+          "recall": 0.037
+        },
+        "violence,aiding_and_abetting,incitement": {
+          "n": 224,
+          "n_positive": 224,
+          "n_negative": 0,
+          "n_flagged": 0,
+          "flag_rate": 0.0,
+          "recall": 0.0
         },
         "non_violent_unethical_behavior": {
           "n": 266,
@@ -369,11 +345,178 @@
           "n_flagged": 0,
           "flag_rate": 0.0,
           "recall": 0.0
+        },
+        "misinformation_regarding_ethics,laws_and_safety": {
+          "n": 53,
+          "n_positive": 53,
+          "n_negative": 0,
+          "n_flagged": 0,
+          "flag_rate": 0.0,
+          "recall": 0.0
+        },
+        "self_harm": {
+          "n": 9,
+          "n_positive": 9,
+          "n_negative": 0,
+          "n_flagged": 0,
+          "flag_rate": 0.0,
+          "recall": 0.0
+        },
+        "sexually_explicit,adult_content": {
+          "n": 56,
+          "n_positive": 56,
+          "n_negative": 0,
+          "n_flagged": 0,
+          "flag_rate": 0.0,
+          "recall": 0.0
+        },
+        "hate_speech,offensive_language": {
+          "n": 134,
+          "n_positive": 134,
+          "n_negative": 0,
+          "n_flagged": 0,
+          "flag_rate": 0.0,
+          "recall": 0.0
         }
       }
     },
     "wildguard_native": {
-      "error": "'NoneType' object has no attribute 'lower'"
+      "overall": {
+        "n": 1689,
+        "n_positive": 749,
+        "n_negative": 940,
+        "n_flagged": 16,
+        "flag_rate": 0.0095,
+        "precision": 0.9375,
+        "recall": 0.02,
+        "f1": 0.0392,
+        "fpr": 0.0011,
+        "auroc": 0.7244,
+        "auprc": 0.698,
+        "auprc_random_baseline": 0.4435
+      },
+      "by_category": {
+        "social_stereotypes_and_unfair_discrimination": {
+          "n": 76,
+          "n_positive": 76,
+          "n_negative": 0,
+          "n_flagged": 0,
+          "flag_rate": 0.0,
+          "recall": 0.0
+        },
+        "benign": {
+          "n": 940,
+          "n_positive": 0,
+          "n_negative": 940,
+          "n_flagged": 1,
+          "flag_rate": 0.0011,
+          "fpr": 0.0011
+        },
+        "toxic_language_hate_speech": {
+          "n": 41,
+          "n_positive": 41,
+          "n_negative": 0,
+          "n_flagged": 0,
+          "flag_rate": 0.0,
+          "recall": 0.0
+        },
+        "cyberattack": {
+          "n": 48,
+          "n_positive": 48,
+          "n_negative": 0,
+          "n_flagged": 7,
+          "flag_rate": 0.1458,
+          "recall": 0.1458
+        },
+        "defamation_encouraging_unethical_or_unsafe_actions": {
+          "n": 46,
+          "n_positive": 46,
+          "n_negative": 0,
+          "n_flagged": 0,
+          "flag_rate": 0.0,
+          "recall": 0.0
+        },
+        "sensitive_information_organization_government": {
+          "n": 49,
+          "n_positive": 49,
+          "n_negative": 0,
+          "n_flagged": 0,
+          "flag_rate": 0.0,
+          "recall": 0.0
+        },
+        "disseminating_false_or_misleading_information_encouraging_disinformation_campaigns": {
+          "n": 43,
+          "n_positive": 43,
+          "n_negative": 0,
+          "n_flagged": 1,
+          "flag_rate": 0.0233,
+          "recall": 0.0233
+        },
+        "sexual_content": {
+          "n": 47,
+          "n_positive": 47,
+          "n_negative": 0,
+          "n_flagged": 1,
+          "flag_rate": 0.0213,
+          "recall": 0.0213
+        },
+        "copyright_violations": {
+          "n": 30,
+          "n_positive": 30,
+          "n_negative": 0,
+          "n_flagged": 0,
+          "flag_rate": 0.0,
+          "recall": 0.0
+        },
+        "others": {
+          "n": 98,
+          "n_positive": 98,
+          "n_negative": 0,
+          "n_flagged": 2,
+          "flag_rate": 0.0204,
+          "recall": 0.0204
+        },
+        "fraud_assisting_illegal_activities": {
+          "n": 60,
+          "n_positive": 60,
+          "n_negative": 0,
+          "n_flagged": 2,
+          "flag_rate": 0.0333,
+          "recall": 0.0333
+        },
+        "private_information_individual": {
+          "n": 81,
+          "n_positive": 81,
+          "n_negative": 0,
+          "n_flagged": 0,
+          "flag_rate": 0.0,
+          "recall": 0.0
+        },
+        "mental_health_over-reliance_crisis": {
+          "n": 45,
+          "n_positive": 45,
+          "n_negative": 0,
+          "n_flagged": 1,
+          "flag_rate": 0.0222,
+          "recall": 0.0222
+        },
+        "causing_material_harm_by_disseminating_misinformation": {
+          "n": 45,
+          "n_positive": 45,
+          "n_negative": 0,
+          "n_flagged": 0,
+          "flag_rate": 0.0,
+          "recall": 0.0
+        },
+        "violence_and_physical_harm": {
+          "n": 40,
+          "n_positive": 40,
+          "n_negative": 0,
+          "n_flagged": 1,
+          "flag_rate": 0.025,
+          "recall": 0.025
+        }
+      }
     }
   }
 }

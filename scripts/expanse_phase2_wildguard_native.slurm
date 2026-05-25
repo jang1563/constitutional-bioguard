@@ -73,7 +73,7 @@ for model_name in ["wildguard_7b", "llama_guard_3_8b"]:
     probs = [p[1] for p in preds]
     clf.unload()
 
-    overall = compute_metrics(true_labels, pred_labels, probs, len(true_labels))
+    overall = compute_metrics(true_labels, pred_labels, probs)
     per_cat = evaluate_per_category(rows, pred_labels, probs, "subcategory")
     result = {
         "overall": overall,
