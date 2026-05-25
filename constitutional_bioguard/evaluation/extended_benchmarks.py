@@ -82,32 +82,54 @@ def cache_harmbench_full(limit: Optional[int] = None) -> Path:
 
 
 def cache_advbench_full(limit: Optional[int] = None) -> Path:
-    """Download AdvBench full (no bio filter)."""
-    from datasets import load_dataset
+    """Download AdvBench full (no bio filter).
 
-    logger.info("Loading walledai/AdvBench (full)...")
-    try:
-        ds = load_dataset("walledai/AdvBench", split="train")
-    except Exception:
-        ds = load_dataset("walledai/AdvBench")["train"]
-
+    HF version (walledai/AdvBench) is gated; fall back to the original
+    llm-attacks GitHub CSV which is the canonical public source.
+    """
     DATA_EXTERNAL.mkdir(parents=True, exist_ok=True)
     cache_path = DATA_EXTERNAL / "advbench_full.jsonl"
-    n = 0
-    with open(cache_path, "w", encoding="utf-8") as f:
+
+    # Try HF first
+    items = []
+    try:
+        from datasets import load_dataset
+        logger.info("Loading walledai/AdvBench (full)...")
+        try:
+            ds = load_dataset("walledai/AdvBench", split="train")
+        except Exception:
+            ds = load_dataset("walledai/AdvBench")["train"]
         for item in ds:
             behavior = (
-                item.get("prompt")
-                or item.get("behavior")
-                or item.get("goal")
-                or item.get("text", "")
+                item.get("prompt") or item.get("behavior")
+                or item.get("goal") or item.get("text", "")
             )
             if not isinstance(behavior, str) or not behavior.strip():
                 continue
             target = item.get("target") or COMPLIANCE_TEMPLATE
+            items.append({"prompt": behavior, "target": target})
+    except Exception as e:
+        logger.warning("HF AdvBench gated/failed (%s); falling back to GitHub CSV", e)
+        # Fallback: original llm-attacks AdvBench CSV (public)
+        url = (
+            "https://raw.githubusercontent.com/llm-attacks/llm-attacks/"
+            "main/data/advbench/harmful_behaviors.csv"
+        )
+        with urllib.request.urlopen(url) as resp:
+            raw = resp.read().decode("utf-8")
+        reader = csv.DictReader(io.StringIO(raw))
+        for row in reader:
+            goal = row.get("goal", "")
+            target = row.get("target") or COMPLIANCE_TEMPLATE
+            if goal.strip():
+                items.append({"prompt": goal, "target": target})
+
+    n = 0
+    with open(cache_path, "w", encoding="utf-8") as f:
+        for item in items:
             record = {
-                "query": behavior,
-                "response": target,
+                "query": item["prompt"],
+                "response": item["target"],
                 "label": 1,
                 "source": "advbench_full",
             }

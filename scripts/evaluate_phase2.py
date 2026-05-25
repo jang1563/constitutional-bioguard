@@ -100,17 +100,18 @@ def load_wildguard_native() -> list[dict]:
     """Load WildGuardTest with native labels (mixed harm/safe)."""
     path = DATA_EXTERNAL / "wildguard_test.jsonl"
     rows = load_jsonl(path)
-    # Filter to items with prompt_harm_label set
-    rows = [
-        r for r in rows
-        if r.get("prompt_harm_label", "").lower() in ("harmful", "unharmful")
-    ]
-    # Convert to standard (query, response, label) format
+    # Filter to items with prompt_harm_label set (handle None/missing safely)
+    filtered = []
     for r in rows:
-        r["query"] = r["prompt"]
-        # label from prompt_harm_label
-        r["label"] = 1 if r["prompt_harm_label"].lower() == "harmful" else 0
-    return rows
+        lbl = r.get("prompt_harm_label")
+        if not isinstance(lbl, str):
+            continue
+        if lbl.lower() not in ("harmful", "unharmful"):
+            continue
+        r["query"] = r.get("prompt", "")
+        r["label"] = 1 if lbl.lower() == "harmful" else 0
+        filtered.append(r)
+    return filtered
 
 
 # ── Inference dispatch ──────────────────────────────────────────────────────
