@@ -26,7 +26,8 @@ sys.path.insert(0, str(Path(__file__).parent.parent))
 
 import numpy as np
 from sklearn.metrics import (
-    f1_score, precision_score, recall_score, roc_auc_score,
+    average_precision_score, f1_score, precision_score, recall_score,
+    roc_auc_score,
 )
 
 from constitutional_bioguard.config import (
@@ -121,6 +122,9 @@ def compute_metrics(true_labels: list[int], pred_labels: list[int],
         })
         try:
             result["auroc"] = round(float(roc_auc_score(y_true, prob_unsafe)), 4)
+            result["auprc"] = round(float(average_precision_score(y_true, prob_unsafe)), 4)
+            # Random baseline for AUPRC = positive class rate
+            result["auprc_random_baseline"] = round(n_pos / n, 4)
         except Exception:
             pass
     elif n_pos > 0:

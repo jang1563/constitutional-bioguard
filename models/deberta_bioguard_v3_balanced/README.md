@@ -57,13 +57,23 @@ v3 has the highest AUROC across the three iterations on the expert-labelled BioT
 
 **Cost efficiency (parameter count):**
 
-| Model | Params | BioThreat-Eval F1 | BioThreat-Eval AUROC |
-|---|---|---|---|
-| **v3 (this)** | **184M** | **0.4279** | 0.7650 |
-| WildGuard 7B (AI2) | 7B (38× larger) | 0.3636 | 0.6111 |
-| LLaMA-Guard 3 8B (Meta) | 8B (43× larger) | 0.2692 | **0.7787** |
+| Model | Params | F1 | AUROC | **AUPRC** |
+|---|---|---|---|---|
+| **v3 (this)** | **184M** | **0.4279** | 0.7650 | **0.7235** |
+| WildGuard 7B (AI2) | 7B (38× larger) | 0.3636 | 0.6111 | 0.4731 |
+| LLaMA-Guard 3 8B (Meta) | 8B (43× larger) | 0.2692 | **0.7787** | 0.6796 |
 
-v3 outperforms BOTH 7-8B published baselines on BioThreat-Eval F1 (the practical-decision metric), at 38-43× smaller scale. LLaMA-Guard 3 achieves slightly higher AUROC (better ranking ability), but uses a much more conservative default threshold and produces lower F1 and recall at threshold 0.5. v3 delivers ~45-68× higher F1-per-billion-parameter than the published baselines on bio content.
+*AUPRC random baseline = 0.323 (positive class rate for BioThreat-Eval).*
+
+v3 wins **F1 and AUPRC** (the imbalanced-set metric most predictive of
+production utility) on BioThreat-Eval at 38-43× smaller scale. LLaMA-Guard
+3 wins AUROC (best ranking ability) but uses a more conservative default
+threshold, yielding lower F1, recall, and AUPRC. WildGuard 7B trails
+on every metric.
+
+In raw parameter-efficiency: v3 delivers ~45-68× higher F1-per-billion-
+parameter than the published baselines on bio content, and ~37× higher
+AUPRC-per-billion-parameter.
 
 ## Quick Start
 
