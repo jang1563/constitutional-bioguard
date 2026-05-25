@@ -252,6 +252,259 @@ def cache_wmdp_bio(limit: Optional[int] = None) -> Path:
     return cache_path
 
 
+# =========================================================================
+# Production-grade benchmark loaders (v2 evaluation pipeline)
+# =========================================================================
+
+def cache_wmdp_subset(subset: str = "wmdp-chem", limit: Optional[int] = None) -> Path:
+    """Cache WMDP-Chem or WMDP-Cyber locally.
+
+    For our bio classifier evaluation, ALL items are treated as label=0 (SAFE)
+    since none is bio content. We measure cross-domain FAR.
+
+    Args:
+        subset: 'wmdp-chem' or 'wmdp-cyber'.
+        limit: optional limit on number of questions.
+
+    Returns:
+        Path to saved JSONL cache.
+    """
+    from datasets import load_dataset
+
+    if subset not in ("wmdp-chem", "wmdp-cyber"):
+        raise ValueError(f"Unknown WMDP subset: {subset}")
+
+    logger.info("Downloading %s for local caching...", subset)
+    dataset = load_dataset("cais/wmdp", subset, split="test")
+    if limit is not None:
+        dataset = dataset.select(range(min(limit, len(dataset))))
+
+    DATA_EXTERNAL.mkdir(parents=True, exist_ok=True)
+    cache_path = DATA_EXTERNAL / f"{subset.replace('-', '_')}.jsonl"
+
+    # For cross-domain evaluation: only correct answers (1 per question).
+    # All labelled SAFE from bio classifier's perspective.
+    n_written = 0
+    with open(cache_path, "w", encoding="utf-8") as f:
+        for q_idx, item in enumerate(dataset):
+            question = item["question"]
+            choices = item["choices"]
+            answer = int(item["answer"])
+            record = {
+                "query": question,
+                "response": choices[answer],
+                "label": 0,  # SAFE from bio classifier's perspective
+                "source": subset,
+                "question_idx": q_idx,
+                "answer_idx": answer,
+            }
+            f.write(json.dumps(record, ensure_ascii=False) + "\n")
+            n_written += 1
+
+    logger.info("Cached %d items to %s", n_written, cache_path)
+    return cache_path
+
+
+def cache_lab_bench(
+    subtasks: Optional[list[str]] = None,
+    limit_per_subtask: Optional[int] = None,
+) -> Path:
+    """Cache LAB-Bench (biology research benchmark) locally.
+
+    LAB-Bench tests legitimate bio research questions. All items labelled
+    SAFE -- a deployed bio safety classifier should not block research.
+
+    Excludes FigQA (image-only) by default. Includes text-based subtasks:
+    CloningScenarios, DbQA, LitQA2, ProtocolQA, SeqQA, SuppQA, TableQA.
+
+    Args:
+        subtasks: list of subtask names. Default = all text-based.
+        limit_per_subtask: optional cap per subtask.
+
+    Returns:
+        Path to saved JSONL cache.
+    """
+    from datasets import load_dataset
+
+    if subtasks is None:
+        subtasks = [
+            "CloningScenarios", "DbQA", "LitQA2", "ProtocolQA",
+            "SeqQA", "SuppQA", "TableQA",
+        ]
+
+    DATA_EXTERNAL.mkdir(parents=True, exist_ok=True)
+    cache_path = DATA_EXTERNAL / "lab_bench.jsonl"
+
+    n_written = 0
+    with open(cache_path, "w", encoding="utf-8") as f:
+        for subtask in subtasks:
+            logger.info("Loading LAB-Bench subtask: %s", subtask)
+            try:
+                ds = load_dataset("futurehouse/lab-bench", subtask, split="train")
+            except Exception as e:
+                logger.warning("Skipping %s: %s", subtask, e)
+                continue
+            if limit_per_subtask is not None:
+                ds = ds.select(range(min(limit_per_subtask, len(ds))))
+            for item in ds:
+                # question + ideal answer = legitimate research exchange
+                question = item.get("question", "")
+                ideal = item.get("ideal", "")
+                if not question.strip() or not ideal.strip():
+                    continue
+                record = {
+                    "query": question,
+                    "response": ideal,
+                    "label": 0,  # SAFE: legitimate research
+                    "source": "lab_bench",
+                    "subtask": subtask,
+                }
+                f.write(json.dumps(record, ensure_ascii=False) + "\n")
+                n_written += 1
+
+    logger.info("Cached %d items to %s", n_written, cache_path)
+    return cache_path
+
+
+def cache_pubmed_qa(
+    config: str = "pqa_labeled",
+    limit: Optional[int] = None,
+) -> Path:
+    """Cache PubMedQA (biomedical research QA) locally.
+
+    All items labelled SAFE -- PubMedQA is clinical/biomedical literature
+    research, used to measure FPR on legitimate bio content.
+
+    Args:
+        config: 'pqa_labeled' (1k high-quality), 'pqa_artificial' (211k),
+                or 'pqa_unlabeled' (61k).
+        limit: optional cap.
+
+    Returns:
+        Path to saved JSONL cache.
+    """
+    from datasets import load_dataset
+
+    logger.info("Loading PubMedQA: %s", config)
+    ds = load_dataset("qiaojin/PubMedQA", config, split="train")
+    if limit is not None:
+        ds = ds.select(range(min(limit, len(ds))))
+
+    DATA_EXTERNAL.mkdir(parents=True, exist_ok=True)
+    cache_path = DATA_EXTERNAL / f"pubmed_qa_{config}.jsonl"
+
+    n_written = 0
+    with open(cache_path, "w", encoding="utf-8") as f:
+        for item in ds:
+            question = item.get("question", "")
+            long_answer = item.get("long_answer", "")
+            if not question.strip() or not long_answer.strip():
+                continue
+            record = {
+                "query": question,
+                "response": long_answer,
+                "label": 0,  # SAFE: biomedical research
+                "source": "pubmed_qa",
+                "config": config,
+                "final_decision": item.get("final_decision", ""),
+            }
+            f.write(json.dumps(record, ensure_ascii=False) + "\n")
+            n_written += 1
+
+    logger.info("Cached %d items to %s", n_written, cache_path)
+    return cache_path
+
+
+def cache_med_qa(
+    language: str = "english",
+    limit: Optional[int] = None,
+) -> Path:
+    """Cache MedQA (medical board exam QA) locally.
+
+    All items labelled SAFE -- clinical medical knowledge, used as
+    auxiliary FPR test.
+
+    Args:
+        language: 'english', 'simplified_chinese', or 'traditional_chinese'.
+        limit: optional cap.
+
+    Returns:
+        Path to saved JSONL cache.
+    """
+    from datasets import load_dataset
+
+    logger.info("Loading MedQA: %s", language)
+    # MedQA bigbio has multiple configs; load_dataset with config matching language
+    config_map = {
+        "english": "med_qa_en_source",
+        "simplified_chinese": "med_qa_zh_source",
+        "traditional_chinese": "med_qa_tw_source",
+    }
+    config = config_map.get(language, "med_qa_en_source")
+
+    try:
+        ds = load_dataset(
+            "bigbio/med_qa", name=config, split="test",
+            trust_remote_code=True,
+        )
+    except Exception:
+        # Fall back to train if test not available
+        ds = load_dataset(
+            "bigbio/med_qa", name=config, split="train",
+            trust_remote_code=True,
+        )
+
+    if limit is not None:
+        ds = ds.select(range(min(limit, len(ds))))
+
+    DATA_EXTERNAL.mkdir(parents=True, exist_ok=True)
+    cache_path = DATA_EXTERNAL / f"med_qa_{language}.jsonl"
+
+    n_written = 0
+    with open(cache_path, "w", encoding="utf-8") as f:
+        for item in ds:
+            question = item.get("question", "")
+            # MedQA bigbio schema: 'options' is list of {'key': ..., 'value': ...}
+            # and 'answer_idx' or 'answer' points to correct
+            options = item.get("options", [])
+            correct_text = ""
+            answer_key = item.get("answer_idx") or item.get("answer", "")
+            for opt in options:
+                if isinstance(opt, dict):
+                    if opt.get("key") == answer_key:
+                        correct_text = opt.get("value", "")
+                        break
+            if not correct_text and options:
+                # Fallback: use first option text
+                opt0 = options[0]
+                correct_text = opt0.get("value", "") if isinstance(opt0, dict) else str(opt0)
+
+            if not question.strip() or not correct_text.strip():
+                continue
+            record = {
+                "query": question,
+                "response": correct_text,
+                "label": 0,  # SAFE: clinical content
+                "source": "med_qa",
+                "language": language,
+            }
+            f.write(json.dumps(record, ensure_ascii=False) + "\n")
+            n_written += 1
+
+    logger.info("Cached %d items to %s", n_written, cache_path)
+    return cache_path
+
+
+def load_jsonl_cache(cache_path: Path) -> list[dict]:
+    """Generic JSONL loader for cached benchmarks."""
+    rows = []
+    with open(cache_path, encoding="utf-8") as f:
+        for line in f:
+            if line.strip():
+                rows.append(json.loads(line))
+    return rows
+
+
 def run_ood_evaluation(
     model_dir: Optional[Path] = None,
     limit: Optional[int] = None,
@@ -1519,6 +1772,168 @@ def run_biothreat_ood_evaluation(
 # =========================================================================
 # Experiment 6.3: Pre- vs Post-Preprocessing Adversarial Comparison
 # =========================================================================
+
+# =========================================================================
+# Experiment 6.9: Unified external benchmark evaluation
+# =========================================================================
+
+def run_external_benchmark_evaluation(
+    cache_path: Path,
+    model_dir: Optional[Path] = None,
+    benchmark_name: Optional[str] = None,
+    output_file: Optional[Path] = None,
+    stratification_field: Optional[str] = None,
+) -> dict:
+    """Generic evaluator for cached external benchmarks.
+
+    Designed for WMDP-Chem, WMDP-Cyber, LAB-Bench, PubMedQA, MedQA.
+    Each cached file has rows with (query, response, label) plus optional
+    stratification metadata (subtask, config, language, etc.).
+
+    Computes:
+      - Overall FAR (since most external benchmarks are all label=0)
+      - If labels are mixed: full classification metrics
+      - Stratified FAR by `stratification_field` if provided
+      - Probability percentiles
+      - Wilson 95% CIs for FAR
+
+    Args:
+        cache_path: Path to cached JSONL file.
+        model_dir: Path to classifier model.
+        benchmark_name: Human-readable label for results.
+        output_file: Where to save results.
+        stratification_field: Optional field to stratify FAR by (e.g., 'subtask').
+
+    Returns:
+        Results dict.
+    """
+    from constitutional_bioguard.evaluation.evaluate_classifier import (
+        load_model_and_tokenizer,
+        predict_batch,
+    )
+
+    model_dir = model_dir or MODELS_DIR / "deberta_bioguard_v1_A_full"
+    benchmark_name = benchmark_name or cache_path.stem
+
+    output_file = output_file or (
+        METRICS_DIR / f"corrective_external_{benchmark_name}.json"
+    )
+
+    # ── Load cache ──
+    rows = load_jsonl_cache(cache_path)
+    logger.info("Loaded %d items from %s", len(rows), cache_path)
+
+    queries = [r["query"] for r in rows]
+    responses = [r["response"] for r in rows]
+    labels = np.array([int(r.get("label", 0)) for r in rows])
+    strat_values = (
+        [r.get(stratification_field, "default") for r in rows]
+        if stratification_field else None
+    )
+
+    # ── Inference ──
+    logger.info("Loading model from %s", model_dir)
+    model, tokenizer = load_model_and_tokenizer(model_dir)
+    logger.info("Running inference on %d items...", len(rows))
+    preds = predict_batch(
+        model=model, tokenizer=tokenizer,
+        queries=queries, responses=responses,
+        normalize=True,
+    )
+    probs = np.array([p[2] for p in preds])
+    pred_labels = (probs >= 0.5).astype(int)
+    del model, tokenizer
+
+    # ── Overall metrics ──
+    n = len(rows)
+    n_flagged = int(pred_labels.sum())
+    far = n_flagged / n
+    lo, hi = _wilson_interval(n_flagged, n)
+
+    overall = {
+        "n": n,
+        "n_flagged_unsafe": n_flagged,
+        "false_alarm_rate": round(far, 4),
+        "wilson_95_lower": round(lo, 4),
+        "wilson_95_upper": round(hi, 4),
+        "mean_prob_unsafe": round(float(probs.mean()), 4),
+        "median_prob_unsafe": round(float(np.median(probs)), 4),
+    }
+
+    # ── Mixed-label metrics (if applicable) ──
+    metrics_classification = None
+    if len(set(labels)) > 1:
+        metrics_classification = {
+            "metrics_at_0.5": compute_full_metrics(labels, probs, threshold=0.5),
+            "metrics_at_0.65": compute_full_metrics(labels, probs, threshold=0.65),
+            "threshold_sweep": threshold_sweep(labels, probs),
+        }
+
+    # ── Stratified FAR ──
+    stratified = []
+    if strat_values is not None:
+        unique = sorted(set(strat_values))
+        for v in unique:
+            mask = np.array([s == v for s in strat_values])
+            n_s = int(mask.sum())
+            if n_s == 0:
+                continue
+            n_flag_s = int(pred_labels[mask].sum())
+            far_s = n_flag_s / n_s
+            lo_s, hi_s = _wilson_interval(n_flag_s, n_s)
+            stratified.append({
+                stratification_field: v,
+                "n": n_s,
+                "n_flagged": n_flag_s,
+                "false_alarm_rate": round(far_s, 4),
+                "wilson_95_lower": round(lo_s, 4),
+                "wilson_95_upper": round(hi_s, 4),
+                "mean_prob_unsafe": round(float(probs[mask].mean()), 4),
+                "descriptive_only": n_s < 20,
+            })
+
+    # ── Probability distribution ──
+    percentiles = {
+        "p10": round(float(np.percentile(probs, 10)), 4),
+        "p25": round(float(np.percentile(probs, 25)), 4),
+        "p50": round(float(np.percentile(probs, 50)), 4),
+        "p75": round(float(np.percentile(probs, 75)), 4),
+        "p90": round(float(np.percentile(probs, 90)), 4),
+    }
+
+    results = {
+        "experiment": f"External benchmark evaluation: {benchmark_name}",
+        "model_dir": str(model_dir),
+        "cache_path": str(cache_path),
+        "benchmark_name": benchmark_name,
+        "n_items": n,
+        "label_distribution": {
+            "n_positive_label_1": int((labels == 1).sum()),
+            "n_negative_label_0": int((labels == 0).sum()),
+        },
+        "overall": overall,
+        "metrics_classification": metrics_classification,
+        f"stratified_by_{stratification_field}": stratified if strat_values else None,
+        "probability_percentiles": percentiles,
+        "interpretation_note": (
+            "For all-label-0 benchmarks (LAB-Bench, PubMedQA, MedQA, "
+            "WMDP-Chem, WMDP-Cyber), overall.false_alarm_rate is the "
+            "primary metric. Lower is better. For mixed-label benchmarks, "
+            "see metrics_classification."
+        ),
+    }
+
+    METRICS_DIR.mkdir(parents=True, exist_ok=True)
+    with open(output_file, "w", encoding="utf-8") as f:
+        json.dump(results, f, indent=2)
+    logger.info("Saved external evaluation to %s", output_file)
+    logger.info(
+        "%s: FAR=%.4f [%.4f, %.4f] (n=%d, n_flagged=%d)",
+        benchmark_name, far, lo, hi, n, n_flagged,
+    )
+
+    return results
+
 
 def run_adversarial_comparison(
     model_dir: Optional[Path] = None,
