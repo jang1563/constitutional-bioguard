@@ -18,10 +18,6 @@ from __future__ import annotations
 import logging
 import re
 from abc import ABC, abstractmethod
-from pathlib import Path
-from typing import Optional
-
-import numpy as np
 
 logger = logging.getLogger(__name__)
 
@@ -80,6 +76,7 @@ class BaselineClassifier(ABC):
     def unload(self) -> None:
         """Free GPU memory after evaluation."""
         import gc
+
         import torch
         self.model = None
         self.tokenizer = None
@@ -100,8 +97,8 @@ class LlamaGuard3(BaselineClassifier):
     model_id = "meta-llama/Llama-Guard-3-8B"
 
     def load(self) -> None:
-        from transformers import AutoModelForCausalLM, AutoTokenizer
         import torch
+        from transformers import AutoModelForCausalLM, AutoTokenizer
 
         logger.info("Loading %s", self.model_id)
         dtype = torch.bfloat16 if self.dtype == "bfloat16" else torch.float16
@@ -215,7 +212,7 @@ class LlamaGuard3(BaselineClassifier):
         gen_tokens = out.sequences[0][input_ids.shape[-1]:]
         gen_text = self.tokenizer.decode(gen_tokens, skip_special_tokens=True)
         # First non-empty line
-        lines = [l.strip() for l in gen_text.split("\n") if l.strip()]
+        lines = [line.strip() for line in gen_text.split("\n") if line.strip()]
         label_from_text = (
             1 if lines and lines[0].lower().startswith("unsafe") else 0
         )
@@ -252,8 +249,8 @@ class WildGuard(BaselineClassifier):
     )
 
     def load(self) -> None:
-        from transformers import AutoModelForCausalLM, AutoTokenizer
         import torch
+        from transformers import AutoModelForCausalLM, AutoTokenizer
 
         logger.info("Loading %s", self.model_id)
         dtype = torch.bfloat16 if self.dtype == "bfloat16" else torch.float16

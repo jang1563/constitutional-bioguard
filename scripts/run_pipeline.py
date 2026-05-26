@@ -136,9 +136,9 @@ def step_external_validate() -> None:
 
 def step_adversarial() -> None:
     """Run adversarial robustness suite."""
-    from constitutional_bioguard.evaluation.adversarial_suite import run_adversarial_suite
-
     import numpy as np
+
+    from constitutional_bioguard.evaluation.adversarial_suite import run_adversarial_suite
     results = run_adversarial_suite()
     mean_asr = np.mean([r.attack_success_rate for r in results])
     logger.info("Adversarial: mean ASR=%.2f%%", mean_asr * 100)

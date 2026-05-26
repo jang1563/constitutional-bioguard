@@ -14,7 +14,6 @@ from constitutional_bioguard.evaluation.corrective_experiments import (
     tpr_at_fpr,
 )
 
-
 # ── Shared fixtures ───────────────────────────────────────────────────────
 
 @pytest.fixture
@@ -214,6 +213,7 @@ class TestAdversarialNormalize:
     def test_run_adversarial_suite_accepts_normalize(self):
         """Verify the function signature accepts normalize parameter."""
         import inspect
+
         from constitutional_bioguard.evaluation.adversarial_suite import (
             run_adversarial_suite,
         )
@@ -223,6 +223,7 @@ class TestAdversarialNormalize:
 
     def test_run_adversarial_suite_accepts_output_file(self):
         import inspect
+
         from constitutional_bioguard.evaluation.adversarial_suite import (
             run_adversarial_suite,
         )

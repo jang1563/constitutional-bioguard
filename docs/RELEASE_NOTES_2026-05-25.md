@@ -2,15 +2,15 @@
 
 ## Release Overview
 
-This release promotes **v4 response-diverse** as the recommended public
+This release promotes **v4 response-diverse** as the recommended release
 checkpoint and documents the v5 PairCFR experiment as a deliberate non-release.
-The major change is not just another model iteration: the public reporting
+The major change is not just another model iteration: the reporting
 surface now reflects the Goodhart/leakage audit that restated several older
 claims.
 
 ## Recommended Model
 
-- Hugging Face model: `jang1563/constitutional-bioguard-v4`
+- Hugging Face model: `jang1563/constitutional-bioguard-v4` (private preview)
 - Base model: `microsoft/deberta-v3-base`
 - Scope: bio-specialist query/response classification, not general safety
 - Key clean gates:
@@ -64,7 +64,7 @@ precision/recall trade-off rather than hidden behind a release tag.
 
 ## Recommended Next Steps
 
-1. Publish the v4 checkpoint and model card to Hugging Face.
+1. Keep the v4 checkpoint and model card synchronized on Hugging Face.
 2. Tag `v0.2.0` after GitHub/HF consistency checks.
 3. Treat lower PairCFR weights (`lambda=0.1` or `0.15`) or a cascade-first v6
    design as the next experimental branch, not as a patch release.

@@ -13,6 +13,7 @@ from pathlib import Path
 sys.path.insert(0, str(Path(__file__).parent.parent))
 
 import numpy as np
+
 from constitutional_bioguard.config import METRICS_DIR
 
 OUT_PATH = METRICS_DIR / "audit_confusion_misclass.json"

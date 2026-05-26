@@ -21,7 +21,9 @@ def main():
     args = parser.parse_args()
 
     from constitutional_bioguard.evaluation.extended_benchmarks import (
-        cache_saladbench_cbrn, cache_alert, cache_or_bench_health,
+        cache_alert,
+        cache_or_bench_health,
+        cache_saladbench_cbrn,
         cache_simple_safety_bio,
     )
 

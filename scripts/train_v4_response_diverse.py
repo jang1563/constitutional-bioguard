@@ -103,7 +103,9 @@ def main():
     args = parser.parse_args()
 
     from constitutional_bioguard.config import (
-        DATA_EXTERNAL, DATA_PROCESSED, MODELS_DIR,
+        DATA_EXTERNAL,
+        DATA_PROCESSED,
+        MODELS_DIR,
     )
     from constitutional_bioguard.training.train_deberta import train
 

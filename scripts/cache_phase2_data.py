@@ -28,8 +28,10 @@ def main():
     args = parser.parse_args()
 
     from constitutional_bioguard.evaluation.extended_benchmarks import (
-        cache_advbench_full, cache_beavertails_subset,
-        cache_harmbench_full, cache_xstest,
+        cache_advbench_full,
+        cache_beavertails_subset,
+        cache_harmbench_full,
+        cache_xstest,
     )
 
     targets = [args.name] if args.name != "all" else [

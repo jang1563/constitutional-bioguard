@@ -25,6 +25,7 @@ from constitutional_bioguard.config import (
     GENERATION_MAX_TOKENS,
     GENERATION_RPM,
 )
+from constitutional_bioguard.generation.llm_client import call_claude
 from constitutional_bioguard.models import (
     AugmentationType,
     FineLabel,
@@ -32,7 +33,6 @@ from constitutional_bioguard.models import (
     SafetyLabel,
     SyntheticExample,
 )
-from constitutional_bioguard.generation.llm_client import call_claude
 
 logger = logging.getLogger(__name__)
 

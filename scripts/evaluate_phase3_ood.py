@@ -15,8 +15,11 @@ sys.path.insert(0, str(Path(__file__).parent.parent))
 
 import numpy as np
 from sklearn.metrics import (
-    average_precision_score, f1_score, precision_score,
-    recall_score, roc_auc_score,
+    average_precision_score,
+    f1_score,
+    precision_score,
+    recall_score,
+    roc_auc_score,
 )
 
 from constitutional_bioguard.config import DATA_EXTERNAL, METRICS_DIR, MODELS_DIR
@@ -80,13 +83,16 @@ def predict(model: str, rows: list[dict]) -> tuple[list[int], list[float]]:
     responses = [r.get("response", "") for r in rows]
     if model == "v3":
         from constitutional_bioguard.evaluation.evaluate_classifier import (
-            load_model_and_tokenizer, predict_batch,
+            load_model_and_tokenizer,
+            predict_batch,
         )
         m, t = load_model_and_tokenizer(MODELS_DIR / "deberta_bioguard_v3_balanced")
         preds = predict_batch(model=m, tokenizer=t, queries=queries,
                               responses=responses, normalize=True)
         del m, t
-        import gc, torch
+        import gc
+
+        import torch
         gc.collect()
         if torch.cuda.is_available():
             torch.cuda.empty_cache()

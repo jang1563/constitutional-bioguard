@@ -1,10 +1,10 @@
 """Tests for constitution loading and validation."""
 
-import pytest
-from pathlib import Path
 
-from constitutional_bioguard.generation.constitution_loader import load_constitution
+import pytest
+
 from constitutional_bioguard.config import CONSTITUTION_FILE
+from constitutional_bioguard.generation.constitution_loader import load_constitution
 from constitutional_bioguard.models import NSABBCategory
 
 

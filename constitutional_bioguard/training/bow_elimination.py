@@ -73,8 +73,8 @@ def bow_predictability(
     try:
         from sklearn.feature_extraction.text import CountVectorizer
         from sklearn.linear_model import LogisticRegression
-        from sklearn.model_selection import cross_val_predict
         from sklearn.metrics import roc_auc_score
+        from sklearn.model_selection import cross_val_predict
     except ImportError as exc:  # pragma: no cover
         raise ImportError(
             "bag-of-words elimination needs scikit-learn: pip install scikit-learn"

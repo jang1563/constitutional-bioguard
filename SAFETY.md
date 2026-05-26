@@ -12,7 +12,7 @@ safeguard.
 - Comparison studies between rule-based, classifier-based, and LLM-judge safeguards.
 - Education on NSABB-category classification, calibration vs evasion trade-offs,
   and the limits of small-classifier safety.
-- Building integration tests for downstream agent stacks (see AgentShield example).
+- Building integration tests for downstream agent stacks.
 
 ## Out of Scope
 
@@ -35,8 +35,8 @@ The following are intentionally **not** in this public repository:
 
 - Generated synthetic unsafe examples (in `data/`, gitignored)
 - Synthetic unsafe training examples and benchmark prompts at full fidelity.
-  Model weights may be published on Hugging Face for research use, but the
-  unsafe-side generated corpus is not redistributed.
+  Model weights may be shared through controlled Hugging Face access for
+  research use, but the unsafe-side generated corpus is not redistributed.
 - Per-attack ROT13 / encoding payloads at full fidelity
 - External validation labels from BioThreat-Eval beyond aggregate kappa
 

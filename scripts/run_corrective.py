@@ -149,17 +149,25 @@ def main():
         elif args.cache_external == "med_qa":
             p = cache_med_qa("test")
         elif args.cache_external == "harmbench_bio":
-            from constitutional_bioguard.evaluation.bio_adversarial_benchmarks import cache_harmbench_bio
+            from constitutional_bioguard.evaluation.bio_adversarial_benchmarks import (
+                cache_harmbench_bio,
+            )
             p = cache_harmbench_bio()
         elif args.cache_external == "jailbreakbench_bio":
-            from constitutional_bioguard.evaluation.bio_adversarial_benchmarks import cache_jailbreakbench_bio
+            from constitutional_bioguard.evaluation.bio_adversarial_benchmarks import (
+                cache_jailbreakbench_bio,
+            )
             p = cache_jailbreakbench_bio()
         elif args.cache_external == "advbench_bio":
-            from constitutional_bioguard.evaluation.bio_adversarial_benchmarks import cache_advbench_bio
+            from constitutional_bioguard.evaluation.bio_adversarial_benchmarks import (
+                cache_advbench_bio,
+            )
             p = cache_advbench_bio()
         elif args.cache_external == "all_adversarial_bio":
             from constitutional_bioguard.evaluation.bio_adversarial_benchmarks import (
-                cache_advbench_bio, cache_harmbench_bio, cache_jailbreakbench_bio,
+                cache_advbench_bio,
+                cache_harmbench_bio,
+                cache_jailbreakbench_bio,
             )
             paths = []
             for name, fn in [

@@ -15,7 +15,10 @@ sys.path.insert(0, str(Path(__file__).parent.parent))
 
 import numpy as np
 from sklearn.metrics import (
-    average_precision_score, f1_score, recall_score, roc_auc_score,
+    average_precision_score,
+    f1_score,
+    recall_score,
+    roc_auc_score,
 )
 
 from constitutional_bioguard.config import METRICS_DIR
@@ -52,7 +55,6 @@ def load_preds(model: str, bench: str, phase: int) -> list[tuple[int, int, float
             return [(p[0], p[1], p[2]) for p in preds]
         # v3 biothreat schema: by_strategy/threat_level_4/variant_a/...
         if "by_strategy" in d:
-            tl4 = d["by_strategy"].get("threat_level_4", {})
             # We don't have per-item predictions here; skip
             continue
         # External benchmark schema: overall + by_category, no predictions
@@ -113,15 +115,6 @@ def bootstrap_metrics(preds: list[tuple], n_boot: int = N_BOOTSTRAP) -> dict:
 
 
 def main():
-    benchmarks = [
-        ("biothreat", 1),
-        ("harmbench_bio_ho", 1),
-        ("advbench_bio_ho", 1),
-        ("wildguard_test_ho", 1),
-        ("lab_bench_ho", 1),
-        # Phase 2:
-        ("biothreat", 2),  # phase2 prefix doesn't exist for biothreat — skip
-    ]
     models = ["v3", "wildguard_7b", "llama_guard_3_8b"]
 
     # Phase 2 benchmark names for v3 (have predictions saved with prob)

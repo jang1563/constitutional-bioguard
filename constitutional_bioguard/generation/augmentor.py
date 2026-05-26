@@ -11,7 +11,6 @@ Total: ~1,900 augmented examples from ~600 input examples.
 
 from __future__ import annotations
 
-import json
 import logging
 import random
 from pathlib import Path
@@ -23,17 +22,15 @@ from constitutional_bioguard.config import (
     AUGMENT_LANGUAGES,
     AUGMENT_MODEL,
     DATA_AUGMENTED,
-    GENERATION_MAX_TOKENS,
     GENERATION_RPM,
     RANDOM_SEED,
 )
+from constitutional_bioguard.generation.llm_client import call_claude
 from constitutional_bioguard.models import (
     AugmentationType,
     FineLabel,
-    SafetyLabel,
     SyntheticExample,
 )
-from constitutional_bioguard.generation.llm_client import call_claude
 
 logger = logging.getLogger(__name__)
 

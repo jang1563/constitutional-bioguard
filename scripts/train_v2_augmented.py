@@ -123,7 +123,6 @@ def main():
         DATA_EXTERNAL,
         DATA_PROCESSED,
         MODELS_DIR,
-        PROJECT_ROOT,
     )
     from constitutional_bioguard.training.train_deberta import train
 

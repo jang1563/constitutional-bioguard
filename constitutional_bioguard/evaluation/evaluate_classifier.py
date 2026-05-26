@@ -295,7 +295,6 @@ def evaluate_test_set(
             [r["text"] for r in records], model, tokenizer,
         )
     pred_labels = np.array([p[0] for p in preds_and_confs])
-    confidences = np.array([p[1] for p in preds_and_confs])
     probs_unsafe = np.array([p[2] for p in preds_and_confs])
 
     overall = _compute_metrics(true_labels, pred_labels, probs_unsafe)

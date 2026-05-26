@@ -131,7 +131,6 @@ def run_overrefusal_test(
             [ex["text"] for ex in benign_examples], model, tokenizer,
         )
     pred_labels = np.array([p[0] for p in preds_and_confs])
-    confidences = np.array([p[1] for p in preds_and_confs])
 
     # Overall FPR: benign examples falsely classified as UNSAFE
     n_false_positive = int((pred_labels == 1).sum())

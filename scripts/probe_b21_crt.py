@@ -21,7 +21,6 @@ from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).parent.parent))
 
-import numpy as np
 
 from constitutional_bioguard.config import METRICS_DIR, MODELS_DIR
 
@@ -49,8 +48,10 @@ DEFLECTION = (
 
 def load_biothreat_queries(n_per_label: int = 50) -> list[dict]:
     from constitutional_bioguard.evaluation.external_validation import (
-        derive_ground_truth_label, format_for_classifier,
-        load_evaluation_results, load_query_bank,
+        derive_ground_truth_label,
+        format_for_classifier,
+        load_evaluation_results,
+        load_query_bank,
     )
     eval_results = load_evaluation_results()
     query_bank = {q["query_id"]: q for q in load_query_bank()}
@@ -68,7 +69,8 @@ def load_biothreat_queries(n_per_label: int = 50) -> list[dict]:
 
 def run_v3(queries, responses):
     from constitutional_bioguard.evaluation.evaluate_classifier import (
-        load_model_and_tokenizer, predict_batch,
+        load_model_and_tokenizer,
+        predict_batch,
     )
     m, t = load_model_and_tokenizer(MODELS_DIR / "deberta_bioguard_v3_balanced")
     preds = predict_batch(model=m, tokenizer=t, queries=queries,

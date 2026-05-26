@@ -1,15 +1,11 @@
 """Unit tests for WS-3 activation probes (CPU-only, no LLM loading)."""
 
 import numpy as np
-import pytest
 from sklearn.linear_model import LogisticRegressionCV
 
 from constitutional_bioguard.evaluation.activation_probes import (
-    DEFAULT_LAYER_FRACTION,
     ProbeResult,
-    SUPPORTED_MODELS,
     evaluate_ensemble,
-    evaluate_probe,
     format_exchange,
     get_target_layer,
     sweep_ensemble_weights,

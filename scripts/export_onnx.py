@@ -21,7 +21,6 @@ sys.path.insert(0, str(Path(__file__).parent.parent))
 from constitutional_bioguard.config import MODELS_DIR
 from constitutional_bioguard.evaluation.evaluate_classifier import (
     load_model_and_tokenizer,
-    predict_batch,
 )
 
 

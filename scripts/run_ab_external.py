@@ -17,7 +17,6 @@ from __future__ import annotations
 
 import json
 import logging
-from pathlib import Path
 
 from constitutional_bioguard.config import METRICS_DIR, MODELS_DIR
 from constitutional_bioguard.evaluation.external_validation import (

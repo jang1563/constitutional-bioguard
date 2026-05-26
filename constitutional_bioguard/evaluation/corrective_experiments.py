@@ -506,11 +506,11 @@ def run_ood_evaluation(
     Returns:
         Results dict with all metrics and comparisons.
     """
+    from constitutional_bioguard.evaluation.escalation import escalation_rate
     from constitutional_bioguard.evaluation.evaluate_classifier import (
         load_model_and_tokenizer,
         predict_batch,
     )
-    from constitutional_bioguard.evaluation.escalation import escalation_rate
 
     model_dir = model_dir or MODELS_DIR / "deberta_bioguard_v1"
     output_file = output_file or METRICS_DIR / "corrective_6_1_ood_evaluation.json"

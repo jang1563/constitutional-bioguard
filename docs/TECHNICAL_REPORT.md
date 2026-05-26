@@ -3,7 +3,7 @@
 **JangKeun Kim**
 Weill Cornell Medicine | jak4013@med.cornell.edu
 
-**Version:** 1.18 (2026-05-25) | **Status:** Phases 1-4 complete + Goodhart audit + v5 honest-failure (Sections 6.1-6.18). v5 (PairCFR + clean splits) did NOT pass strict release rule -- the precision-recall trade-off was too sharp at lambda=0.3; v4 remains production. v4 on truly-held-out OR-Bench-Hard-1K is 2.1% FPR (passes the gate), confirming the v4 mechanism fix is real and the 98.5% headline was specifically a training-data leakage artefact. **v4 (response-diverse augmentation) breaks the compliance-template shortcut**, *mechanism-verified*: CRT flag rate under compliance template collapses 100% -> 29% with v4 now content-discriminating (44% on UNSAFE labels vs 14% on SAFE labels; v3 was 100/100). Linear probe on hidden state shows compliance-template feature still encoded (AUROC=1.0) but no longer sufficient for UNSAFE. **Goodhart audit (6.16.5-6.18) restated several measurement claims**: OR-Bench's 1.22% over-refusal is 100% train/eval overlap and cannot be cited as generalisation; HarmBench/AdvBench bio "held-out" sets had pre-existing 100% leakage from v3-era data prep. Transferable evidence with 0% leakage: **XSTest FPR 94% -> 0%, WildGuard native bio recall 2% -> 32%, BioThreat-Eval F1 0.43 -> 0.45, SaladBench/ALERT CBRN 22%/14% selectivity vs baselines' 90%+**. Refusal-prefix bypass (G.2) disconfirmed -- v4 catches 64% of UNSAFE even with refusal-then-compliance pattern. A small newly identified Goodhart artefact: v4 over-flags artificial refusal+compliance hybrids (FPR 68% on this synthetic composite; not observed in real LLM outputs). Production cost: v4 is **15.6x faster** than WildGuard 7B and **6.7x faster** than LLaMA-Guard 3 8B at batch=1 with ~7x less GPU memory. Total v1->v4 compute cost: under $200 + ~3 hours GPU.
+**Version:** 1.18 (2026-05-25) | **Status:** Phases 1-4 complete + Goodhart audit + v5 honest-failure (Sections 6.1-6.18). v5 (PairCFR + clean splits) did NOT pass strict release rule -- the precision-recall trade-off was too sharp at lambda=0.3; v4 remains the recommended release checkpoint. v4 on truly-held-out OR-Bench-Hard-1K is 2.1% FPR (passes the gate), confirming the v4 mechanism fix is real and the 98.5% headline was specifically a training-data leakage artefact. **v4 (response-diverse augmentation) breaks the compliance-template shortcut**, *mechanism-verified*: CRT flag rate under compliance template collapses 100% -> 29% with v4 now content-discriminating (44% on UNSAFE labels vs 14% on SAFE labels; v3 was 100/100). Linear probe on hidden state shows compliance-template feature still encoded (AUROC=1.0) but no longer sufficient for UNSAFE. **Goodhart audit (6.16.5-6.18) restated several measurement claims**: OR-Bench's 1.22% over-refusal is 100% train/eval overlap and cannot be cited as generalisation; HarmBench/AdvBench bio "held-out" sets had pre-existing 100% leakage from v3-era data prep. Transferable evidence with 0% leakage: **XSTest FPR 94% -> 0%, WildGuard native bio recall 2% -> 32%, BioThreat-Eval F1 0.43 -> 0.45, SaladBench/ALERT CBRN 22%/14% selectivity vs baselines' 90%+**. Refusal-prefix bypass (G.2) disconfirmed -- v4 catches 64% of UNSAFE even with refusal-then-compliance pattern. A small newly identified Goodhart artefact: v4 over-flags artificial refusal+compliance hybrids (FPR 68% on this synthetic composite; not observed in real LLM outputs). Inference cost: v4 is **15.6x faster** than WildGuard 7B and **6.7x faster** than LLaMA-Guard 3 8B at batch=1 with ~7x less GPU memory. Total v1->v4 compute cost: under $200 + ~3 hours GPU.
 
 ---
 
@@ -1912,7 +1912,7 @@ not specifically bio-weapon queries.
    automatically fires on compliance template. The 47% likely matches
    the bio-relevant fraction of AdvBench.
 
-**Net assessment:** v4 is the production-ready successor to v3. The
+**Net assessment:** v4 is the recommended release successor to v3. The
 compliance-template shortcut is broken; v4 reads response content for
 genuine harm assessment; over-refusal is fixed (1.22% vs LLaMA-Guard's
 3.92%). Trade-off: BioThreat F1 essentially unchanged (+0.02),
@@ -2479,7 +2479,7 @@ release rule says no-release for v5; both pre-thought v6 contingency
 options (A: real labelled data, B: cascade-first, D: generative
 paradigm) remain valid paths if the project continues beyond v4.
 
-**Honest restatement of v4's status.** v4 is the production model with
+**Honest restatement of v4's status.** v4 is the recommended release checkpoint with
 three caveats:
 (a) The "98.5% -> 1.22% over-refusal" claim, when stated about OR-Bench
     in general, requires the qualifier "on OR-Bench-Health, which was
