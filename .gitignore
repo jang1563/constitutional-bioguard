@@ -11,6 +11,7 @@ data/raw/*.jsonl
 data/augmented/*.jsonl
 data/processed/*.jsonl
 data/external/
+data/processed/*bow*.json
 
 # Models (too large for git)
 models/
@@ -19,6 +20,7 @@ models/
 results/figures/*.png
 results/metrics/*.json
 results/reports/*.md
+pipeline.log
 
 # Environment
 .env
@@ -37,3 +39,6 @@ uv.lock
 
 # HPC run logs
 cayuga_*.log
+
+# Local session handoffs
+docs/HANDOFF_*.md

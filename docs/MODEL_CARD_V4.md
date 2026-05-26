@@ -77,7 +77,7 @@ plus corrective augmentation designed to diagnose and reduce shortcut learning.
 
 **Not released:** v5 PairCFR. v5 fixed one artificial hybrid-response Goodhart
 case but lost too much specialist bio recall, so it is documented as a negative
-result rather than shipped as the public model.
+result rather than shipped as the release model.
 
 ## Intended Scope
 
@@ -126,7 +126,7 @@ SaladBench/ALERT CBRN selectivity, and the BioThreat-based CRT probes.
 | CRT refusal+compliance FPR | < 35% | 68% | 100% | 10% |
 
 v5 PairCFR solved the artificial refusal+compliance hybrid FPR but failed the
-specialist bio recall gate. v4 remains the recommended public checkpoint.
+specialist bio recall gate. v4 remains the recommended release checkpoint.
 
 ## Usage
 

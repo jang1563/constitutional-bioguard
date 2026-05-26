@@ -1,5 +1,6 @@
 """Configuration constants for Constitutional BioGuard."""
 
+import os as _os
 from pathlib import Path
 
 # ── Paths ────────────────────────────────────────────────────────────────────
@@ -21,7 +22,6 @@ FIGURES_DIR = RESULTS_DIR / "figures"
 REPORTS_DIR = RESULTS_DIR / "reports"
 
 # ── BioThreat-Eval paths (external validation data) ─────────────────────────
-import os as _os
 BIOTHREAT_EVAL_DIR = Path(
     _os.environ.get(
         "BIOTHREAT_EVAL_DIR",

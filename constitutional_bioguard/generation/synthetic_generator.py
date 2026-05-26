@@ -31,15 +31,14 @@ from constitutional_bioguard.config import (
     GENERATION_TEMPERATURE,
     RANDOM_SEED,
 )
+from constitutional_bioguard.generation.llm_client import call_claude
 from constitutional_bioguard.models import (
     AugmentationType,
     ConstitutionRule,
     FineLabel,
-    NSABBCategory,
     SafetyLabel,
     SyntheticExample,
 )
-from constitutional_bioguard.generation.llm_client import call_claude
 
 logger = logging.getLogger(__name__)
 

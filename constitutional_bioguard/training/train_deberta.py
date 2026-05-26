@@ -15,6 +15,7 @@ from typing import Optional
 import numpy as np
 import torch
 import yaml
+from datasets import Dataset
 from sklearn.metrics import (
     accuracy_score,
     f1_score,
@@ -42,8 +43,6 @@ def load_training_config() -> dict:
 
 def load_dataset(filepath: Path) -> "Dataset":
     """Load a JSONL file as a HuggingFace Dataset."""
-    from datasets import Dataset
-
     records = []
     with open(filepath, encoding="utf-8") as f:
         for line in f:

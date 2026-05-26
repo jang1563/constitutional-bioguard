@@ -27,7 +27,7 @@ abstract: >-
   biosafety constitution across 7 NSABB categories, generates synthetic
   training and corrective augmentation data, and fine-tunes DeBERTa-v3-base
   for binary safe/unsafe classification. The v4 response-diverse checkpoint
-  is the recommended public model after a leakage audit and v5 non-release
+  is the recommended release checkpoint after a leakage audit and v5 non-release
   decision; it reaches 2.1% FPR on OR-Bench-Hard-1K, 0% XSTest FPR, 32%
   WildGuard native bio recall, and 0.45 BioThreat-Eval F1. Intended as a
   research artifact, not a production safeguard.

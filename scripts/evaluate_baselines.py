@@ -26,12 +26,16 @@ sys.path.insert(0, str(Path(__file__).parent.parent))
 
 import numpy as np
 from sklearn.metrics import (
-    average_precision_score, f1_score, precision_score, recall_score,
+    average_precision_score,
+    f1_score,
+    precision_score,
+    recall_score,
     roc_auc_score,
 )
 
 from constitutional_bioguard.config import (
-    DATA_EXTERNAL, METRICS_DIR,
+    DATA_EXTERNAL,
+    METRICS_DIR,
 )
 
 logging.basicConfig(
@@ -54,8 +58,10 @@ def load_jsonl(path: Path) -> list[dict]:
 def load_biothreat() -> tuple[list[str], list[str], list[int]]:
     """Load BioThreat-Eval (558 items)."""
     from constitutional_bioguard.evaluation.external_validation import (
-        derive_ground_truth_label, format_for_classifier,
-        load_evaluation_results, load_query_bank,
+        derive_ground_truth_label,
+        format_for_classifier,
+        load_evaluation_results,
+        load_query_bank,
     )
     eval_results = load_evaluation_results()
     query_bank = {q["query_id"]: q for q in load_query_bank()}

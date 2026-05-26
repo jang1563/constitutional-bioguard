@@ -164,7 +164,7 @@ def evaluate_wmdp(model_dir: Path, limit: int | None = None) -> dict:
 
     print("\n── WMDP-Bio Evaluation Results ──────────────────────────────")
     print(f"  Questions          : {n_questions}")
-    print(f"  Total inputs       : {len(all_texts)}")
+    print(f"  Total inputs       : {len(all_labels)}")
     print(f"  Precision          : {precision:.4f}")
     print(f"  Recall             : {recall:.4f}")
     print(f"  F1                 : {f1:.4f}")

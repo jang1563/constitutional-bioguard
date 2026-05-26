@@ -25,7 +25,7 @@ import yaml
 PROJECT_ROOT = Path(__file__).parent.parent
 sys.path.insert(0, str(PROJECT_ROOT))
 
-from constitutional_bioguard.config import DATA_PROCESSED, MODELS_DIR, RESULTS_DIR
+from constitutional_bioguard.config import MODELS_DIR, RESULTS_DIR
 
 logger = logging.getLogger("variant_experiment")
 
@@ -97,10 +97,11 @@ def evaluate_variant(variant_name: str, eval_cfg: dict) -> dict:
 
     if eval_cfg.get("run_adversarial", True):
         try:
+            import numpy as np
+
             from constitutional_bioguard.evaluation.adversarial_suite import (
                 run_adversarial_suite,
             )
-            import numpy as np
 
             adv = run_adversarial_suite(model_dir=model_dir)
             mean_asr = float(np.mean([r.attack_success_rate for r in adv]))

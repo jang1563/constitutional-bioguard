@@ -4,7 +4,7 @@
 [![Python 3.10+](https://img.shields.io/badge/python-3.10%2B-blue)](pyproject.toml)
 [![HF Model](https://img.shields.io/badge/%F0%9F%A4%97%20Hugging%20Face-v4-yellow)](https://huggingface.co/jang1563/constitutional-bioguard-v4)
 
-> **TL;DR.** Research prototype biological dual-use content classifier built using Anthropic's [Constitutional Classifiers](https://arxiv.org/abs/2501.18837) methodology. A 56-rule biosafety constitution across 7 NSABB categories drives synthetic data generation and DeBERTa-v3-base fine-tuning. **v4 response-diverse is the recommended public checkpoint**: it breaks v3's compliance-template shortcut, reaches 2.1% FPR on truly held-out OR-Bench-Hard-1K, 0% XSTest FPR, 32% WildGuard native bio recall, and 0.45 BioThreat-Eval F1 at 184M parameters. **v5 was tested but not released**: PairCFR fixed one artificial hybrid-response Goodhart case but collapsed key bio recall. The project is a transparent case study in shortcut diagnosis, data-centric remediation, leakage auditing, and honest non-release decisions. It is not a production-equivalent safeguard.
+> **TL;DR.** Research prototype biological dual-use content classifier built using Anthropic's [Constitutional Classifiers](https://arxiv.org/abs/2501.18837) methodology. A 56-rule biosafety constitution across 7 NSABB categories drives synthetic data generation and DeBERTa-v3-base fine-tuning. **v4 response-diverse is the recommended release checkpoint**: it breaks v3's compliance-template shortcut, reaches 2.1% FPR on truly held-out OR-Bench-Hard-1K, 0% XSTest FPR, 32% WildGuard native bio recall, and 0.45 BioThreat-Eval F1 at 184M parameters. **v5 was tested but not released**: PairCFR fixed one artificial hybrid-response Goodhart case but collapsed key bio recall. The project is a transparent case study in shortcut diagnosis, data-centric remediation, leakage auditing, and honest non-release decisions. It is not a production-equivalent safeguard.
 
 > **Portfolio context.** This DeBERTa-v3 prototype is the classifier component of the *Calibrated Permissioning for Biological AI* framework (Kim, NeurIPS 2026 Position submission), trained on the [ConstitutionRules](https://github.com/jang1563/bio-constitution-rules) 56-rule constitution and evaluated alongside [OverRefusal](https://github.com/jang1563/bio-overrefusal-v0.1) (FPR finding) and [AmbiguityCasebook](https://github.com/jang1563/ambiguity-casebook) (DURC boundary).
 
@@ -14,8 +14,8 @@
 
 | Surface | Status |
 |---------|--------|
-| Code | v0.2.0 research prototype, MIT-licensed, public on GitHub |
-| Model | `jang1563/constitutional-bioguard-v4` on Hugging Face |
+| Code | v0.2.0 research prototype, MIT-licensed on GitHub |
+| Model | `jang1563/constitutional-bioguard-v4` private Hugging Face preview |
 | Constitution | 56 rules / 7 NSABB categories (`constitution/biosafety_constitution.yaml`) |
 | External validation | v4/v5 gate metrics and leakage audit reported in `data/metrics/` and `docs/TECHNICAL_REPORT.md` |
 | Internal review | Solo author; expert circulation pending |
@@ -180,7 +180,7 @@ pytest tests/ -v
 
 ### Inference-Only Quickstart
 
-Pull the trained classifier from Hugging Face and run a single batch. No Anthropic API key needed; no training pipeline needed.
+Pull the trained classifier from Hugging Face and run a single batch. No Anthropic API key needed; no training pipeline needed. The v4 checkpoint is currently a private preview, so the Hugging Face account running this snippet must have access.
 
 ```python
 from transformers import AutoTokenizer, AutoModelForSequenceClassification
@@ -218,6 +218,8 @@ data discipline and acceptance gates stay auditable.
 source ~/.api_keys && nohup bash scripts/run_full_pipeline.sh > pipeline.log 2>&1 &
 ```
 
+`pipeline.log` is treated as a local, ignored run artifact.
+
 This runs the original 7-step baseline automatically:
 1. Generate synthetic data (1960+ examples from 56 rules)
 2. Augment restricted/boundary examples
@@ -253,7 +255,7 @@ After completion, follow [`docs/POST_PIPELINE_CHECKLIST.md`](docs/POST_PIPELINE_
 - Review calibration results
 - Run variant experiments
 - Compare and select best model
-- Export to HuggingFace (optional)
+- Export to Hugging Face (optional)
 
 **Legacy: step-by-step commands**
 
@@ -312,7 +314,7 @@ constitutional_bioguard/
 │   ├── validate_constitution.py      # Constitution coverage checker
 │   ├── train_v4_response_diverse.py  # Recommended v4 training
 │   ├── train_v5.py                   # v5 PairCFR non-release experiment
-│   └── export_to_hf.py               # HuggingFace Hub upload
+│   └── export_to_hf.py               # Hugging Face Hub upload
 └── tests/
 ```
 
@@ -355,11 +357,12 @@ That discipline is the main intended contribution of this repository.
 
 ## Cross-Project Integration
 
-This classifier serves as the output safety filter in [AgentShield](../agentshield/), providing real-time content classification at ~5ms/query with no API cost. See AgentShield's `output_classifier.py` for integration details.
+This classifier can serve as an output safety filter in downstream agent stacks, providing local content classification with no per-query API cost. Keep integration-specific code in the downstream application so this repository remains a focused classifier artifact.
 
 ## Responsible Use Scope
 
 See [`SAFETY.md`](SAFETY.md) for the public responsible-use scope, what is withheld, and how to report concerns.
+See [`docs/REPOSITORY_QUALITY_CHECKLIST.md`](docs/REPOSITORY_QUALITY_CHECKLIST.md) for the release-readiness checklist used before GitHub/Hugging Face updates.
 
 ## Citation
 

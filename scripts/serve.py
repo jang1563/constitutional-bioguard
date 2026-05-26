@@ -21,11 +21,10 @@ from typing import Any, Optional
 # Allow running as a script from project root
 sys.path.insert(0, str(Path(__file__).parent.parent))
 
-from constitutional_bioguard.config import MODELS_DIR
-
 # ── Pydantic models ──────────────────────────────────────────────────────────
-
 from pydantic import BaseModel, model_validator
+
+from constitutional_bioguard.config import MODELS_DIR
 
 
 class ClassifyRequest(BaseModel):

@@ -33,12 +33,17 @@ sys.path.insert(0, str(Path(__file__).parent.parent))
 
 import numpy as np
 from sklearn.metrics import (
-    average_precision_score, f1_score, precision_score, recall_score,
+    average_precision_score,
+    f1_score,
+    precision_score,
+    recall_score,
     roc_auc_score,
 )
 
 from constitutional_bioguard.config import (
-    DATA_EXTERNAL, METRICS_DIR, MODELS_DIR,
+    DATA_EXTERNAL,
+    METRICS_DIR,
+    MODELS_DIR,
 )
 
 logging.basicConfig(
@@ -64,7 +69,7 @@ def load_harmbench_full() -> list[dict]:
     path = DATA_EXTERNAL / "harmbench_full.jsonl"
     if not path.exists():
         raise FileNotFoundError(
-            f"Run: python scripts/cache_phase2_data.py harmbench_full"
+            "Run: python scripts/cache_phase2_data.py harmbench_full"
         )
     return load_jsonl(path)
 
@@ -73,7 +78,7 @@ def load_advbench_full() -> list[dict]:
     path = DATA_EXTERNAL / "advbench_full.jsonl"
     if not path.exists():
         raise FileNotFoundError(
-            f"Run: python scripts/cache_phase2_data.py advbench_full"
+            "Run: python scripts/cache_phase2_data.py advbench_full"
         )
     return load_jsonl(path)
 
@@ -82,7 +87,7 @@ def load_xstest() -> list[dict]:
     path = DATA_EXTERNAL / "xstest.jsonl"
     if not path.exists():
         raise FileNotFoundError(
-            f"Run: python scripts/cache_phase2_data.py xstest"
+            "Run: python scripts/cache_phase2_data.py xstest"
         )
     return load_jsonl(path)
 
@@ -91,7 +96,7 @@ def load_beavertails() -> list[dict]:
     path = DATA_EXTERNAL / "beavertails_subset.jsonl"
     if not path.exists():
         raise FileNotFoundError(
-            f"Run: python scripts/cache_phase2_data.py beavertails"
+            "Run: python scripts/cache_phase2_data.py beavertails"
         )
     return load_jsonl(path)
 
@@ -119,7 +124,8 @@ def load_wildguard_native() -> list[dict]:
 def predict_v3(rows: list[dict]) -> tuple[list[int], list[float]]:
     """Run v3 inference on rows."""
     from constitutional_bioguard.evaluation.evaluate_classifier import (
-        load_model_and_tokenizer, predict_batch,
+        load_model_and_tokenizer,
+        predict_batch,
     )
     model_dir = MODELS_DIR / "deberta_bioguard_v3_balanced"
     model, tokenizer = load_model_and_tokenizer(model_dir)
@@ -131,7 +137,9 @@ def predict_v3(rows: list[dict]) -> tuple[list[int], list[float]]:
         normalize=True,
     )
     del model, tokenizer
-    import gc, torch
+    import gc
+
+    import torch
     gc.collect()
     if torch.cuda.is_available():
         torch.cuda.empty_cache()

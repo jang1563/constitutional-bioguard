@@ -13,7 +13,7 @@ import matplotlib.pyplot as plt
 import numpy as np
 import seaborn as sns
 
-from constitutional_bioguard.config import FIGURES_DIR, FIGURE_DPI, FIGURE_FONT_SIZE, METRICS_DIR
+from constitutional_bioguard.config import FIGURE_DPI, FIGURE_FONT_SIZE, FIGURES_DIR, METRICS_DIR
 
 logger = logging.getLogger(__name__)
 
@@ -83,7 +83,7 @@ def plot_roc_curve(output_dir: Optional[Path] = None) -> Path:
     # Approximate ROC point from metrics
     fpr = data["internal_metrics"]["fpr"]
     recall = data["internal_metrics"]["recall"]
-    ax.plot(fpr, recall, "ro", markersize=10, label=f"Operating point")
+    ax.plot(fpr, recall, "ro", markersize=10, label="Operating point")
     ax.annotate(
         f"FPR={fpr:.3f}\nRecall={recall:.3f}",
         (fpr, recall),
@@ -160,8 +160,7 @@ def plot_adversarial_heatmap(output_dir: Optional[Path] = None) -> Path:
     with open(adv_file, encoding="utf-8") as f:
         results = json.load(f)
 
-    # Organize by category
-    categories = sorted(set(r["attack_category"] for r in results))
+    # Organize by attack name and color by category
     attack_names = [r["attack_name"] for r in results]
     asr_values = [r["attack_success_rate"] * 100 for r in results]
 
@@ -177,7 +176,7 @@ def plot_adversarial_heatmap(output_dir: Optional[Path] = None) -> Path:
     }
     colors = [cat_colors.get(r["attack_category"], "#666") for r in results]
 
-    bars = ax.bar(range(len(attack_names)), asr_values, color=colors)
+    ax.bar(range(len(attack_names)), asr_values, color=colors)
 
     ax.set_xticks(range(len(attack_names)))
     ax.set_xticklabels(

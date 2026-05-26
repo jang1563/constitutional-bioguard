@@ -26,8 +26,8 @@ PROJECT_ROOT = Path(__file__).parent.parent
 sys.path.insert(0, str(PROJECT_ROOT))
 
 from constitutional_bioguard.config import (
-    CONSTITUTION_FILE,
     CONSTITUTION_DIR,
+    CONSTITUTION_FILE,
     MIN_RULES_PER_CATEGORY,
     NSABB_CATEGORIES,
     TARGET_RULES_PER_CATEGORY,

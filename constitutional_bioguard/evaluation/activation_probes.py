@@ -30,6 +30,7 @@ from typing import Optional
 
 import numpy as np
 import torch
+from scipy.stats import spearmanr
 from sklearn.linear_model import LogisticRegressionCV
 from sklearn.metrics import (
     average_precision_score,
@@ -37,7 +38,6 @@ from sklearn.metrics import (
     roc_auc_score,
     roc_curve,
 )
-from scipy.stats import spearmanr
 
 logger = logging.getLogger(__name__)
 

@@ -31,7 +31,10 @@ from sklearn.metrics import roc_auc_score
 from sklearn.model_selection import train_test_split
 
 from constitutional_bioguard.config import (
-    CONFIGS_DIR, DATA_EXTERNAL, METRICS_DIR, MODELS_DIR,
+    CONFIGS_DIR,
+    DATA_EXTERNAL,
+    METRICS_DIR,
+    MODELS_DIR,
 )
 
 logging.basicConfig(level=logging.INFO, format="%(asctime)s [%(levelname)s] %(message)s")

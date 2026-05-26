@@ -9,10 +9,8 @@ Usage:
 import argparse
 import json
 import re
-import sys
 import time
 from pathlib import Path
-from datetime import datetime, timedelta
 
 
 def parse_pipeline_log(log_path: Path) -> dict:
@@ -60,7 +58,7 @@ def parse_pipeline_log(log_path: Path) -> dict:
         info["last_update"] = line.split()[0] if line.split() else None
 
     # Check for generation progress
-    gen_line = [l for l in lines if "Generating synthetic data:" in l]
+    gen_line = [line for line in lines if "Generating synthetic data:" in line]
     if gen_line:
         # Parse progress line like: "Generating synthetic data:  25%|████      | 14/56"
         match = re.search(r"(\d+)%.*\| (\d+)/56", gen_line[-1])
@@ -69,7 +67,7 @@ def parse_pipeline_log(log_path: Path) -> dict:
             info["generation_progress"] = {"percent": int(pct), "rules_done": int(done), "rules_total": 56}
 
     # Check for calibration results
-    cal_lines = [l for l in lines if "Optimal threshold:" in l or "Best F1:" in l]
+    cal_lines = [line for line in lines if "Optimal threshold:" in line or "Best F1:" in line]
     if cal_lines:
         info["calibration_complete"] = True
         info["calibration_output"] = cal_lines
@@ -143,7 +141,7 @@ def print_status(info: dict) -> None:
         pct = gen["percent"]
         bar_filled = int(pct / 5)
         bar = "█" * bar_filled + "░" * (20 - bar_filled)
-        print(f"\n  Synthetic Generation Progress:")
+        print("\n  Synthetic Generation Progress:")
         print(f"    [{bar}] {pct}% ({rules_done}/{rules_total} rules)")
         if rules_done > 0:
             examples_per_rule = 30
@@ -152,7 +150,7 @@ def print_status(info: dict) -> None:
 
     # Calibration results
     if info.get("calibration_output"):
-        print(f"\n  Calibration Results:")
+        print("\n  Calibration Results:")
         for line in info["calibration_output"]:
             print(f"    {line.strip()}")
 
@@ -176,7 +174,7 @@ def print_status(info: dict) -> None:
             if info["current_step"] == 1:
                 remaining_secs += 80 * 60
             print(f"\n  ⏱️  Estimated time remaining: ~{format_duration(remaining_secs)}")
-            print(f"  (Total estimate: ~2-4 hours from start)")
+            print("  (Total estimate: ~2-4 hours from start)")
 
     print("\n" + "=" * 80 + "\n")
 

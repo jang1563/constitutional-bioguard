@@ -54,8 +54,8 @@ def plot_by_category(v3_cat: dict, a_full_cat: dict) -> Path:
     w = 0.38
 
     fig, ax = plt.subplots(figsize=(10, 5.5))
-    bars_a = ax.bar(x - w/2, a_vals, w, label="v1 (A_full)", color="#d62728")
-    bars_v = ax.bar(x + w/2, v_vals, w, label="v3 (balanced)", color="#2ca02c")
+    ax.bar(x - w/2, a_vals, w, label="v1 (A_full)", color="#d62728")
+    ax.bar(x + w/2, v_vals, w, label="v3 (balanced)", color="#2ca02c")
 
     ax.set_xticks(x)
     ax.set_xticklabels([c.capitalize() for c in categories])
@@ -102,7 +102,7 @@ def plot_top_attacks(v3_results_path: Path) -> Path:
     colors = [cat_color[c] for c in categories]
 
     fig, ax = plt.subplots(figsize=(13, 6))
-    bars = ax.bar(range(len(names)), asrs, color=colors)
+    ax.bar(range(len(names)), asrs, color=colors)
     ax.set_xticks(range(len(names)))
     ax.set_xticklabels(names, rotation=70, ha="right", fontsize=9)
     ax.set_ylabel("Attack Success Rate (%)")
@@ -134,7 +134,7 @@ def main():
     print("v3 ASR by category:")
     for cat, asr in v3_cat.items():
         print(f"  {cat:15s} {100*asr:.2f}%")
-    print(f"\nA_full ASR by category (post-norm, from actual results):")
+    print("\nA_full ASR by category (post-norm, from actual results):")
     for cat, asr in a_full_cat.items():
         print(f"  {cat:15s} {100*asr:.2f}%")
 

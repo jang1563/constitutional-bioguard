@@ -117,7 +117,8 @@ def load_unsafe_bio_queries(n: int = 50) -> list[str]:
 
 def run_v3(queries, responses):
     from constitutional_bioguard.evaluation.evaluate_classifier import (
-        load_model_and_tokenizer, predict_batch,
+        load_model_and_tokenizer,
+        predict_batch,
     )
     m, t = load_model_and_tokenizer(MODELS_DIR / "deberta_bioguard_v3_balanced")
     preds = predict_batch(model=m, tokenizer=t, queries=queries,
@@ -142,7 +143,6 @@ def main():
 
     # Show a sample
     logger.info("\nSample query transformations:")
-    sample = queries[0]
     for name, lst in variants.items():
         logger.info("  %-15s %s", name, lst[0][:120])
 

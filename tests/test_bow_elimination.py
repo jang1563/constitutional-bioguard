@@ -1,17 +1,17 @@
 """Tests for WS-2 bag-of-words elimination and the external dataset registry."""
 
-from constitutional_bioguard.training.bow_elimination import bow_predictability
 from constitutional_bioguard.evaluation.external_datasets import (
     REGISTRY,
     coverage_summary,
     datasets_by_role,
 )
+from constitutional_bioguard.training.bow_elimination import bow_predictability
 
 
 def test_bow_predictability_detects_keyword_shortcut():
     """When a keyword perfectly separates classes, examples are trivial."""
     texts = (
-        ["this exchange discusses dangerous pathogen weaponization"] * 20
+        ["this exchange discusses restricted biological escalation"] * 20
         + ["this exchange discusses ordinary garden vegetable soup"] * 20
     )
     labels = [1] * 20 + [0] * 20
