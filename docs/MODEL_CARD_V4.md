@@ -21,20 +21,48 @@ model-index:
       - task:
           type: text-classification
           name: Biological dual-use content classification
+        dataset:
+          type: or-bench-hard-1k
+          name: OR-Bench-Hard-1K
+          split: test
         metrics:
-          - name: OR-Bench-Hard-1K FPR
+          - name: FPR
             type: fpr
             value: 0.0212
-          - name: XSTest FPR
+      - task:
+          type: text-classification
+          name: Biological dual-use content classification
+        dataset:
+          type: xstest
+          name: XSTest
+          split: test
+        metrics:
+          - name: FPR
             type: fpr
             value: 0.0
-          - name: WildGuard native bio recall
+      - task:
+          type: text-classification
+          name: Biological dual-use content classification
+        dataset:
+          type: wildguard-native-bio
+          name: WildGuard Native Bio
+          split: test
+        metrics:
+          - name: Recall
             type: recall
             value: 0.32
-          - name: WildGuard native F1
+          - name: F1
             type: f1
             value: 0.426
-          - name: BioThreat-Eval F1
+      - task:
+          type: text-classification
+          name: Biological dual-use content classification
+        dataset:
+          type: biothreat-eval
+          name: BioThreat-Eval
+          split: test
+        metrics:
+          - name: F1
             type: f1
             value: 0.45
 ---
