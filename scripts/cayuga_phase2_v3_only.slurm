@@ -4,7 +4,7 @@
 #SBATCH --error=cayuga_phase2_v3_%j.log
 #SBATCH --partition=scu-gpu
 #SBATCH --qos=normal
-#SBATCH --account=cayuga_0003
+##SBATCH --account=<your_allocation>
 #SBATCH --nodes=1
 #SBATCH --ntasks-per-node=1
 #SBATCH --gpus=1
@@ -18,11 +18,11 @@
 set -euo pipefail
 cd "${SLURM_SUBMIT_DIR:-$(pwd)}"
 
-PYTHON=~/.conda/envs/bioguard/bin/python
+PYTHON=${PYTHON:-python}
 
 export PYTHONUTF8=1
 export PYTHONPATH="${PYTHONPATH:+$PYTHONPATH:}$(pwd)"
-export BIOTHREAT_EVAL_DIR="${HOME}/New_Science/biothreat_eval"
+export BIOTHREAT_EVAL_DIR="${BIOTHREAT_EVAL_DIR:-${HOME}/biothreat_eval}"
 
 echo "======================================================"
 echo "PHASE 2 v3 only (Cayuga)"

@@ -54,7 +54,7 @@ detail into public GitHub issues.
 
 ## Limitations Recap
 
-- Solo-author classifier; expert circulation pending
+- Solo-author classifier; independent expert review not yet completed
 - Trained on Claude-generated synthetic data; real-world distribution shift
   is uncharacterized
 - v4 still over-flags an artificial refusal+compliance hybrid response pattern

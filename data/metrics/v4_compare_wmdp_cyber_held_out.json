@@ -1,6 +1,6 @@
 {
   "experiment": "External benchmark evaluation: v4_wmdp_cyber_held_out",
-  "model_dir": "~/constitutional-bioguard/models/deberta_bioguard_v4_response_diverse",
+  "model_dir": "<project-root>/models/deberta_bioguard_v4_response_diverse",
   "cache_path": "data/external/v3_splits/wmdp_cyber_held_out.jsonl",
   "benchmark_name": "v4_wmdp_cyber_held_out",
   "n_items": 1887,

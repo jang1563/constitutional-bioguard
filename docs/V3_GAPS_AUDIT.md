@@ -2,7 +2,7 @@
 
 **Date:** 2026-05-25, during v4 training wait window.
 **Purpose:** Adversarial self-review of v3's evaluation. Categorize gaps by
-critical/nice-to-have. Plan follow-ups before paper submission.
+critical/nice-to-have. Plan follow-ups before release.
 
 ---
 
@@ -206,7 +206,7 @@ this is reported.
 
 ---
 
-## 🎯 Recommended sprint (4-6 hours before paper submission)
+## 🎯 Recommended sprint (4-6 hours before release)
 
 Priority queue:
 

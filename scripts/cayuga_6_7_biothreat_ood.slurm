@@ -4,7 +4,7 @@
 #SBATCH --error=cayuga_6_7_%j.log
 #SBATCH --partition=scu-cpu
 #SBATCH --qos=normal
-#SBATCH --account=cayuga_0003
+##SBATCH --account=<your_allocation>
 #SBATCH --nodes=1
 #SBATCH --ntasks-per-node=1
 #SBATCH --cpus-per-task=4
@@ -17,18 +17,18 @@
 # the "binary label is too coarse" concern surfaced after 6.1.
 #
 # Pre-requisites:
-#   1. BioThreat-Eval data at ~/New_Science/biothreat_eval/
+#   1. BioThreat-Eval data at ${BIOTHREAT_EVAL_DIR:-${HOME}/biothreat_eval}
 #   2. Both model variants at ~/constitutional-bioguard/models/
 
 set -euo pipefail
 cd "${SLURM_SUBMIT_DIR:-$(pwd)}"
 
 # Direct path to conda env python (module system unavailable in SLURM)
-PYTHON=~/.conda/envs/bioguard/bin/python
+PYTHON=${PYTHON:-python}
 
 export PYTHONUTF8=1
 export PYTHONPATH="${PYTHONPATH:+$PYTHONPATH:}$(pwd)"
-export BIOTHREAT_EVAL_DIR="${HOME}/New_Science/biothreat_eval"
+export BIOTHREAT_EVAL_DIR="${BIOTHREAT_EVAL_DIR:-${HOME}/biothreat_eval}"
 
 # Model paths
 MODEL_A=${HOME}/constitutional-bioguard/models/deberta_bioguard_v1_A_full

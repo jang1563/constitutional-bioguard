@@ -4,7 +4,7 @@
 #SBATCH --error=ws5_corrective_%j.log
 #SBATCH --partition=nairr-gpu-shared
 #SBATCH --qos=nairr-gpu-shared-normal
-#SBATCH --account=crl195
+##SBATCH --account=<your_allocation>
 #SBATCH --nodes=1
 #SBATCH --ntasks-per-node=1
 #SBATCH --gpus=1
@@ -23,22 +23,22 @@
 #   1. Download WMDP-Bio data:
 #      python scripts/run_corrective.py --cache-wmdp
 #   2. Ensure BioThreat-Eval data is accessible at:
-#      /home/jkim61/New_Science/biothreat_eval/
+#      <biothreat-eval-root>/
 #      (or set BIOTHREAT_EVAL_DIR env var)
 #   3. Ensure both model variants exist:
-#      /home/jkim61/constitutional-bioguard/models/deberta_bioguard_v1_A_full
-#      /home/jkim61/constitutional-bioguard/models/deberta_bioguard_v1_B_bowhard
+#      <project-root>/models/deberta_bioguard_v1_A_full
+#      <project-root>/models/deberta_bioguard_v1_B_bowhard
 
 set -euo pipefail
 cd "${SLURM_SUBMIT_DIR:-$(pwd)}"
 
-PYTHON=/home/jkim61/.conda/envs/bioguard/bin/python
+PYTHON=${PYTHON:-python}
 export PYTHONUTF8=1
 export PYTHONPATH="${PYTHONPATH:+$PYTHONPATH:}$(pwd)"
 
 # Model paths
-MODEL_A=/home/jkim61/constitutional-bioguard/models/deberta_bioguard_v1_A_full
-MODEL_B=/home/jkim61/constitutional-bioguard/models/deberta_bioguard_v1_B_bowhard
+MODEL_A="${MODEL_A:-models/deberta_bioguard_v1_A_full}"
+MODEL_B="${MODEL_B:-models/deberta_bioguard_v1_B_bowhard}"
 
 echo "=== BioGuard WS-5: Corrective Experiments ==="
 echo "Node: $(hostname)   Started: $(date)"

@@ -11,8 +11,8 @@
 
 set -euo pipefail
 
-PYTHON=~/.conda/envs/bioguard/bin/python
-PROJECT=~/constitutional_bioguard
+PYTHON=${PYTHON:-python}
+PROJECT="${PROJECT:-${SLURM_SUBMIT_DIR:-$(pwd)}}"
 cd "$PROJECT"
 mkdir -p logs results/metrics
 

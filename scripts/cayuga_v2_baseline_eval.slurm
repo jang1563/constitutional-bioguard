@@ -4,7 +4,7 @@
 #SBATCH --error=cayuga_v2_baseline_%j.log
 #SBATCH --partition=scu-cpu
 #SBATCH --qos=normal
-#SBATCH --account=cayuga_0003
+##SBATCH --account=<your_allocation>
 #SBATCH --nodes=1
 #SBATCH --ntasks-per-node=1
 #SBATCH --cpus-per-task=4
@@ -19,7 +19,7 @@
 set -euo pipefail
 cd "${SLURM_SUBMIT_DIR:-$(pwd)}"
 
-PYTHON=~/.conda/envs/bioguard/bin/python
+PYTHON=${PYTHON:-python}
 
 export PYTHONUTF8=1
 export PYTHONPATH="${PYTHONPATH:+$PYTHONPATH:}$(pwd)"

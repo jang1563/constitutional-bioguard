@@ -4,7 +4,7 @@
 #SBATCH --error=probe_ensemble_%j.log
 #SBATCH --partition=nairr-gpu-shared
 #SBATCH --qos=nairr-gpu-shared-normal
-#SBATCH --account=crl195
+##SBATCH --account=<your_allocation>
 #SBATCH --gpus=1
 #SBATCH --nodes=1
 #SBATCH --ntasks-per-node=1
@@ -12,7 +12,7 @@
 #SBATCH --mem=64G
 #SBATCH --time=06:00:00
 #
-# WS-3 Activation-probe ensemble on SDSC Expanse (NAIRR allocation crl195).
+# WS-3 Activation-probe ensemble on SDSC Expanse (NAIRR allocation).
 #
 # Loads an open-weight LLM (Llama-3.1-8B or Gemma-2-9B), extracts
 # hidden-state activations on train+test data, trains linear probes,
@@ -29,7 +29,7 @@ set -euo pipefail
 cd "${SLURM_SUBMIT_DIR:-$(pwd)}"
 
 # Use conda env from previous WS-2 setup
-PYTHON=/home/jkim61/.conda/envs/bioguard/bin/python
+PYTHON=${PYTHON:-python}
 
 export PYTHONUTF8=1
 export PYTHONPATH="${PYTHONPATH:+$PYTHONPATH:}$(pwd)"

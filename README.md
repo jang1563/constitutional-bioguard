@@ -6,7 +6,7 @@
 
 > **TL;DR.** Research prototype biological dual-use content classifier built using Anthropic's [Constitutional Classifiers](https://arxiv.org/abs/2501.18837) methodology. A 56-rule biosafety constitution across 7 NSABB categories drives synthetic data generation and DeBERTa-v3-base fine-tuning. **v4 response-diverse is the recommended release checkpoint**: it breaks v3's compliance-template shortcut, reaches 2.1% FPR on truly held-out OR-Bench-Hard-1K, 0% XSTest FPR, 32% WildGuard native bio recall, and 0.45 BioThreat-Eval F1 at 184M parameters. **v5 was tested but not released**: PairCFR fixed one artificial hybrid-response Goodhart case but collapsed key bio recall. The project is a transparent case study in shortcut diagnosis, data-centric remediation, leakage auditing, and honest non-release decisions. It is not a production-equivalent safeguard.
 
-> **Portfolio context.** This DeBERTa-v3 prototype is the classifier component of the *Calibrated Permissioning for Biological AI* framework (Kim, NeurIPS 2026 Position submission), trained on the [ConstitutionRules](https://github.com/jang1563/bio-constitution-rules) 56-rule constitution and evaluated alongside [OverRefusal](https://github.com/jang1563/bio-overrefusal-v0.1) (FPR finding) and [AmbiguityCasebook](https://github.com/jang1563/ambiguity-casebook) (DURC boundary).
+> **Portfolio context.** This DeBERTa-v3 prototype is trained on the [ConstitutionRules](https://github.com/jang1563/bio-constitution-rules) 56-rule constitution and evaluated alongside [OverRefusal](https://github.com/jang1563/bio-overrefusal-v0.1) (FPR finding) and [AmbiguityCasebook](https://github.com/jang1563/ambiguity-casebook) (DURC boundary).
 
 **Author:** JangKeun Kim, Weill Cornell Medicine (jak4013@med.cornell.edu)
 
@@ -18,7 +18,7 @@
 | Model | `jang1563/constitutional-bioguard-v4` private Hugging Face preview |
 | Constitution | 56 rules / 7 NSABB categories (`constitution/biosafety_constitution.yaml`) |
 | External validation | v4/v5 gate metrics and leakage audit reported in `data/metrics/` and `docs/TECHNICAL_REPORT.md` |
-| Internal review | Solo author; expert circulation pending |
+| Independent review | Not yet externally audited |
 | Responsible-use scope | [`SAFETY.md`](SAFETY.md) |
 
 ### Latest Run Snapshot (2026-05-25)
@@ -215,7 +215,7 @@ data discipline and acceptance gates stay auditable.
 **Step 1: Run the complete pipeline** (2–4 hours)
 
 ```bash
-source ~/.api_keys && nohup bash scripts/run_full_pipeline.sh > pipeline.log 2>&1 &
+ANTHROPIC_API_KEY=your_key nohup bash scripts/run_full_pipeline.sh > pipeline.log 2>&1 &
 ```
 
 `pipeline.log` is treated as a local, ignored run artifact.

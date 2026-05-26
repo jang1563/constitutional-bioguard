@@ -4,7 +4,7 @@
 #SBATCH --error=expanse_lg3_%j.log
 #SBATCH --partition=nairr-gpu-shared
 #SBATCH --qos=nairr-gpu-shared-normal
-#SBATCH --account=crl195
+##SBATCH --account=<your_allocation>
 #SBATCH --nodes=1
 #SBATCH --ntasks-per-node=1
 #SBATCH --gpus=1
@@ -13,16 +13,16 @@
 #SBATCH --time=03:00:00
 #
 # LLaMA-Guard 3 8B baseline on Expanse (Cayuga GPU is QOS-blocked).
-# Reuses jkim61's existing bioguard conda env on /home/jkim61/.conda/envs/.
+# Set PYTHON to a project-specific environment if needed.
 
 set -euo pipefail
 cd "${SLURM_SUBMIT_DIR:-$(pwd)}"
 
-PYTHON=/home/jkim61/.conda/envs/bioguard/bin/python
+PYTHON=${PYTHON:-python}
 
 export PYTHONUTF8=1
 export PYTHONPATH="${PYTHONPATH:+$PYTHONPATH:}$(pwd)"
-export BIOTHREAT_EVAL_DIR="${SLURM_SUBMIT_DIR}/biothreat_eval"
+export BIOTHREAT_EVAL_DIR="${BIOTHREAT_EVAL_DIR:-${SLURM_SUBMIT_DIR:-$(pwd)}/biothreat_eval}"
 
 echo "======================================================"
 echo "LLAMA-GUARD 3 8B (Expanse)"

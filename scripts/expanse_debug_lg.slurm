@@ -4,7 +4,7 @@
 #SBATCH --error=expanse_lg_debug_%j.log
 #SBATCH --partition=nairr-gpu-shared
 #SBATCH --qos=nairr-gpu-shared-normal
-#SBATCH --account=crl195
+##SBATCH --account=<your_allocation>
 #SBATCH --nodes=1
 #SBATCH --ntasks-per-node=1
 #SBATCH --gpus=1
@@ -13,5 +13,5 @@
 #SBATCH --time=00:20:00
 
 cd "${SLURM_SUBMIT_DIR:-$(pwd)}"
-PYTHON=/home/jkim61/.conda/envs/bioguard/bin/python
+PYTHON=${PYTHON:-python}
 $PYTHON scripts/debug_llama_guard.py

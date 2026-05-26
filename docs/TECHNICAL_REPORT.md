@@ -198,7 +198,7 @@ improve external agreement.
    keyword-predictable.
 2. Removed examples where BoW confidence >= 0.999, retaining 1,819 / 3,062
    examples (59.4%) with recomputed class weights.
-3. Retrained two models on SDSC Expanse (NAIRR allocation crl195):
+3. Retrained two models on SDSC Expanse (NAIRR allocation):
    - **A_full**: original training set (3,062 examples) -- controls for
      run-to-run variance.
    - **B_bowhard**: filtered set (1,819 examples) -- tests the hypothesis.

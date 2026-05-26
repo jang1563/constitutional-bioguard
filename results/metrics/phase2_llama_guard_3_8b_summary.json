@@ -381,7 +381,7 @@
       }
     },
     "wildguard_native": {
-      "error": "[Errno 2] No such file or directory: '/home/jkim61/constitutional-bioguard/data/external/wildguard_test.jsonl'"
+      "error": "[Errno 2] No such file or directory: '<project-root>/data/external/wildguard_test.jsonl'"
     }
   }
 }

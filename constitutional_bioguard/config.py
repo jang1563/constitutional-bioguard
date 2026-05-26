@@ -25,7 +25,7 @@ REPORTS_DIR = RESULTS_DIR / "reports"
 BIOTHREAT_EVAL_DIR = Path(
     _os.environ.get(
         "BIOTHREAT_EVAL_DIR",
-        str(PROJECT_ROOT.parent.parent / "New_Science" / "biothreat_eval"),
+        str(PROJECT_ROOT.parent / "biothreat_eval"),
     )
 )
 BIOTHREAT_QUERY_BANK = BIOTHREAT_EVAL_DIR / "data" / "raw" / "query_bank.json"
