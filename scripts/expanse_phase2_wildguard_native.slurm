@@ -4,7 +4,7 @@
 #SBATCH --error=expanse_phase2_wgn_%j.log
 #SBATCH --partition=nairr-gpu-shared
 #SBATCH --qos=nairr-gpu-shared-normal
-#SBATCH --account=crl195
+##SBATCH --account=<your_allocation>
 #SBATCH --nodes=1
 #SBATCH --ntasks-per-node=1
 #SBATCH --gpus=1
@@ -22,7 +22,7 @@
 set -euo pipefail
 cd "${SLURM_SUBMIT_DIR:-$(pwd)}"
 
-PYTHON=/home/jkim61/.conda/envs/bioguard/bin/python
+PYTHON=${PYTHON:-python}
 
 export PYTHONUTF8=1
 export PYTHONPATH="${PYTHONPATH:+$PYTHONPATH:}$(pwd)"

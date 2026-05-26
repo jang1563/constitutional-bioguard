@@ -1,6 +1,6 @@
 {
   "experiment": "6.7 OOD evaluation on BioThreat-Eval (expert-labeled)",
-  "model_dir_a": "/home/fs01/jak4013/constitutional-bioguard/models/deberta_bioguard_v4_response_diverse",
+  "model_dir_a": "<project-root>/models/deberta_bioguard_v4_response_diverse",
   "model_dir_b": null,
   "dataset": "BioThreat-Eval (93 queries x 6 models = 558 scored responses)",
   "n_pairs": 558,

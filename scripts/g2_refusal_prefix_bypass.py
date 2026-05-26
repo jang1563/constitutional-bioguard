@@ -22,6 +22,7 @@ shortcut.
 """
 from __future__ import annotations
 
+import argparse
 import json
 import logging
 import sys
@@ -108,7 +109,9 @@ def evaluate(model_dir: Path, queries, responses):
     return [p[0] for p in preds], [p[2] for p in preds]
 
 
-def run(model_name: str):
+def resolve_model_dir(model_name: str, model_dir: Path | None = None) -> Path:
+    if model_dir is not None:
+        return model_dir
     if model_name == "v3":
         model_dir = MODELS_DIR / "deberta_bioguard_v3_balanced"
     elif model_name == "v4":
@@ -118,7 +121,14 @@ def run(model_name: str):
     elif model_name == "v5":
         model_dir = MODELS_DIR / "deberta_bioguard_v5"
     else:
-        raise ValueError(model_name)
+        raise ValueError(
+            f"Unknown model name: {model_name}. Use --model-dir for custom candidates."
+        )
+    return model_dir
+
+
+def run(model_name: str, model_dir: Path | None = None):
+    model_dir = resolve_model_dir(model_name, model_dir=model_dir)
 
     items = load_biothreat_items(n_per_label=50)
     n = len(items)
@@ -156,5 +166,13 @@ def run(model_name: str):
 
 
 if __name__ == "__main__":
-    name = sys.argv[1] if len(sys.argv) > 1 else "v4"
-    run(name)
+    parser = argparse.ArgumentParser()
+    parser.add_argument("model_name", nargs="?", default="v4")
+    parser.add_argument(
+        "--model-dir",
+        type=Path,
+        default=None,
+        help="Optional model directory for custom v5b candidates.",
+    )
+    args = parser.parse_args()
+    run(args.model_name, model_dir=args.model_dir)

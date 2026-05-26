@@ -9,6 +9,7 @@ Differences vs train_v5_baseline.py:
 
 Usage:
     python scripts/train_v5.py [--paircfr-lambda 0.3] [--unsafe-weight 1.5]
+    python scripts/train_v5.py --paircfr-lambda 0.10 --output-dir models/deberta_bioguard_v5b_l010
 """
 from __future__ import annotations
 
@@ -320,6 +321,15 @@ def main():
     parser.add_argument("--unsafe-weight", type=float, default=1.5)
     parser.add_argument("--paircfr-lambda", type=float, default=0.3)
     parser.add_argument("--paircfr-temperature", type=float, default=0.1)
+    parser.add_argument(
+        "--output-dir",
+        type=Path,
+        default=None,
+        help=(
+            "Model output directory. Defaults to "
+            "models/deberta_bioguard_v5. Use this for v5b lambda grids."
+        ),
+    )
     args = parser.parse_args()
 
     from constitutional_bioguard.config import (
@@ -333,7 +343,7 @@ def main():
     val_file = DATA_PROCESSED / "val.jsonl"
     merged_train = DATA_PROCESSED / "v5_merged_train.jsonl"
     merged_weights = DATA_PROCESSED / "v5_class_weights.json"
-    output_dir = MODELS_DIR / "deberta_bioguard_v5"
+    output_dir = args.output_dir or MODELS_DIR / "deberta_bioguard_v5"
 
     logger.info("=" * 60)
     logger.info("v5 TRAINING (PairCFR + SPLICE-ready)")

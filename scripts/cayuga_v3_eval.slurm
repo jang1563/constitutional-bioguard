@@ -11,8 +11,8 @@
 
 set -euo pipefail
 
-PYTHON=/home/fs01/jak4013/.conda/envs/bioguard/bin/python
-PROJECT=/home/fs01/jak4013/constitutional_bioguard
+PYTHON=${PYTHON:-python}
+PROJECT="${PROJECT:-${SLURM_SUBMIT_DIR:-$(pwd)}}"
 cd "$PROJECT"
 mkdir -p logs results/metrics
 

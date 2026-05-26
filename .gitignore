@@ -42,3 +42,6 @@ cayuga_*.log
 
 # Local session handoffs
 docs/HANDOFF_*.md
+docs/SESSION_*.md
+docs/V5_FOLLOWUP_*.md
+docs/V5_NEXT_*.md

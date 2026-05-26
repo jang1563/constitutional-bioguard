@@ -3,10 +3,10 @@
 # Resumes from where it left off (synthetic_generator uses resume=True).
 #
 # Usage:
-#   source ~/.api_keys && bash scripts/run_full_pipeline.sh
+#   ANTHROPIC_API_KEY=your_key bash scripts/run_full_pipeline.sh
 #
 # Or in the background:
-#   source ~/.api_keys && nohup bash scripts/run_full_pipeline.sh > pipeline.log 2>&1 &
+#   ANTHROPIC_API_KEY=your_key nohup bash scripts/run_full_pipeline.sh > pipeline.log 2>&1 &
 #
 # Estimated time: 2-4 hours (depending on API response times)
 
@@ -14,7 +14,7 @@ set -euo pipefail
 cd "$(dirname "$0")/.."
 
 if [ -z "${ANTHROPIC_API_KEY:-}" ]; then
-    echo "ERROR: ANTHROPIC_API_KEY not set. Run: source ~/.api_keys"
+    echo "ERROR: ANTHROPIC_API_KEY not set. Run: export ANTHROPIC_API_KEY=your_key"
     exit 1
 fi
 

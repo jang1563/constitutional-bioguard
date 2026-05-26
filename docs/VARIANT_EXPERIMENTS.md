@@ -60,7 +60,7 @@ Each variant is evaluated on:
 
 ### 1. Run Full Pipeline
 ```bash
-source ~/.api_keys && nohup bash scripts/run_full_pipeline.sh > pipeline.log 2>&1 &
+ANTHROPIC_API_KEY=your_key nohup bash scripts/run_full_pipeline.sh > pipeline.log 2>&1 &
 # Estimated: 2–4 hours
 ```
 
