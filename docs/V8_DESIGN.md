@@ -143,6 +143,22 @@ The harmful-RESPONSE positive class is the only genuinely hard, partly-open part
 **Recommend A first** (measure the harvested bio pool size), escalate to B only
 if the class is too thin to train. This is the decision that gates v8 feasibility.
 
+> **RESOLVED 2026-05-31 — Option A is FEASIBLE; B not needed for the positive class.**
+> Measured the harvestable bio pool from WildGuardMix train (86,759), leakage-clean.
+> The earlier "143" floor was a filter artifact (F.4 matched bio on the PROMPT only).
+> Broadening the bio match to the RESPONSE text as well:
+> - prompt-only (F.4): bio=859 → 143 harmful-RESPONSE positives
+> - **broad (prompt+response): bio=1901 → 658 harmful-RESPONSE positives** ((1,1)=657, (0,1)=1)
+>
+> So **658 real, already-public, leakage-clean bio harmful-response positives — zero
+> new generation** — a trainable positive class, growable with BeaverTails/Aegis.
+> Companion classes from the same harvest: 409 bio (1,0) harmful-prompt→safe-response
+> (the critical "don't flag on the prompt" negatives), 444 (0,0) benign.
+> **The (0,1) quadrant remains ~0 (1 item)** — still the hardest gap, deferred to a
+> separate careful pilot (ExpGuard-style jargon-concealment re-grounded in bio, §4.2).
+> Decision: build v8 on Option A (reuse-only positives). Measurement script: harvest
+> with the BROAD (prompt+response) bio filter, not F.4's prompt-only filter.
+
 ## 5. Pre-registered gates (carry the v6/v7 eight + add real-response gates)
 
 Tier-1 (the 8, unchanged): SaladBench-O39 recall ≥96% (use strict subset);
