@@ -12,6 +12,8 @@ data/augmented/*.jsonl
 data/processed/*.jsonl
 data/external/
 data/processed/*bow*.json
+data/aug/
+data/splits/
 
 # Models (too large for git)
 models/
@@ -20,6 +22,7 @@ models/
 results/figures/*.png
 results/metrics/*.json
 results/reports/*.md
+results/*.json
 pipeline.log
 
 # Environment
