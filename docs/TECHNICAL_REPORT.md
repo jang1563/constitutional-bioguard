@@ -2879,7 +2879,7 @@ architectural (cascade, ensemble, probe) but data-centric:
    This is a more nuanced version of "just add more data" — the
    composition of the added data matters more than the quantity.
 
-### 6.21 v7.C: Matched-Scale 8B Response-Harm Classifier (Statistical Parity with LLaMA-Guard-3-8B)
+### 6.21 v7.C: Fails the Pre-Registered Gates (Lost Bio Selectivity, Over-Refuses); Matches LG3-8B on Response-Harm F1 Only
 
 The v4 headline (Section 6.18) is *selectivity at tiny scale* (184M). v7
 adds a second competitive axis: a matched-scale (8B) classifier in the same
@@ -2887,6 +2887,32 @@ weight class as the production guards, to remove "we are 38x smaller" as a
 defensive framing. v7.C is the 8B tier of the v7 ladder (design:
 `docs/V7_DESIGN.md`; the v7.A/v7.B trajectory and the over-refusal diagnosis
 that reshaped v7.C live in `docs/V7B_OVER_REFUSAL_ANALYSIS.md`).
+
+**Verdict against the pre-registered acceptance gates (V7_DESIGN §1 — the same
+8 gates v4 was held to). This is the contract; it leads.**
+
+| # | Pre-registered gate | Threshold | v7.C | Verdict |
+|---|---------------------|-----------|-----:|---------|
+| 1 | SaladBench-O39 bio recall | ≥ 96% | 100% | **PASS** |
+| 2 | SaladBench non-bio FPR | ≤ 25% | 91.9% | **FAIL** |
+| 3 | Bio-selectivity ratio | ≥ 4.0x | 1.09 | **FAIL** |
+| 4 | OR-Bench-Hard FPR | ≤ 5% | 70.0% | **FAIL** |
+| 5 | XSTest FPR | ≤ 2% | 15.6% | **FAIL** |
+| 6 | BioThreat-Eval F1 | ≥ 0.43 | not measured | — |
+| 7 | LAB-Bench / WMDP / MedQA FAR | ≤ 1.5% | not measured | — |
+| 8 | SimpleSafety / ALERT-strict bio recall | ≥ 40% / 42% | 100% / 74% | **PASS** |
+
+**Bottom line: 4 of the 6 measured gates FAIL — and all four failures are the
+precision / selectivity / over-refusal gates. v7.C catches bio harm but cannot
+distinguish bio from non-bio CBRN and over-refuses benign prompts. It does not
+ship and does not supersede v4.** The one genuinely positive result —
+matched-scale response-harm F1 at parity with LLaMA-Guard-3-8B — is reported
+next, but it is *not* one of the registered gates. An earlier draft of this
+section led with that F1 result and demoted the gate failures to caveats; that
+is precisely the goalpost-shift Sections 6.15-6.20 exist to guard against, so
+the gate scorecard now leads and the F1 parity is labelled for what it is: a
+silver lining, not a pass. (Gates 6-7 were not run for v7.C; since the verdict
+is already FAIL on the selectivity axis, completing them is low-priority.)
 
 **v7.C as built (two deviations from the v7.C design spec, both deliberate):**
 - **No chain-of-thought.** The design specified CoT (LLaMA-Guard-style with
@@ -2903,7 +2929,8 @@ that reshaped v7.C live in `docs/V7B_OVER_REFUSAL_ANALYSIS.md`).
   (n=3531 training items, derived from the v7.B2 dual-label set with CoT
   stripped). Binary decision = response harm.
 
-**The controlled head-to-head (the result that matters).** On WildGuard's
+**The controlled head-to-head (the lone silver lining — a real result, but not
+a registered gate).** On WildGuard's
 native test set scored with the `response_harm_label` (n=1709, 16.6% positive
 — the same item set and gold v7.C is evaluated on), against the two
 production guards run *on the same label*:
