@@ -32,6 +32,7 @@ from sklearn.metrics import f1_score, precision_score, recall_score
 from constitutional_bioguard.config import DATA_EXTERNAL, METRICS_DIR, MODELS_DIR
 
 MODEL_DIRS = {
+    "v8b": MODELS_DIR / "deberta_bioguard_v8b",
     "v8": MODELS_DIR / "deberta_bioguard_v8",
     "v4": MODELS_DIR / "deberta_bioguard_v4_response_diverse",
 }
