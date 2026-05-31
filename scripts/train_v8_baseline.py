@@ -42,11 +42,16 @@ MODELS = ROOT / "models"
 RESULTS = ROOT / "results"
 
 
-def load_splits():
-    """Load train/val/ood splits into lists of dicts."""
+def load_splits(train_file=None):
+    """Load train/val/ood splits into lists of dicts.
+
+    train_file: optional override for the train split path (e.g. a KO-augmented
+    train set). val/ood_fpr/ood_fnr always come from data/splits/ — the eval
+    splits stay fixed so augmentation runs remain comparable.
+    """
     splits = {}
     for name in ("train", "val", "ood_fpr", "ood_fnr"):
-        path = SPLITS / f"{name}.jsonl"
+        path = Path(train_file) if (name == "train" and train_file) else SPLITS / f"{name}.jsonl"
         records = []
         with open(path, encoding="utf-8") as f:
             for line in f:
@@ -221,6 +226,12 @@ def main():
                         default="microsoft/deberta-v3-base")
     parser.add_argument("--output-dir", type=str,
                         default=str(MODELS / "deberta_bioguard_v8_baseline"))
+    parser.add_argument("--train-file", type=str, default=None,
+                        help="Override train split path (e.g. KO-augmented train). "
+                             "val/ood splits stay fixed.")
+    parser.add_argument("--results-name", type=str, default="phase3_baseline_eval.json",
+                        help="Filename under results/ for the eval report "
+                             "(set distinct per run so baseline isn't overwritten).")
     args = parser.parse_args()
 
     logger.info("=" * 70)
@@ -239,7 +250,9 @@ def main():
 
     # Load data
     logger.info("\nLoading splits...")
-    splits = load_splits()
+    if args.train_file:
+        logger.info("Train override: %s", args.train_file)
+    splits = load_splits(train_file=args.train_file)
 
     # Build tokenizer & model
     logger.info("\nLoading model: %s", args.model_name)
@@ -371,7 +384,7 @@ def main():
         "all_gates_passed": all_pass,
         "data_source": "data/splits/ (post-audit v2, 2026-05-28)",
     }
-    report_path = RESULTS / "phase3_baseline_eval.json"
+    report_path = RESULTS / args.results_name
     with open(report_path, "w") as f:
         json.dump(eval_report, f, indent=2)
     logger.info("\nResults saved to %s", report_path)

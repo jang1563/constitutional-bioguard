@@ -1,0 +1,47 @@
+{
+  "model": "microsoft/deberta-v3-base",
+  "output_dir": "models/deberta_bioguard_v8_baseline",
+  "unsafe_weight": 1.5,
+  "epochs": 5,
+  "val_f1_macro": 0.9956164965103897,
+  "ood_fpr_rate": 0.19314641744548286,
+  "ood_fnr_rate": 0.06847649918962723,
+  "youdens_j_per_domain": {
+    "biochemistry": 0.9998807525043958,
+    "cell_biology": 0.0004183602723060176,
+    "genomics": 0.9998791607431485,
+    "immunology": 0.33400093702463596,
+    "microbiology": 0.9997648762994991,
+    "pathogen_biology": 0.9994530531748751,
+    "structural_biology": 0.9998919434365234,
+    "synthetic_biology": 0.12643258786192746,
+    "toxicology": 0.44438560359170287,
+    "virology": 0.9997789452299912,
+    "dual_use_chemistry": 0.0,
+    "avg": 0.6276260200126369
+  },
+  "gates": {
+    "val_f1_macro": {
+      "value": 0.9956164965103897,
+      "target": "\u2265 0.85",
+      "pass": true
+    },
+    "ood_fpr_rate": {
+      "value": 0.19314641744548286,
+      "target": "\u2264 0.10",
+      "pass": false
+    },
+    "ood_fnr_rate": {
+      "value": 0.06847649918962723,
+      "target": "\u2264 0.05",
+      "pass": false
+    },
+    "youdens_j_avg": {
+      "value": 0.6276260200126369,
+      "target": "\u2265 0.70",
+      "pass": false
+    }
+  },
+  "all_gates_passed": false,
+  "data_source": "data/splits/ (post-audit v2, 2026-05-28)"
+}

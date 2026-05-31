@@ -1,7 +1,7 @@
 #!/bin/bash
-#SBATCH --job-name=bioguard-v8-baseline
-#SBATCH --output=logs/cayuga_v8_baseline_%j.log
-#SBATCH --error=logs/cayuga_v8_baseline_%j.log
+#SBATCH --job-name=bioguard-v8-koaug
+#SBATCH --output=logs/cayuga_v8_koaug_%j.log
+#SBATCH --error=logs/cayuga_v8_koaug_%j.log
 #SBATCH --partition=scu-gpu
 #SBATCH --qos=normal
 #SBATCH --nodes=1
@@ -22,7 +22,8 @@ export PYTHONPATH="${PYTHONPATH:+$PYTHONPATH:}$(pwd)"
 mkdir -p logs results models
 
 echo "======================================================================"
-echo "Phase 3 Baseline — constitutional_bioguard v8"
+echo "Phase 3 KO-aug retrain — constitutional_bioguard v8_koaug"
+echo "Korean-augmented train (held-out-safe: translated from TRAIN, not session)"
 echo "Started: $(date)"
 echo "Node: $(hostname)"
 echo "======================================================================"
@@ -30,18 +31,20 @@ nvidia-smi --query-gpu=name,memory.total --format=csv,noheader 2>/dev/null || ec
 
 echo ""
 echo "--- Data splits ---"
-wc -l data/splits/train.jsonl data/splits/val.jsonl \
+wc -l data/splits/train_ko_aug.jsonl data/splits/val.jsonl \
        data/splits/ood_fpr.jsonl data/splits/ood_fnr.jsonl
 
 echo ""
-echo "--- Training ---"
+echo "--- Training (same hyperparams as v8 baseline; only the train data changed) ---"
 $PYTHON scripts/train_v8_baseline.py \
+    --train-file data/splits/train_ko_aug.jsonl \
+    --results-name phase3_koaug_eval.json \
     --unsafe-weight 1.5 \
     --epochs 5 \
     --batch-size 32 \
     --lr 2e-5 \
     --model-name microsoft/deberta-v3-base \
-    --output-dir models/deberta_bioguard_v8_baseline
+    --output-dir models/deberta_bioguard_v8_koaug
 
 echo ""
 echo "======================================================================"
