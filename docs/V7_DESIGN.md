@@ -248,17 +248,22 @@ generative primary candidate.
 **v7.C (Llama-3.1-8B, 8B).** Two deliberate deviations from §3: **no-CoT**
 (CoT removed at the data level — Llama has no `/no_think` escape hatch) and
 **Instruct, not base** (chat template + root cause #5). The competitive gate
-in §3/§9 ("beat WildGuard-7B AND LG3-8B at same scale") was **reassessed on
-response-harm F1** rather than the originally-specified bio-selectivity ratio,
-because the cascade was dropped and the decisive comparison became the
-matched-scale response-harm head-to-head. Result: **statistically
-indistinguishable from LLaMA-Guard-3-8B** (McNemar p=1.0, ΔF1 CI contains 0)
-and within 0.06 F1 of WildGuard-7B, but with a **sharp OOD over-refusal
+in §3/§9 ("beat WildGuard-7B AND LG3-8B at same scale") was evaluated on **two
+axes**: (1) response-harm F1, the decisive matched-scale comparison once the
+cascade was dropped — **statistically indistinguishable from LLaMA-Guard-3-8B**
+(McNemar p=1.0, ΔF1 CI contains 0) and within 0.06 F1 of WildGuard-7B; and
+(2) the **originally-specified bio-selectivity ratio**, which the audit
+computed from the SaladBench stratification and which v7.C **FAILS** — bio
+recall is at ceiling (O39 1.00) but it flags 92% of *non-bio* CBRN, a
+selectivity ratio of **1.09** (vs v4's 4.85), behaving like the generalist
+guards. So on the original gate's own terms, v7.C does not beat the baselines;
+on the response-harm axis it ties LG3-8B. Plus a **sharp OOD over-refusal
 regression** (OR-Bench-Hard flag rate 0.70 vs v7.B's 0.25). Decision-tree
-resolution: v7.C took the **"doesn't beat → documented"** branch (parity, not
-dominance), and is recorded as a *design-point datapoint, not a ship
-candidate* — its over-refusal disqualifies it for the low-friction bio-guard
-goal.
+resolution: v7.C took the **"doesn't beat → documented"** branch, and is
+recorded as a *design-point datapoint, not a ship candidate* — it loses v4's
+bio specialization and over-refuses, disqualifying it for the low-friction
+bio-guard goal even though it proves an 8B no-CoT recipe can reach production-
+guard parity on response-harm F1.
 
 **The load-bearing lesson: train == eval is a first-class correctness
 requirement.** The v7.B2 collapse and a separate, independently-caught eval

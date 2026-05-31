@@ -2945,8 +2945,10 @@ train-matched policy and prompt mode):**
 | Benchmark (metric)                    | v7.B (/no_think) | v7.C (plain) | better |
 |---------------------------------------|-----------------:|-------------:|:------:|
 | WildGuard native — F1                 |           0.5479 |   **0.7033** |  v7.C  |
-| SaladBench-CBRN — recall              |           0.7152 |   **0.9211** |  v7.C  |
-| SimpleSafety-bio — recall             |             0.75 |   **1.000**  |  v7.C  |
+| SaladBench O39 bio — recall (n=52)       |          0.981   |   **1.000**  |  ~tie  |
+| SaladBench non-bio — flag (lower=better) |       **0.709**  |       0.919  |  v7.B  |
+| SaladBench bio-selectivity (bio/non-bio) |       **1.38**   |       1.09   |  v7.B  |
+| SimpleSafety-bio — recall (n=40, noisy)  |            0.75  |   **1.000**  |  v7.C  |
 | XSTest — F1                           |           0.7787 |   **0.8139** |  v7.C  |
 | XSTest — FPR (lower better)           |       **0.072**  |       0.156  |  v7.B  |
 | OR-Bench-Hard-1k — flag rate (FPR)    |       **0.2472** |       0.6998 |  v7.B  |
@@ -2956,10 +2958,25 @@ train-matched policy and prompt mode):**
 the O39-strict subset — not comparable. v7.C alert_cbrn_strict recall = 0.742.)
 
 v7.C is the *more aggressive* classifier. It closes the gap to the 7-8B guards
-on in-distribution response-harm F1 and lifts CBRN recall, but it **regresses
-sharply on the exact axis the v7 program set out to fix** — over-refusal on
-OOD adversarial-benign prompts (OR-Bench-Hard 0.70 vs 0.25). A 70% flag rate
-on a benign-but-toxic-looking set is disqualifying for a shippable guard.
+on in-distribution response-harm F1 and ties v7.B at ceiling on *genuine* bio
+recall (SaladBench-O39 1.00, SimpleSafety 1.00, alert_cbrn_strict 0.742). But
+its aggressiveness shows up as **two regressions on the exact axes the v7
+program exists to protect**:
+- **Over-refusal** on OOD adversarial-benign prompts (OR-Bench-Hard flag rate
+  0.70 vs v7.B 0.25; FalseReject 0.56 vs 0.42). A 70% flag rate on a
+  benign-but-toxic-looking set is disqualifying for a shippable low-friction
+  guard.
+- **Loss of bio selectivity.** The headline SaladBench-CBRN flag rate (0.92)
+  is *not* bio recall — bio recall is already at ceiling (1.00). It is
+  non-bio over-flagging: v7.C flags **92% of non-bio SaladBench CBRN**
+  (drugs, weapons, terrorism, cyber), a bio-selectivity ratio of **1.09** vs
+  v7.B's 1.38 and v4's **4.85** (Section 6.18). On this axis v7.C behaves like
+  the generalist 7-8B guards (WildGuard non-bio 0.935, LG3 0.915), not like a
+  bio specialist. An earlier draft of this table mislabeled the 0.92 union
+  flag rate as a "CBRN recall" win for v7.C; the stratified numbers show it is
+  the opposite — a selectivity regression. The generative tier (both v7.B and
+  v7.C) abandoned v4's defining bio-vs-non-bio scope; this is the unmeasured
+  original v7.C competitive gate (V7_DESIGN §3), now measured and failed.
 
 **What this means competitively:**
 1. **An 8B bio-specialised no-CoT classifier reaches statistical parity with
