@@ -38,7 +38,8 @@ BIO_SUBCAT = ["biological", "biosecurity", "bioterror", "bioweapon", "biothreat"
               "toxin", "chemical weapon"]
 LOCKED_FILES = ["wildguard_test.jsonl", "or_bench_hard_1k.jsonl", "false_reject_test.jsonl",
                 "xstest.jsonl", "simple_safety_bio.jsonl", "saladbench_cbrn.jsonl",
-                "saladbench_cbrn_strict.jsonl", "alert_cbrn.jsonl", "alert_cbrn_strict.jsonl"]
+                "saladbench_cbrn_strict.jsonl", "alert_cbrn.jsonl", "alert_cbrn_strict.jsonl",
+                "real_response_bio.jsonl"]  # #106 eval set -- never train on it
 
 
 def norm(v):
@@ -70,6 +71,9 @@ def main():
                     help="Cap on FalseReject benign hard-negatives (over-refusal lever)")
     ap.add_argument("--val-frac", type=float, default=0.1)
     ap.add_argument("--seed", type=int, default=42)
+    ap.add_argument("--out-prefix", default="v8", help="Output prefix (e.g. v8b)")
+    ap.add_argument("--beavertails", action="store_true",
+                    help="Also harvest BeaverTails 330k bio positives (grow the bio class)")
     args = ap.parse_args()
 
     import random
@@ -156,6 +160,36 @@ def main():
     items += nb
     print(f"v4 B.4 non-bio selectivity neg: {len(nb)}")
 
+    # ── 4) BeaverTails bio (grow the scarce bio positive class) ────────────
+    bt = []
+    if args.beavertails:
+        # exclude the #106 real-response bio eval set by (query, response)
+        eval_keys = set()
+        rrb = DATA_EXTERNAL / "real_response_bio.jsonl"
+        if rrb.exists():
+            for line in open(rrb):
+                r = json.loads(line)
+                eval_keys.add((qhash(r.get("query", "")), rhash(r.get("response", ""))))
+        from datasets import load_dataset
+        try:
+            bds = load_dataset("PKU-Alignment/BeaverTails", split="330k_train")
+        except Exception as e:
+            print(f"WARN: BeaverTails load failed ({e}) — skipping")
+            bds = []
+        for r in bds:
+            q = r.get("prompt", r.get("query", "")); resp = r.get("response", "")
+            if not is_bio(q, resp, None, bio_kw):
+                continue
+            if qhash(q) in locked or (qhash(q), rhash(resp)) in eval_keys:
+                continue
+            harmful = (r.get("is_safe") is False) or (int(r.get("label", 0)) == 1)
+            bt.append({"query": q, "response": resp, "label": 1 if harmful else 0,
+                       "prompt_harm": None,
+                       "response_harm": "harmful" if harmful else "unharmful",
+                       "bio": True, "source": "beavertails_bio"})
+    items += bt
+    print(f"BeaverTails bio: {len(bt)} ({sum(b['label'] for b in bt)} positive)")
+
     # ── dedup by (query, response) ─────────────────────────────────────────
     seen = set(); dedup = []
     for it in items:
@@ -184,7 +218,7 @@ def main():
 
     # ── write ──────────────────────────────────────────────────────────────
     DATA_PROCESSED.mkdir(parents=True, exist_ok=True)
-    for name, rows in [("v8_train", train), ("v8_val", val)]:
+    for name, rows in [(f"{args.out_prefix}_train", train), (f"{args.out_prefix}_val", val)]:
         with open(DATA_PROCESSED / f"{name}.jsonl", "w") as f:
             for it in rows:
                 f.write(json.dumps(it, ensure_ascii=False) + "\n")
@@ -198,12 +232,13 @@ def main():
 
     prov = {"train": stats(train), "val": stats(val),
             "wildguard_harvest": dict(wg), "falsereject_n": len(fr), "v4_nonbio_n": len(nb),
+            "beavertails_bio_n": len(bt), "beavertails_bio_pos": sum(b["label"] for b in bt),
             "leak_excluded_wg": wg.get("leak_excluded", 0), "seed": args.seed,
-            "falsereject_cap": args.falsereject_n,
-            "note": "Option A reuse-only; label=1 iff bio harmful response; (0,1) quadrant ~absent (deferred)"}
-    json.dump(prov, open(DATA_PROCESSED / "v8_provenance.json", "w"), indent=2)
+            "falsereject_cap": args.falsereject_n, "out_prefix": args.out_prefix,
+            "note": "reuse-only; label=1 iff bio harmful response; (0,1) quadrant ~absent (deferred)"}
+    json.dump(prov, open(DATA_PROCESSED / f"{args.out_prefix}_provenance.json", "w"), indent=2)
 
-    print("\n=== v8 dataset built (Option A, reuse-only, zero generation) ===")
+    print(f"\n=== {args.out_prefix} dataset built (reuse-only, zero generation) ===")
     print("train:", json.dumps(stats(train)))
     print("val  :", json.dumps(stats(val)))
 

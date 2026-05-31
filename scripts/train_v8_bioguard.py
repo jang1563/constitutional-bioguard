@@ -32,15 +32,16 @@ def main():
     ap = argparse.ArgumentParser()
     ap.add_argument("--unsafe-weight", type=float, default=2.0)
     ap.add_argument("--output-name", default="deberta_bioguard_v8")
+    ap.add_argument("--data-prefix", default="v8", help="Data file prefix (e.g. v8b)")
     args = ap.parse_args()
 
     from constitutional_bioguard.config import DATA_PROCESSED, MODELS_DIR
     from constitutional_bioguard.training.train_deberta import train
 
-    train_file = DATA_PROCESSED / "v8_train.jsonl"
-    val_file = DATA_PROCESSED / "v8_val.jsonl"
+    train_file = DATA_PROCESSED / f"{args.data_prefix}_train.jsonl"
+    val_file = DATA_PROCESSED / f"{args.data_prefix}_val.jsonl"
     output_dir = MODELS_DIR / args.output_name
-    weights_file = DATA_PROCESSED / "v8_class_weights.json"
+    weights_file = DATA_PROCESSED / f"{args.data_prefix}_class_weights.json"
 
     if not train_file.exists():
         logger.error("Missing %s — run build_v8_data.py first", train_file)
@@ -60,7 +61,8 @@ def main():
     logger.info("v8 train: %d pos / %d neg (%.1f%% pos); class weights SAFE=%.3f UNSAFE=%.3f",
                 n_pos, n_neg, 100 * n_pos / total, weights["0"], weights["1"])
 
-    cfg = {"data": {"class_weights": True, "class_weights_file": "v8_class_weights.json"}}
+    cfg = {"data": {"class_weights": True,
+                    "class_weights_file": f"{args.data_prefix}_class_weights.json"}}
     results = train(train_file=train_file, val_file=val_file,
                     output_dir=output_dir, config_override=cfg)
 
