@@ -26,6 +26,6 @@ echo "Started: $(date)"
 nvidia-smi --query-gpu=name,memory.total --format=csv,noheader 2>/dev/null || true
 test -d models/deberta_bioguard_v8 || { echo "FATAL: no v8 model"; exit 1; }
 
-$PYTHON scripts/eval_v8_gates.py --models v8 v4
+$PYTHON scripts/eval_v8_gates.py --models v8b v8 v4
 
 echo "=== v8 eval done: $(date) ==="

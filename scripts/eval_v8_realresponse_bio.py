@@ -103,9 +103,10 @@ def main():
         print("WARNING: <5 positives -- recall will be extremely noisy")
     q = [it["query"] for it in items]; resp = [it["response"] for it in items]
     lab = np.array([it["label"] for it in items])
+    srcs = np.array([it["source"] for it in items])
 
     METRICS_DIR.mkdir(parents=True, exist_ok=True)
-    for model in ("v8", "v4"):
+    for model in ("v8b", "v8", "v4"):
         md = MODEL_DIRS[model]
         if not md.exists():
             print(f"{model}: missing {md}")
@@ -119,6 +120,14 @@ def main():
                "f1": round(float(f1_score(lab, pred, zero_division=0)), 4)}
         json.dump({"overall": out}, open(METRICS_DIR / f"v8_realresponse_bio_{model}.json", "w"), indent=2)
         print(f"  {model}: recall={out['recall']} fpr={out['fpr']} precision={out['precision']} f1={out['f1']} (n_pos={npos})")
+        # per-source (leakage / home-field check): wildguard_test_bio is OUT-of-training
+        # distribution for v8b; beavertails_bio is IN-training distribution.
+        for s in sorted(set(srcs.tolist())):
+            mpos = (lab == 1) & (srcs == s)
+            mneg = (lab == 0) & (srcs == s)
+            r = round(float(pred[mpos].mean()), 3) if mpos.any() else None
+            fp = round(float(pred[mneg].mean()), 3) if mneg.any() else None
+            print(f"      [{s}] recall={r} (n_pos={int(mpos.sum())})  fpr={fp} (n_neg={int(mneg.sum())})")
 
 
 if __name__ == "__main__":
