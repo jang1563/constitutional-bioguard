@@ -30,7 +30,17 @@ sys.path.insert(0, str(Path(__file__).parent.parent))
 import numpy as np
 from sklearn.metrics import f1_score, precision_score, recall_score
 
-from constitutional_bioguard.config import CONFIGS_DIR, DATA_EXTERNAL, METRICS_DIR, MODELS_DIR
+from constitutional_bioguard.config import (
+    CONFIGS_DIR, DATA_EXTERNAL, DATA_PROCESSED, METRICS_DIR, MODELS_DIR)
+import hashlib
+
+
+def _qh(q):
+    return hashlib.sha1((q or "").strip().lower().encode()).hexdigest()[:16]
+
+
+def _rh(r):
+    return hashlib.sha1((r or "").strip().encode()).hexdigest()[:16]
 
 MODEL_DIRS = {"v8b": MODELS_DIR / "deberta_bioguard_v8b",
               "v8": MODELS_DIR / "deberta_bioguard_v8",
@@ -45,31 +55,47 @@ def is_bio(q, r):
 
 
 def build_benchmark():
+    # Leakage guard: anything whose QUERY the model trained on is excluded.
+    train_q = set(); train_qr = set()
+    for tp in (DATA_PROCESSED / "v8b_train.jsonl", DATA_PROCESSED / "v8b_val.jsonl",
+               DATA_PROCESSED / "v8_train.jsonl", DATA_PROCESSED / "v8_val.jsonl"):
+        if tp.exists():
+            for line in open(tp):
+                r = json.loads(line)
+                train_q.add(_qh(r.get("query", "")))
+                train_qr.add((_qh(r.get("query", "")), _rh(r.get("response", ""))))
+
     items = []
-    # wildguard_test bio (response_harm label)
+    # wildguard_test bio (real responses, response_harm label; held-out from training)
     for r in (json.loads(l) for l in open(DATA_EXTERNAL / "wildguard_test.jsonl") if l.strip()):
         rh = r.get("response_harm_label")
         if not (isinstance(rh, str) and rh.lower() in ("harmful", "unharmful")):
             continue
         q = r.get("prompt", r.get("query", "")); resp = r.get("response", "")
-        if not is_bio(q, resp):
+        if not is_bio(q, resp) or _qh(q) in train_q:
             continue
         items.append({"query": q, "response": resp,
                       "label": 1 if rh.lower() == "harmful" else 0, "source": "wildguard_test_bio"})
-    # beavertails bio (response-harm label)
-    bp = DATA_EXTERNAL / "beavertails_subset.jsonl"
-    if bp.exists():
-        for r in (json.loads(l) for l in open(bp) if l.strip()):
-            q = r.get("query", r.get("prompt", "")); resp = r.get("response", "")
-            if not is_bio(q, resp):
-                continue
-            items.append({"query": q, "response": resp,
-                          "label": int(r.get("label", 0)), "source": "beavertails_bio"})
+    # BeaverTails 330k_TEST bio (real responses; disjoint from v8b's 330k_train,
+    # plus explicit train-query exclusion for airtight no-leakage)
+    try:
+        from datasets import load_dataset
+        bds = load_dataset("PKU-Alignment/BeaverTails", split="330k_test")
+    except Exception as e:
+        print(f"WARN: BeaverTails 330k_test load failed ({e})"); bds = []
+    for r in bds:
+        q = r.get("prompt", r.get("query", "")); resp = r.get("response", "")
+        if not is_bio(q, resp):
+            continue
+        if _qh(q) in train_q or (_qh(q), _rh(resp)) in train_qr:
+            continue
+        harmful = (r.get("is_safe") is False) or (int(r.get("label", 0)) == 1)
+        items.append({"query": q, "response": resp, "label": 1 if harmful else 0,
+                      "source": "beavertails330k_test_bio"})
     # dedup by (query, response)
     seen = set(); out = []
-    import hashlib
     for it in items:
-        k = hashlib.sha1((it["query"] + "||" + it["response"]).encode()).hexdigest()
+        k = (_qh(it["query"]), _rh(it["response"]))
         if k in seen:
             continue
         seen.add(k); out.append(it)
