@@ -41,6 +41,17 @@ SPLITS = ROOT / "data" / "splits"
 MODELS = ROOT / "models"
 RESULTS = ROOT / "results"
 
+# OOD-FNR scoring exclusion. constitution_rules_fnr records are NOT valid
+# post-response harmful FNRs: their harmful query text was redacted to a
+# placeholder ID during sanitization and the response is either "[WITHHELD ...]"
+# (harmful answer removed) or a model refusal/empty — so a query+response text
+# classifier sees no harmful content and correctly scores p~0. They also measure
+# the GENERATING model's refusal behavior (source_detail=fnr_<model>), a
+# different task than bioguard. Excluded from the FNR gate; true FNR is measured
+# on scoreable harmful (SALAD/WildGuard). See docs/V8_KOAUG_ANALYSIS.md and
+# data/splits/README.md.
+FNR_EXCLUDE_SOURCES = {"constitution_rules_fnr"}
+
 
 def load_splits(train_file=None):
     """Load train/val/ood splits into lists of dicts.
@@ -119,6 +130,12 @@ def eval_fpr_fnr(model, tokenizer, splits, device, batch_size=64):
     results = {}
     for split_name in ("ood_fpr", "ood_fnr"):
         records = splits[split_name]
+        if split_name == "ood_fnr" and FNR_EXCLUDE_SOURCES:
+            n_before = len(records)
+            records = [r for r in records if r.get("source") not in FNR_EXCLUDE_SOURCES]
+            if len(records) != n_before:
+                logger.info("  OOD-FNR: excluded %d non-scoreable records (sources=%s)",
+                            n_before - len(records), sorted(FNR_EXCLUDE_SOURCES))
         if not records:
             continue
         texts = [r["text"] for r in records]

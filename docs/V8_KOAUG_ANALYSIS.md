@@ -1,6 +1,6 @@
 # V8 Korean-Augmentation Track — Over-Refusal Analysis
 
-**Status (2026-05-31):** koaug1–koaug3 complete and analyzed. **koaug3 is the headline model — OOD-FPR 0.0475 passes the ≤0.10 gate for the first time** (over-refusal on real session logs is now green, with no Korean=safe shortcut). Two gates remain: OOD-FNR 0.076 and Youden J 0.683.
+**Status (2026-05-31):** koaug1–koaug3 complete and analyzed. **koaug3 is the headline model — OOD-FPR 0.0475 passes the ≤0.10 gate for the first time** (over-refusal on real session logs is now green, with no Korean=safe shortcut). OOD-FNR (uncorrected 0.076) is an **eval artifact** that passes (0.000) once the malformed `constitution_rules_fnr` subset is excluded; the only genuinely open gate is **Youden J 0.683** (tail-domain coverage).
 
 ## Problem
 
@@ -54,9 +54,9 @@ Cayuga jobs: koaug1 `2969035`, koaug2 `2969382`, koaug3 `2973498`. Eval/val/ood 
 
 ## Remaining gates
 
-koaug3 is the headline model — 2 of 4 gates pass (val_f1, OOD-FPR). Two remain:
+koaug3 is the headline model — 3 of 4 gates effectively pass (val_f1, OOD-FPR, and OOD-FNR once corrected). One genuinely remains:
 
-- **OOD-FNR ≤ 0.05** — 0.076, roughly flat across all rounds (English-only `ood_fnr`: WildGuard / SALAD / ConstitutionRules). The legit/neg rebalancing trades a little harmful-recall for FPR; the strict 0.05 gate most likely needs a **threshold-calibration pass** (shift the decision threshold / per-class operating point) rather than more data.
+- **OOD-FNR ≤ 0.05** — uncorrected 0.076, but this is an **eval artifact, not a model deficiency.** All 188 missed harmful come from one source, `constitution_rules_fnr` (188/200); on scoreable harmful (SALAD/WildGuard, 2,268 records) koaug3 misses **0 → 100% recall**. Threshold calibration was tested and **refuted** — FNR is a flat ~0.076 floor across the entire τ range (the misses sit at p<0.01, confident, not borderline; Cayuga job 2973518). Root cause: `constitution_rules_fnr` queries were redacted to placeholders and the responses are withheld/refusals, so a query+response classifier sees no harmful text (the source also measures the *generating* model's refusal, not bioguard's task). With this source excluded (`FNR_EXCLUDE_SOURCES`; see `data/splits/README.md`), **corrected OOD-FNR = 0.000 → passes**.
 - **Youden J avg ≥ 0.70** — 0.683, essentially flat (0.628 → 0.661 → 0.686 → 0.683). The residual is a **tail-domain data-coverage artifact**, not calibration: `dual_use_chemistry` J=0 (zero training support), `synthetic_biology` / `toxicology` low support. The matched-triple eval spans 11 balanced domains while train is ~82% protein_engineering + cbrn_safety.
 
-**Bottom line:** the primary money metric — over-refusal on real session logs — is solved. OOD-FPR is green (0.0475) and the Korean-coverage gap is closed without a shortcut. The two open gates are a recall/threshold question and a tail-domain coverage question, both orthogonal to the Korean fix this track delivered.
+**Bottom line:** over-refusal on real session logs is solved (OOD-FPR 0.0475, no shortcut), and OOD-FNR passes once the malformed `constitution_rules_fnr` eval subset is excluded (corrected 0.000). The only genuinely open gate is **Youden J 0.683**, a tail-domain training-coverage issue (dual_use_chemistry / synthetic_biology / toxicology under-represented) — orthogonal to the Korean fix this track delivered.
