@@ -399,11 +399,17 @@ def cache_saladbench_cbrn(limit: Optional[int] = None) -> Path:
 
 
 def cache_alert(limit: Optional[int] = None) -> Path:
-    """ALERT (Tedeschi et al. NAACL 2024).
+    """ALERT (Tedeschi et al. NAACL 2024) -- BROAD union (curation-polluted).
 
     HF: Babelscape/ALERT, config='alert', split='test' (14,763 items).
     Filter to weapons / crime_injury / substance / hate categories
     that overlap with bio-relevant content.
+
+    WARNING: admits a row on (in_cat OR bio-keyword) over a broad category set,
+    so the cached result is ~43% crime_injury + ~29% substances and only ~14%
+    true CBRN-weapon prompts -- the headline recall is curation-inflated. For an
+    honest CBRN gate use cache_alert_cbrn_strict() instead.
+    See docs/V7B_OVER_REFUSAL_ANALYSIS.md Section 9.6.
     """
     from datasets import load_dataset
 
@@ -461,6 +467,116 @@ def cache_alert(limit: Optional[int] = None) -> Path:
     logger.info("ALERT CBRN-related: %d items cached to %s", n, cache_path)
     logger.info("Top categories: %s", sorted(by_cat.items(), key=lambda x: -x[1])[:8])
     return cache_path
+
+
+# Honest CBRN-weapon categories within ALERT, mapped to a short class tag.
+# Everything else (crime_injury, substance_*, weapon_firearm, weapon_other,
+# hate_*, ...) is off-mission and EXCLUDED from the strict benchmark.
+CBRN_WEAPON_CATEGORIES = {
+    "weapon_biological": "bio",
+    "weapon_chemical": "chem",
+    "weapon_radioactive": "rad",
+    "weapon_nuclear": "nuclear",
+}
+
+
+def cache_alert_cbrn_strict(limit: Optional[int] = None) -> Path:
+    """Honest CBRN-weapon subset of ALERT (bio/chem/rad/nuclear only).
+
+    Rationale: cache_alert() admits a polluted union where crime_injury (~43%)
+    and substances (~29%) dominate and true CBRN-weapon prompts are only ~14%,
+    inflating the headline ALERT recall above the real CBRN number
+    (docs/V7B_OVER_REFUSAL_ANALYSIS.md Section 9.6).
+
+    Derives deterministically from the full ALERT cache written by
+    cache_alert(): every CBRN-weapon row enters that cache via in_cat (all four
+    categories are in its bio_categories set), so the strict set is a clean
+    subset and no HF re-download is needed. If the full cache is absent it is
+    built first. Each row is tagged:
+        cbrn_class     in {bio, chem, rad, nuclear}
+        is_cbrn_weapon = True
+
+    NOTE: responses remain the constant COMPLIANCE_TEMPLATE stub (ALERT ships
+    prompts only). This is therefore a PROMPT-HARM benchmark, not response-harm
+    (Section 9.5); report it as such.
+    """
+    full = DATA_EXTERNAL / "alert_cbrn.jsonl"
+    if not full.exists():
+        cache_alert()
+    out = DATA_EXTERNAL / "alert_cbrn_strict.jsonl"
+    n = 0
+    by_class: dict[str, int] = {}
+    with open(full, encoding="utf-8") as fin, open(out, "w", encoding="utf-8") as fout:
+        for line in fin:
+            if not line.strip():
+                continue
+            r = json.loads(line)
+            cls = CBRN_WEAPON_CATEGORIES.get(str(r.get("alert_category", "")))
+            if cls is None:
+                continue
+            r["cbrn_class"] = cls
+            r["is_cbrn_weapon"] = True
+            r["source"] = "alert_cbrn_strict"
+            fout.write(json.dumps(r, ensure_ascii=False) + "\n")
+            n += 1
+            by_class[cls] = by_class.get(cls, 0) + 1
+            if limit and n >= limit:
+                break
+
+    logger.info("ALERT CBRN-strict: %d items cached to %s", n, out)
+    logger.info("By CBRN class: %s", sorted(by_class.items(), key=lambda x: -x[1]))
+    return out
+
+
+def cache_saladbench_cbrn_strict(limit: Optional[int] = None) -> Path:
+    """Bio-only (O39) subset of SaladBench-CBRN — the honest bio-recall set.
+
+    The shipped saladbench_cbrn benchmark is a curation union (n=2268) dominated
+    by NON-bio CBRN (O35 weapons, O4 terrorism, O19 drugs, O54 drug-crime, O36
+    infra; ~2216 items). Only the O39 "Biological and Chemical Harms" category
+    (n=52) is on-mission. A single union flag rate therefore conflates bio recall
+    with non-bio over-flagging: a bio SPECIALIST keeps it low (v4 ~0.20), a
+    generalist drives it high (WildGuard ~0.94), so "higher = better recall" is
+    WRONG on the union (Section 6.21 audit). Use this strict subset for genuine
+    bio recall; read the union flag rate only as an (inverse) selectivity signal.
+
+    Derives deterministically from the full saladbench_cbrn cache (no HF
+    re-download). O39 detection mirrors the Section 6.18 / audit stratification:
+    "O39" or "Biological" appears in any salad_category_{1,2,3} field. Each row
+    is tagged is_bio_harm=True. NOTE: O39 is "Biological AND Chemical" harms, so
+    this is bio/chem, not pure-bio — the closest bio subset SaladBench exposes.
+    Responses are the constant COMPLIANCE_TEMPLATE stub (SaladBench ships prompts
+    only): a PROMPT-HARM benchmark, report as such.
+    """
+    full = DATA_EXTERNAL / "saladbench_cbrn.jsonl"
+    if not full.exists():
+        cache_saladbench_cbrn()
+    out = DATA_EXTERNAL / "saladbench_cbrn_strict.jsonl"
+
+    def _is_bio(r: dict) -> bool:
+        for fld in ("salad_category_1", "salad_category_2", "salad_category_3"):
+            v = str(r.get(fld) or "")
+            if ("O39" in v) or ("biolog" in v.lower()):
+                return True
+        return False
+
+    n = 0
+    with open(full, encoding="utf-8") as fin, open(out, "w", encoding="utf-8") as fout:
+        for line in fin:
+            if not line.strip():
+                continue
+            r = json.loads(line)
+            if not _is_bio(r):
+                continue
+            r["is_bio_harm"] = True
+            r["source"] = "saladbench_cbrn_strict"
+            fout.write(json.dumps(r, ensure_ascii=False) + "\n")
+            n += 1
+            if limit and n >= limit:
+                break
+
+    logger.info("SaladBench CBRN-strict (O39 bio/chem): %d items cached to %s", n, out)
+    return out
 
 
 def cache_or_bench_health(limit: Optional[int] = None) -> Path:

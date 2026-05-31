@@ -417,6 +417,7 @@ def main():
         ("simple_safety_bio", "simple_safety_bio.jsonl"),
         ("wildguard_native", "wildguard_test.jsonl"),
         ("saladbench_cbrn", "saladbench_cbrn.jsonl"),
+        ("saladbench_cbrn_strict", "saladbench_cbrn_strict.jsonl"),
         ("alert_cbrn", "alert_cbrn.jsonl"),
         ("alert_cbrn_strict", "alert_cbrn_strict.jsonl"),
     ]
