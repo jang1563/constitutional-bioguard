@@ -193,6 +193,22 @@ addressable by the ABSTAIN tier or MMLU-bio negatives (diminishing returns).
 **NEXT = P3** (shared-encoder dual-mode integration: combine this prompt-head with
 the v2 response-head, staged unfreeze + regression guard).
 
+**PRE-P3 VALIDATION (2026-06-01, drift-review payoff) - the prompt-head is a
+BIO-KEYWORD SHORTCUT, not a genuine intent classifier.** On HELD-OUT wildguard_test
+bio prompts the OOD bio-harm recall is **0.263** (not the in-dist 0.983; the in-dist
+number was a saladbench/alert STYLE shortcut). Lexical ablation: masking bio
+keywords flips **0.667** of flagged positives to safe -> the head keys on bio
+keywords, not harm-intent (embeddings were not frozen). OOD benign-bio FPR 0.667
+(n=3). So recall 0.983 / S=869 were MISLEADING (in-distribution + keyword-driven);
+the S=869 "bio-specificity" is partly a keyword artifact (non-bio harm lacks bio
+keywords). Root cause: the diverse positive pool is only ~467, saladbench/alert-
+dominated, too narrow to learn beyond keywords. DECISION: pivot to the section-4
+**LEXICOGRAPHIC HYBRID** (tiered lexicon T1 select-agents/toxins + T2 harm-methods +
+sequence/BLAST + the learned head as ONE signal; a bare generic-bio keyword never
+the sole trigger). A pure learned text classifier cannot be the bio-prompt-harm head
+on this data. The drift review caught this BEFORE P3, exactly its purpose (10th
+eval-honesty catch of the effort).
+
 ## 4. Bio-selectivity: the metric (a contribution) + method
 
 The core specialization risk is flagging legitimate dual-use research. We define
