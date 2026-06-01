@@ -173,8 +173,13 @@ response and test prompt harm, which a response-harm classifier correctly ignore
    directional. Public real-response bio-harmful data is scarce; growing it under
    reuse-only is capped near ~100 items, so a tighter CI would require gated-access
    data or generation (deliberately avoided). Report and read recall with its CI.
-2. **Multi-turn untested.** No multi-turn evaluation yet; published work shows
-   guards can be bypassed across turns. Assume vulnerable until measured.
+2. **Multi-turn: robust to naive splitting; adversarial reconstruction untested.**
+   Splitting a harmful response across 2 to 5 turns is still caught per-turn at
+   0.964 recall (windowed scoring recovers the rest, 1.0). The model does not
+   collapse under naive multi-turn splitting. Not yet tested: adversarial
+   reconstruction where each turn is rewritten to read benign so harm emerges only
+   on assembly (this would require windowed/exchange scoring and is the safer
+   deployment mode).
 3. **Content obfuscation/reconstruction untested** beyond the char-level attacks above.
 4. **Spacing and Greek-homoglyph residuals.** Intra-word spacing (ESR 0.21) cannot
    be fixed by character stripping without breaking legitimate bio notation (e.g.
