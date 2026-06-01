@@ -31,7 +31,8 @@ logger = logging.getLogger(__name__)
 # ── Invisible / zero-width character stripping ──────────────────────────────
 
 _INVISIBLE_CHARS = re.compile(
-    r"[\u200b\u200c\u200d\u200e\u200f\u202a-\u202e\u2060-\u2064\ufeff\u00ad]"
+    r"[\u200b\u200c\u200d\u200e\u200f\u202a-\u202e\u2060-\u2064\ufeff\u00ad"
+    r"\ufe00-\ufe0f\U000e0000-\U000e007f\U000e0100-\U000e01ef]"
 )
 
 # ── Homoglyph normalization (Cyrillic look-alikes -> Latin) ──────────────────
@@ -186,6 +187,13 @@ def _unicode_normalize(text: str) -> str:
     return unicodedata.normalize("NFKC", text)
 
 
+def _strip_combining(text: str) -> str:
+    """Remove standalone combining marks (the diacritic-injection attack inserts a
+    combining mark after every character). Precomposed legitimate accented
+    characters have combining()==0 and are left untouched."""
+    return "".join(c for c in text if not unicodedata.combining(c))
+
+
 # ── Public API ────────────────────────────────────────────────────────────────
 
 def normalize_text(text: str) -> str:
@@ -199,7 +207,8 @@ def normalize_text(text: str) -> str:
     5. Hex decode (if text looks like a hex string)
     6. ROT13 decode (if decoded result is plausible)
     7. Homoglyph normalization (Cyrillic look-alikes -> Latin)
-    8. NFKC Unicode normalization
+    8. Strip standalone combining marks (diacritic-injection)
+    9. NFKC Unicode normalization
 
     Only a single encoding layer is unwrapped per call. For nested encodings
     (e.g. base64-of-rot13), call normalize_text twice.
@@ -230,7 +239,10 @@ def normalize_text(text: str) -> str:
     # Step 7: homoglyph normalization
     text = _normalize_homoglyphs(text)
 
-    # Step 8: NFKC
+    # Step 8: strip standalone combining marks (diacritic-injection attack)
+    text = _strip_combining(text)
+
+    # Step 9: NFKC
     text = _unicode_normalize(text)
 
     return text
