@@ -12,7 +12,7 @@ from pathlib import Path
 sys.path.insert(0, str(Path(__file__).parent.parent))
 import numpy as np
 from constitutional_bioguard.config import CONFIGS_DIR, DATA_EXTERNAL, DATA_PROCESSED
-from constitutional_bioguard.dual_mode import DualModeGuard
+from constitutional_bioguard.dual_mode import DualModeGuard, has_bio_context
 
 BIO_KW = [k.lower() for k in json.load(open(CONFIGS_DIR / "bio_keywords_adv.json")).get("keywords", [])]
 
@@ -46,8 +46,16 @@ def main():
                 and not is_cyber_or_game(r.get("prompt",""))]
     nonbio_harm = [r.get("prompt","") for r in wg
                    if phl(r) == "harmful" and not is_bio(r.get("prompt",""))]
-    bio_benign = [r.get("prompt","") for r in wg
-                  if phl(r) == "unharmful" and is_bio(r.get("prompt",""))]
+    # benign-bio over-refusal: FalseReject-test bio-context subset (curated, n~142),
+    # replacing the n=3 wildguard "unharmful+is_bio" cell which was statistical noise.
+    fr_path = next((d / "false_reject_test.jsonl"
+                    for d in (DATA_PROCESSED, DATA_EXTERNAL)
+                    if (d / "false_reject_test.jsonl").exists()), None)
+    bio_benign = []
+    if fr_path:
+        fr = [json.loads(line) for line in open(fr_path) if line.strip()]
+        bio_benign = [r.get("query", "") for r in fr
+                      if has_bio_context(r.get("query", ""))]
 
     def prompt_axis(name, qs):
         if not qs: return
@@ -62,7 +70,7 @@ def main():
     print("=== prompt-axis OOD wildguard_test (cleaned) ===")
     prompt_axis("bio_harm  ", bio_harm)
     prompt_axis("nonbio_harm", nonbio_harm)
-    prompt_axis("bio_benign", bio_benign)
+    prompt_axis("bio_benign(FR)", bio_benign)
 
     # 2) In-dist pdual_val (positives + bio benign negatives)
     val = [json.loads(l) for l in open(DATA_PROCESSED / "pdual_val.jsonl") if l.strip()]
