@@ -180,6 +180,17 @@ the primary threat) is now covered: char-injection 7/8 + adv-word PASS.
   n=500). This is where v8b can be MORE rigorous than the published guard baselines,
   which publish no operating-point uncertainty.
 
+**R2 RESULT (2026-06-01, `r2_calibrate_v8b.py`; 62 harmful vs 531 real legit
+over-refusal).** AUROC **0.970**, AUPRC **0.938** (excellent discrimination of
+real harm from real legitimate research). Temperature scaling (T=0.239, fit on a
+held-out cal split) cuts **ECE 0.137 -> 0.042** and Brier 0.053 -> 0.035. The
+recall-vs-over-refusal curve shows the default **threshold 0.5 is already
+near-optimal: recall 0.919 at 2.1% over-refusal** (Wilson 95% CI [0.825, 0.965]);
+buying recall 0.95 costs ~15% over-refusal. DONE: temp scaling, ECE/Brier,
+operating-point curve, AUROC/AUPRC, Wilson CI. DEFERRED (same scarcity as R3): the
+distribution-free conformal FNR bound needs >=500 calibration positives; at n=62
+the Hoeffding slack (0.155) makes it uninformative, so report the Wilson CI instead.
+
 ### Phase R4: release packaging
 - **Stats**: Wilson CIs default; Clopper-Pearson + rule-of-three (3/n) for
   zero-count claims; bootstrap for AUPRC and between-version diffs; exact McNemar
@@ -231,8 +242,8 @@ are light. None requires new harmful generation.
 | Held-out bio | recall; gen gap | >= 0.75; <= 0.15 | untested |
 | Multi-turn | windowed; vs per-turn | >= 0.70; +>= 15 pts | untested |
 | Over-refusal | FPR substantive | <= 6% | 1.5% (n small) |
-| Calibration | ECE reported + reduced | yes | untested |
-| Operating point | recall@FPR<=5% + conformal FNR bound | published | 0.5 default |
+| Calibration | ECE reported + reduced | yes | **DONE: 0.137->0.042 (T=0.24); AUROC 0.97/AUPRC 0.94** |
+| Operating point | recall@over-refusal<=5% | published | **DONE: tau=0.5 -> recall 0.919 @ 2.1%** |
 | License/gating | CC-BY-NC, gated, withholds | in place | not yet |
 | Model card | HF schema + taxonomy + model-index | complete | partial |
 
