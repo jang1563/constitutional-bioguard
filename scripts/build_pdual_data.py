@@ -28,9 +28,12 @@ BIO_KW = [k.lower() for k in json.load(open(CONFIGS_DIR / "bio_keywords_adv.json
 
 POS_FILES = ["saladbench_cbrn.jsonl", "alert_cbrn.jsonl", "advbench_bio.jsonl",
              "harmbench_bio.jsonl", "jailbreakbench_bio.jsonl", "clearharm_bio.jsonl"]
-NEG_BIO_FILES = ["or_bench_health.jsonl", "lab_bench.jsonl", "false_reject_train.jsonl",
-                 "false_reject_test.jsonl", "med_qa_test.jsonl", "pubmed_qa_pqa_labeled.jsonl",
-                 "or_bench_hard_1k.jsonl"]
+# all-biomedical benign sources -> include ALL rows (legitimate bio knowledge/research/
+# clinical = the dual-use boundary; teaches "bio knowledge question = pass", reduces over-refusal)
+ALLBIO_NEG_FILES = ["or_bench_health.jsonl", "lab_bench.jsonl", "pubmed_qa_pqa_labeled.jsonl",
+                    "med_qa_test.jsonl"]
+# general sets -> keyword bio filter
+KW_BIO_NEG_FILES = ["false_reject_train.jsonl", "false_reject_test.jsonl", "or_bench_hard_1k.jsonl"]
 # NON-BIO harmful prompts -> the selectivity-teaching negatives (label 0 for bio head)
 NEG_NONBIO_HARM_FILES = ["harmbench_full.jsonl", "advbench_full.jsonl", "saladbench_cbrn.jsonl",
                          "alert_cbrn.jsonl", "wmdp_cyber.jsonl", "wmdp_chem.jsonl"]
@@ -78,12 +81,16 @@ def main():
             if is_bio(pr):
                 add(pr, 1, fn.replace(".jsonl", ""))
 
-    # benign-bio hard negatives
-    for fn in NEG_BIO_FILES:
+    # benign-bio hard negatives: all-biomedical sources fully (the dual-use research/
+    # knowledge boundary), plus keyword-bio rows from general benign sets
+    for fn in ALLBIO_NEG_FILES:
+        for r in load(fn):
+            add(prompt_of(r), 0, "negbio_" + fn.split(".")[0][:8])
+    for fn in KW_BIO_NEG_FILES:
         for r in load(fn):
             pr = prompt_of(r)
             if is_bio(pr):
-                add(pr, 0, "neg_bio_" + fn.split(".")[0][:10])
+                add(pr, 0, "negbiokw_" + fn.split(".")[0][:6])
 
     # NON-BIO harmful -> collect, dedup, split 80 train / 20 held-out selectivity
     nonbio_harm = []
