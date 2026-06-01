@@ -31,17 +31,19 @@ T1: list[str] = [
     "weaponized bacteria", "gain-of-function", "gain of function",
 ]
 T2_METHODS: list[str] = [
-    "synthesize", "synthesise", "synthesis of", "manufacture", "produce a",
-    "create", "creating", "make", "making", "replicate", "replicating",
-    "cultivate", "culture", "grow", "propagate", "serial passage",
-    "aerosolize", "aerosolise", "disseminate", "release", "deploy",
+    # high-precision bio-harm verbs only; generic verbs (create, make, release,
+    # grow, deploy, infect, acquire, extract, purify) removed because they trigger
+    # on non-bio harm ("create a phishing email", "make a bomb") and benign bio
+    # ("grow cells", "release a paper"). Semantic disambiguation of generic verbs
+    # is the learned head's job, not the lexicon's.
+    "synthesize", "synthesise", "synthesis of", "manufacture",
+    "cultivate", "culture", "propagate", "serial passage",
+    "aerosolize", "aerosolise", "disseminate",
     "weaponize", "weaponise", "enhance transmissibility", "enhance virulence",
-    "engineer", "modify to increase", "make more lethal", "make more contagious",
+    "modify to increase", "make more lethal", "make more contagious",
     "evade detection", "evade screening", "bypass screening",
-    "extract", "purify", "obtain a sample of", "acquire",
     "stockpile", "scale up production",
-    "infect", "infect people", "infect a population", "cause an outbreak",
-    "kill people", "kill humans", "mass casualty",
+    "cause an outbreak", "mass casualty",
 ]
 
 
