@@ -43,6 +43,7 @@ Char-injection ESR after the shipped `normalize_text` (`scripts/eval_v8b_robust_
 |--------|--------|------------------|
 | Adversarial word perturbation | ESR 0.123 (greedy char-swap) | `scripts/eval_v8b_robust_advword.py` |
 | Multi-turn naive reconstruction | per-turn recall 0.964 vs windowed 1.0 | `scripts/eval_v8b_multiturn_reconstruction.py` |
+| Benign-framing obfuscation | worst ESR 0.140 (fiction/roleplay/educational wraps) | `scripts/eval_v8b_robust_framing.py` |
 | Lexical (bio-keyword) ablation | ~1% prediction change | `scripts/probe_v8b_shortcut.py` |
 
 ## Scope boundary
