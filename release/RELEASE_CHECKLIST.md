@@ -1,4 +1,4 @@
-# bioguard-v8b release checklist (R4 packaging)
+# constitutional-bioguard-deberta-v2 (internal run v8b) release checklist (R4 packaging)
 
 Status of the gated, non-commercial research release (V8B_RELEASE_PLAN Phase R4).
 Posture: gated HF repo, CC-BY-NC-4.0, withhold harmful corpus + exact threshold.
