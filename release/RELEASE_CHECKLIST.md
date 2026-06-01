@@ -34,7 +34,7 @@ Posture: gated HF repo, CC-BY-NC-4.0, withhold harmful corpus + exact threshold.
 ## Gating
 - [x] Repo to be created as a Hugging Face **gated** model repo.
 - [x] Click-through Responsible-Use terms (in extra_gated_prompt).
-- [ ] Responsible-disclosure contact line filled with a real address before push.
+- [x] Responsible-disclosure contact (silveray1563@gmail.com) in the card.
 
 ## Pending eval (release is shippable now as v1; these are v2 additions)
 - [ ] Multi-turn robustness (windowed vs per-turn) blocked on MHJ access (requested).
