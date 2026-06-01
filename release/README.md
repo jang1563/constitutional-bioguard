@@ -180,7 +180,10 @@ response and test prompt harm, which a response-harm classifier correctly ignore
    reconstruction where each turn is rewritten to read benign so harm emerges only
    on assembly (this would require windowed/exchange scoring and is the safer
    deployment mode).
-3. **Content obfuscation/reconstruction untested** beyond the char-level attacks above.
+3. **Framing obfuscation tested and resisted.** Benign fiction/roleplay/educational/
+   disclaimer wrappers around harmful content evade at worst 0.14 (most 0.02 to
+   0.05); v8b judges the content, not the frame. Not tested: LLM-rewrite
+   reconstruction where the harmful core itself is reworded to read benign.
 4. **Spacing and Greek-homoglyph residuals.** Intra-word spacing (ESR 0.21) cannot
    be fixed by character stripping without breaking legitimate bio notation (e.g.
    spaced sequences like "A T G C"); needs adversarial training. Greek homoglyph
