@@ -173,17 +173,13 @@ response and test prompt harm, which a response-harm classifier correctly ignore
    directional. Public real-response bio-harmful data is scarce; growing it under
    reuse-only is capped near ~100 items, so a tighter CI would require gated-access
    data or generation (deliberately avoided). Report and read recall with its CI.
-2. **Multi-turn: robust to naive splitting; adversarial reconstruction untested.**
-   Splitting a harmful response across 2 to 5 turns is still caught per-turn at
-   0.964 recall (windowed scoring recovers the rest, 1.0). The model does not
-   collapse under naive multi-turn splitting. Not yet tested: adversarial
-   reconstruction where each turn is rewritten to read benign so harm emerges only
-   on assembly (this would require windowed/exchange scoring and is the safer
-   deployment mode).
-3. **Framing obfuscation tested and resisted.** Benign fiction/roleplay/educational/
-   disclaimer wrappers around harmful content evade at worst 0.14 (most 0.02 to
-   0.05); v8b judges the content, not the frame. Not tested: LLM-rewrite
-   reconstruction where the harmful core itself is reworded to read benign.
+2. **Multi-turn: robust (tested).** Splitting harmful content across 2 to 5 turns
+   is caught per-turn at 0.964; LLM-paraphrasing each turn then reconstructing
+   gives per-turn 0.945 equal to windowed (no exchange-classifier gap). v8b does
+   not collapse under multi-turn delivery.
+3. **Obfuscation: resisted (tested).** Benign framing wrappers evade at worst 0.14;
+   a full neutral LLM paraphrase (Qwen2.5-7B, semantics preserved, surface fully
+   rewritten) evades at only 0.07. v8b judges content, not surface form.
 4. **Spacing and Greek-homoglyph residuals.** Intra-word spacing (ESR 0.21) cannot
    be fixed by character stripping without breaking legitimate bio notation (e.g.
    spaced sequences like "A T G C"); needs adversarial training. Greek homoglyph
