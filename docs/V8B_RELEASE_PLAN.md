@@ -1,0 +1,207 @@
+# v8b Release Plan: from research artifact to gated public release
+
+Precise, phased plan to take v8b (DeBERTa-v3-base bio response-harm classifier)
+to a defensible public release. Built from four research sweeps (robustness,
+licensing, bio dual-use, calibration/sizing); citations in §7. Companion:
+`V8B_MODEL_CARD.md`, `V8B_SHIP_EVIDENCE.md`, `V8_DESIGN.md` §8.
+
+## 0. Decision: the release posture
+
+Target = **gated, non-commercial research release on Hugging Face**, mirroring the
+WildGuard template (open weights behind a click-through Responsible-Use gate), not
+the Anthropic Constitutional-Classifiers norm (never released). This is the
+established norm for a defensive discriminative guard, and it is achievable.
+
+Posture, concretely (from the dual-use analysis):
+- **Gated HF repo** (click-through Responsible-Use acknowledgment).
+- **License CC-BY-NC-4.0** + explicit bio-misuse clause.
+- **Withhold the harmful (positive) training examples** (release weights, not the
+  harmful corpus).
+- **Withhold the exact production threshold** (ship logits + a re-calibratable
+  default; deployers must calibrate).
+- **Rate-limit** any hosted endpoint; **do not** open-source a companion attack
+  harness.
+- Hold a one-rung step-down to eval-only/API or AISI/CAISI structured access in
+  reserve for any higher-capability or operational-data-trained variant.
+
+Rationale: the marginal misuse uplift of a purely discriminative response-detector
+is low relative to already-open guards (Llama Guard, WildGuard cover CBRN), open
+harmful-prompt benchmarks, and an attacker's own generator. The one real
+info-hazard, classifier-as-reward-model (GeneBreaker used a pathogenicity
+classifier as a beam-search reward), is bounded by withholding the corpus and the
+threshold.
+
+## 1. Two hard constraints (state these honestly up front)
+
+**1a. License forces non-commercial.** Training mix licenses:
+
+| Dataset | License | Commercial? |
+|---------|---------|-------------|
+| WildGuardMix | ODC-BY-1.0 (gated by AI2 RUG) | yes |
+| BeaverTails | CC-BY-NC-4.0 | **no** |
+| FalseReject | CC-BY-NC-4.0 | **no** |
+
+Two NC datasets propagate to the weights under the conservative reading any
+credible release must adopt. So v8b ships **non-commercial**. Direct precedent:
+PKU's own `beaver-dam-7b` (BeaverTails-trained, publicly released, NC). A
+**commercial** release requires dropping BeaverTails + FalseReject and retraining
+on permissive data only (ODC-BY WildGuardMix and/or CC-BY-4.0 Aegis 2.0), then
+licensing Apache-2.0, the WildGuard/Aegis pattern. Tracked as an optional Phase C.
+
+**1b. Eval sizing collides with the frontier wall, but only for TRAINING.** The
+sizing target below needs ~140 to 390 bio-harmful EVAL positives. These are
+**harvestable from existing public harmful completions** (HarmBench bio behaviors
++ completions, WMDP-bio topics, WildJailbreak bio split), graded genuinely harmful
+by the StrongREJECT autograder (score >= 0.5). That is reuse-only eval assembly,
+not new harm generation, and it is separate from the training-side frontier wall
+(the ambiguous dual-use tail still cannot be reuse-sourced for training, per
+§8.4). So: the eval CAN be resized; the training positive class still cannot be
+expanded without generation.
+
+## 2. Phased plan
+
+### Phase R3 first: eval resizing (unblocks R1/R2 power)
+Current n=62 positives gives a recall Wilson 95% CI of [0.825, 0.965], about
++/-0.07. Too wide to defend "0.92" or to detect a 5-point regression. Collect:
+
+| Quantity | Now | Minimal viable | Publication-grade |
+|----------|-----|----------------|-------------------|
+| Bio-harmful positives (real responses, StrongREJECT >= 0.5) | 62 | **~140** (recall CI +/-0.05) | **~390** (CI +/-0.03) |
+| Substantive benign-bio negatives | 68 | **~470** (FPR CI +/-0.02) | **~1,840** (+/-0.01) |
+| Held-out calibration positives | 0 | **~150** | ~500 (usable conformal bound) |
+
+Sources for positives: HarmBench Chemical/Biological behaviors + completions,
+WMDP-bio derived responses, WildJailbreak harmful split (bio-filtered), bio slice
+of existing data. Grade with StrongREJECT; keep only genuinely-harmful responses.
+Negatives: FalseReject-Test held-out, XSTest-Resp, benign bio responses to
+dual-use-sounding questions, plus the real-session `ood_fpr` bio set.
+
+### Phase R1: robustness eval (the largest readiness gap)
+v8b's `query [SEP] response` input is structurally the Constitutional
+Classifiers++ "exchange classifier" (judges response in full input context). The
+publishable result is proving v8b inherits that robustness. Five tracks:
+
+| Track | Test | Metric | Pass bar |
+|-------|------|--------|----------|
+| 0 Baseline | WildGuardTest vanilla vs adversarial split | F1, AUPRC, recall@FPR=1%/5% | adv F1 >= 0.65; vanilla-adv gap <= 0.15 |
+| 1 Char injection | emoji/Unicode-tag/homoglyph/zero-width on harmful responses | Evasion Success Rate, **with NFKC normalization defense** | ESR < 20% |
+| 1 Adv-word sub | TextAttack (TextFooler/BERT-Attack/DeepWordBug) white-box vs v8b | ESR | < 40% |
+| 1 Obfuscation/reconstruction | rewrite harmful response benign; split across fragments | recall | >= 0.50 |
+| 2 Held-out bio | Biorisk-Shift, GeneBreaker, SORRY-Bench mutations (never in train) | recall; generalization gap | >= 0.75; gap <= 0.15 |
+| 3 Multi-turn | MHJ, Biorisk-Shift, RED QUEEN; per-turn vs full-context-windowed scoring | windowed detection; windowed minus per-turn | >= 0.70; **+>= 15 pts** |
+| 4 Over-refusal guardrail | FalseReject-Test, XSTest-Resp | FPR | <= 6% (robustness fixes must not raise it) |
+
+Ship alongside: **input normalization (NFKC + zero-width/emoji/homoglyph
+stripping)** before tokenization. Highest-ROI fix; converts ~100% char-injection
+ESR into a near non-issue. Tooling: TextAttack, HarmBench (+ its classifier as a
+second grader), StrongREJECT, ftfy/NFKC.
+
+### Phase R2: calibration and operating point
+- **Calibrate** on a disjoint calibration split: temperature scaling (primary,
+  1-param, robust at small n, preserves ranking); beta calibration as a check; do
+  NOT use isotonic (<1000 samples). Report ECE (10-bin) + reliability diagram +
+  Brier, before vs after.
+- **Operating point**: headline artifact = a recall(harm)-vs-over-refusal(benign)
+  tradeoff curve with the chosen threshold marked. Report AUROC + AUPRC with
+  bootstrap CIs (AUPRC for rare-positive sensitivity; AUROC for ranking). Pick the
+  threshold for a target over-refusal FPR <= 5%; report recall@5%FPR.
+- **Distribution-free guarantee**: wrap the threshold in a Learn-then-Test / RCPS
+  bound, certifying FNR <= alpha at 95% confidence. Needs the ~500-positive
+  calibration split for a tight bound (Hoeffding slack is 0.155 at n=62, 0.055 at
+  n=500). This is where v8b can be MORE rigorous than the published guard baselines,
+  which publish no operating-point uncertainty.
+
+### Phase R4: release packaging
+- **Stats**: Wilson CIs default; Clopper-Pearson + rule-of-three (3/n) for
+  zero-count claims; bootstrap for AUPRC and between-version diffs; exact McNemar
+  (paired) for v8b-vs-baseline and version-to-version.
+- **Model card**: upgrade `V8B_MODEL_CARD.md` to the HF schema: YAML block
+  (`license: cc-by-nc-4.0`, `base_model`, `datasets`, `pipeline_tag`, `model-index`
+  for the eval widget, `extra_gated_*`), inline the bio response-harm taxonomy /
+  label definition, NeMoGuard-style Bias/Explainability/Privacy/Safety ethics block,
+  content warning, responsible-use clauses, disclosure contact.
+- **Artifact bundle**: `inference.py` (load + classify), `eval/` (harness + configs
+  + RESULTS.md reproducing the card numbers), `train/` (data-prep + label map +
+  DeBERTa hyperparameters/seed), threshold + calibration note. Withhold: harmful
+  positives, exact threshold, attack harness.
+- **Gating**: HF gated repo + click-through Responsible-Use ToU.
+
+## 3. Sequencing and rough effort
+
+1. **R3 data** (harvest + StrongREJECT grade), unblocks everything; the long pole.
+2. **R1 robustness** + ship NFKC normalization, the biggest readiness gap and the
+   most publishable result (validate the exchange-classifier robustness claim).
+3. **R2 calibration**, small once R3's calibration split exists.
+4. **R4 packaging**, mechanical once R1-R3 numbers are in.
+5. (optional) **Phase C commercial**: retrain without BeaverTails + FalseReject;
+   relicense Apache-2.0.
+
+R1-R3 are the real work (data harvest + adversarial harness + multi-turn). R2/R4
+are light. None requires new harmful generation.
+
+## 4. Decision gates
+
+- After R1: if vanilla-adversarial F1 gap > 0.15, or char-injection ESR stays high
+  even with NFKC, or multi-turn windowed does not beat per-turn, v8b is not
+  release-grade; iterate (likely add adversarial responses to training).
+- After R3: confirm recall/FPR CIs are tight enough (+/-0.05) to make the claims.
+- Release: gated non-commercial research release once R1-R4 pass. Commercial only
+  after Phase C.
+
+## 5. Consolidated acceptance scorecard (the release bar)
+
+| Dimension | Metric | Pass bar | Current |
+|-----------|--------|----------|---------|
+| Recall power | bio positives n | >= 140 (min) | 62 |
+| Over-refusal power | substantive-benign n | >= 470 | 68 |
+| Real harm recall | recall, Wilson CI | >= 0.75, +/-0.05 | 0.92 (+/-0.07) |
+| Adversarial | vanilla-adv F1 gap | <= 0.15 | untested |
+| Char injection | ESR w/ NFKC | < 20% | untested |
+| Adv-word sub | ESR (TextAttack) | < 40% | untested |
+| Obfuscation/reconstruction | recall | >= 0.50 | untested |
+| Held-out bio | recall; gen gap | >= 0.75; <= 0.15 | untested |
+| Multi-turn | windowed; vs per-turn | >= 0.70; +>= 15 pts | untested |
+| Over-refusal | FPR substantive | <= 6% | 1.5% (n small) |
+| Calibration | ECE reported + reduced | yes | untested |
+| Operating point | recall@FPR<=5% + conformal FNR bound | published | 0.5 default |
+| License/gating | CC-BY-NC, gated, withholds | in place | not yet |
+| Model card | HF schema + taxonomy + model-index | complete | partial |
+
+## 6. What this plan changes about the readiness verdict
+
+Before: "v8b is a strong research artifact but not a drop-in production guard."
+This plan makes that precise and costed. A **gated non-commercial research
+release** is reachable after R1-R4 (no new harm, reuse-only). **Production /
+commercial** additionally needs Phase C (retrain off NC data) and the full
+robustness bar. The release posture itself (gated, dual-use-reasoned, threshold
+withheld) is a portfolio asset: it demonstrates calibrated release judgment, not
+just a benchmark number.
+
+## 7. References (verified across the four research sweeps)
+
+Robustness: Constitutional Classifiers arXiv:2501.18837 + ++ arXiv:2601.04603
+(exchange classifier); WildGuard arXiv:2406.18495 (vanilla-vs-adv F1);
+Llama Guard arXiv:2312.06674; ShieldGemma arXiv:2407.21772; Aegis 2.0
+arXiv:2501.09004; HarmBench arXiv:2402.04249; StrongREJECT arXiv:2402.10260;
+MHJ arXiv:2408.15221; Crescendo arXiv:2404.01833; RED QUEEN arXiv:2409.17458;
+"Bypassing LLM Guardrails" arXiv:2504.11168 (attacks DeBERTa-v3 family; NFKC fix);
+Qwen3Guard generalization-collapse arXiv:2511.22047; Biorisk-Shift (NeurIPS 2025
+BioSafe GenAI, OpenReview MwajedbCfX); GeneBreaker arXiv:2505.23839.
+
+Licensing/release: ODC-BY-1.0 (opendatacommons.org/licenses/by/1-0); CC-BY-NC-4.0;
+AI2 Responsible Use (allenai.org/responsible-use); HF model-card schema
+(huggingface.co/docs/hub/model-cards, model-card-annotated); reference cards
+meta-llama/Llama-Guard-3-8B, allenai/wildguard, google/shieldgemma-2b,
+nvidia/llama-3.1-nemoguard-8b-content-safety; NC precedent PKU-Alignment/beaver-dam-7b.
+
+Dual-use / responsible release: Structured access Shevlane arXiv:2201.05159;
+GPT-2 staged release arXiv:1908.09203; Beyond Release arXiv:2502.16701; marginal
+risk / open foundation models arXiv:2403.07918; WMDP arXiv:2403.03218;
+SciSafeEval arXiv:2410.03769; Biosecurity-eval best practices arXiv:2510.27629;
+NTI|bio managed-access framework (nti.org); Anthropic ASL-3 (deployed, not released).
+
+Calibration/sizing: temperature scaling + ECE, Guo et al. arXiv:1706.04599; beta
+calibration, Kull et al. AISTATS 2017; sklearn calibration docs; AUROC-vs-AUPRC
+arXiv:2401.06091; conformal RCPS arXiv:2107.07511 + Learn-then-Test arXiv:2110.01052;
+Wilson / Clopper-Pearson, Brown Cai DasGupta Stat.Sci. 2001; McNemar (exact when
+discordant < 25).
