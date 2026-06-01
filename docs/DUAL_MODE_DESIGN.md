@@ -137,6 +137,25 @@ Access note: SaladBench/ALERT/HarmBench/AdvBench have open CAIS/GitHub mirrors;
 WildJailbreak/MHJ are gated (already requested). SciSafeEval, FalseReject,
 LAB-Bench, PubMedQA, OR-Bench are open.
 
+**P1 RESULT (2026-06-01, assessed) - the pool is smaller than the row counts imply:**
+- SciSafeEval biology is ~12.6K ROWS but the instruction is TEMPLATED (5 task
+  templates: gene/protein classification/generation/structure); the variation lives
+  in a `sequence` field (DNA/protein strings), so distinct TEXT prompts dedup to
+  ~1139 and the harm is sequence-bound, not natural-language intent. It is really
+  sequence-task data -> feeds the BLAST/sequence SELECTIVITY signal, not the text head.
+- **WMDP-bio (3272) is NOT a positive.** It is hazardous-KNOWLEDGE MCQ (research
+  questions), not operational intent; labeling it positive would INDUCE over-refusal
+  (the exact failure mode), and LLM-rewriting it would violate the zero-generated-
+  harmful-content principle. Repurpose WMDP-bio as the DUAL-USE-AMBIGUOUS boundary
+  set -> ABSTAIN tier + the selectivity / over-refusal eval (this is where claims 1-2
+  are proven).
+- Clean diverse TEXT intent positives: ~467 (SaladBench-cbrn 247 + ALERT-cbrn 140 +
+  AdvBench 21 + HarmBench 10 + ClearHarm 49) + ~1139 SciSafeEval-templated; augmentable
+  to ~3-4K with ClearHarm rep40 paraphrases + ALERT/SaladBench adversarial variants
+  (all reuse). Hard-negatives ~1000 cached (OR-Bench-health 740 + LAB-Bench 157 + ...)
+  expandable via PubMedQA/BioASQ/MedMCQA. Modest but >> response-harm (n=62) and enough
+  for a P2 baseline; the model card's small-n honesty framing carries over.
+
 ## 4. Bio-selectivity: the metric (a contribution) + method
 
 The core specialization risk is flagging legitimate dual-use research. We define
