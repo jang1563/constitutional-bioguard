@@ -74,6 +74,9 @@ def main():
     ap.add_argument("--out-prefix", default="v8", help="Output prefix (e.g. v8b)")
     ap.add_argument("--beavertails", action="store_true",
                     help="Also harvest BeaverTails 330k bio positives (grow the bio class)")
+    ap.add_argument("--pubmedqa", action="store_true",
+                    help="Add PubMedQA substantive benign biomedical negatives "
+                         "(fixes v8b's confident 'detailed benign bio = harmful' over-refusal)")
     args = ap.parse_args()
 
     import random
@@ -190,6 +193,26 @@ def main():
     items += bt
     print(f"BeaverTails bio: {len(bt)} ({sum(b['label'] for b in bt)} positive)")
 
+    # ── 5) PubMedQA substantive benign biomedical negatives (label 0) ──────
+    #   Fixes v8b's confident "detailed benign bio = harmful" over-refusal
+    #   (diag_v8b_biobenign_fp: 7/10 confident FPs on reliable-label benign bio).
+    pq = []
+    if args.pubmedqa:
+        pp = DATA_EXTERNAL / "pubmed_qa_pqa_labeled.jsonl"
+        if pp.exists():
+            for line in open(pp):
+                r = json.loads(line)
+                q = r.get("query", ""); resp = r.get("response", "")
+                if qhash(q) in locked:
+                    continue
+                pq.append({"query": q, "response": resp, "label": 0,
+                           "prompt_harm": None, "response_harm": "unharmful",
+                           "bio": True, "source": "pubmedqa"})
+        else:
+            print(f"WARN: {pp} missing — skipping PubMedQA")
+    items += pq
+    print(f"PubMedQA substantive benign-bio: {len(pq)}")
+
     # ── dedup by (query, response) ─────────────────────────────────────────
     seen = set(); dedup = []
     for it in items:
@@ -233,6 +256,7 @@ def main():
     prov = {"train": stats(train), "val": stats(val),
             "wildguard_harvest": dict(wg), "falsereject_n": len(fr), "v4_nonbio_n": len(nb),
             "beavertails_bio_n": len(bt), "beavertails_bio_pos": sum(b["label"] for b in bt),
+            "pubmedqa_n": len(pq),
             "leak_excluded_wg": wg.get("leak_excluded", 0), "seed": args.seed,
             "falsereject_cap": args.falsereject_n, "out_prefix": args.out_prefix,
             "note": "reuse-only; label=1 iff bio harmful response; (0,1) quadrant ~absent (deferred)"}
