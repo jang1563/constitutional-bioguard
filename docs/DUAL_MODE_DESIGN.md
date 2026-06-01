@@ -180,6 +180,19 @@ Residual: WMDP dual-use boundary over-flag is 0.21 (the legitimate-dual-use-rese
 over-refusal axis, Claim 2); next lever = add dual-use-research benign prompts as
 negatives (or the ABSTAIN tier) to reduce it.
 
+**P2c RESULT (2026-06-01, deberta_pdual_v3, + all-bio benign-knowledge negatives).**
+Adding the full biomedical benign sources (LAB-Bench/PubMedQA/MedQA, ~4300) as
+label-0 cut the WMDP dual-use over-flag from 0.21 to **0.132** (passes 87% of
+legitimate dual-use research) while recall HELD at 0.983, S improved to 869
+(non-bio-harm flag 0.001), benign-bio FPR ~0.006. The standalone prompt-head is now
+a strong bio-specialized intent classifier: **recall 0.983, bio-selectivity S=869,
+dual-use over-flag 0.132, benign-bio FPR 0.006**. Three diagnose->fix->verify
+iterations: P2 generic (S=1.67) -> P2b non-bio-harm-neg (S=579) -> P2c
+benign-knowledge-neg (WMDP 0.21->0.132). Residual WMDP over-flag 0.132 (1/8) is
+addressable by the ABSTAIN tier or MMLU-bio negatives (diminishing returns).
+**NEXT = P3** (shared-encoder dual-mode integration: combine this prompt-head with
+the v2 response-head, staged unfreeze + regression guard).
+
 ## 4. Bio-selectivity: the metric (a contribution) + method
 
 The core specialization risk is flagging legitimate dual-use research. We define
