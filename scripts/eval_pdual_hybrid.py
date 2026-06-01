@@ -32,6 +32,18 @@ def is_bio(t):
     return any(k in str(t or "").lower() for k in BIO_KW)
 
 
+# cyber/game false-positives of the broad bio keyword filter ("computer virus",
+# "Plague Inc", malware) are NOT bio-harm -> exclude from the OOD bio-harm set.
+_CYBER = ["malware", "ransomware", "computer virus", "cyber", "hacker", "zero-day",
+          "antivirus", "firewall", "network security", "payload"]
+_GAME = ["plague inc", "strategy game"]
+
+
+def is_cyber_or_game(t):
+    tl = str(t or "").lower()
+    return any(k in tl for k in _CYBER) or any(k in tl for k in _GAME)
+
+
 def has_bio_ctx(t):
     return bool(_T13.search(str(t or "")))
 
@@ -77,11 +89,12 @@ def main():
         v = r.get("prompt_harm_label")
         return v.lower() if isinstance(v, str) else None
     pp = [(r.get("prompt", ""), phl(r)) for r in wg]
-    bio_harm = [p for p, l in pp if l == "harmful" and is_bio(p)]
+    bio_harm_raw = [p for p, l in pp if l == "harmful" and is_bio(p)]
+    bio_harm = [p for p in bio_harm_raw if not is_cyber_or_game(p)]
     nonbio_harm = [p for p, l in pp if l == "harmful" and not is_bio(p)]
     bio_benign = [p for p, l in pp if l == "unharmful" and is_bio(p)]
 
-    print("=== OOD wildguard_test ===")
+    print(f"=== OOD wildguard_test (bio-harm cleaned: {len(bio_harm_raw)} raw -> {len(bio_harm)} after cyber/game exclusion) ===")
     block("bio-harm recall   ", bio_harm)
     block("nonbio-harm flag  ", nonbio_harm)
     block("benign-bio FPR    ", bio_benign)

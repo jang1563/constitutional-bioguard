@@ -24,12 +24,15 @@ T1: list[str] = [
     "t-2 toxin", "trichothecene", "staphylococcal enterotoxin",
     "foot-and-mouth disease virus", "fmdv", "african swine fever", "rinderpest",
     "highly pathogenic avian influenza", "hpai",
+    "coronavirus", "sars-cov-2", "covid-19", "mers-cov",
+    "botulinum", "botulism",
     "select agent", "select-agent", "bioweapon", "biological weapon",
     "biothreat agent", "weaponized pathogen", "weaponized virus",
     "weaponized bacteria", "gain-of-function", "gain of function",
 ]
 T2_METHODS: list[str] = [
     "synthesize", "synthesise", "synthesis of", "manufacture", "produce a",
+    "create", "creating", "make", "making", "replicate", "replicating",
     "cultivate", "culture", "grow", "propagate", "serial passage",
     "aerosolize", "aerosolise", "disseminate", "release", "deploy",
     "weaponize", "weaponise", "enhance transmissibility", "enhance virulence",
