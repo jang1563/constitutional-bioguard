@@ -21,8 +21,8 @@ Posture: gated HF repo, CC-BY-NC-4.0, withhold harmful corpus + exact threshold.
 - [x] Input normalization defense (`constitutional_bioguard/preprocessing.py::normalize_text`),
       hardened for char-injection (ship as the deployed preprocessing).
 - [x] `inference.py` (standalone load + normalize + classify; `release/inference.py`).
-- [ ] `eval/` harness + configs + a RESULTS.md reproducing the card's numbers.
-- [ ] `train/` data-prep + label map + DeBERTa hyperparameters/seed (reproducibility).
+- [x] `RESULTS.md` (consolidated eval table + per-metric script mapping + reproduce commands).
+- [x] `TRAINING.md` (data sources + licenses + hyperparameters + seed; harmful examples withheld).
 - [x] Decision-threshold + calibration note (in the card: default 0.5, T=0.24).
 
 ## Withhold (do NOT ship)
@@ -42,8 +42,9 @@ Posture: gated HF repo, CC-BY-NC-4.0, withhold harmful corpus + exact threshold.
 - [ ] Held-out bio generalization blocked by the bio real-response scarcity (R3).
 
 ## Verdict
-The model card + license + gating + withhold list are **release-ready as a v1
-gated non-commercial research artifact**. Remaining items are the runnable bundle
-files (mechanical) and the v2 eval additions (multi-turn, obfuscation), which the
-card already lists as untested. No blocker to a v1 push once the bundle files and
-a disclosure contact are added.
+The model card + license + gating + withhold list + reproducibility bundle
+(`README.md`, `RESULTS.md`, `TRAINING.md`, `inference.py`) are **release-ready as
+a v1 gated non-commercial research artifact**. The ONLY remaining pre-push item is
+a real responsible-disclosure contact address (JK to provide). The v2 eval
+additions (obfuscation / adversarial reconstruction) are documented as untested in
+the card; multi-turn naive-split robustness is already reported.
