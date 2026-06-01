@@ -204,3 +204,65 @@ non-archival workshop posters with small evals (60-prompt); ExpGuard is non-bio
 the partly-open crux (uplift-free options furnish the benign/contrast classes
 well but not a large real-positive pool without reusing public completions or
 abstracting detail). Open questions logged in `w38qflty9` output.
+
+## 8. Cross-track integration — koaug v8 track (closed 2026-05-31)
+
+A parallel "v8 KO-aug" line ran on a different axis (Korean-coverage
+**over-refusal OOD-FPR**, `data/splits/` lineage, v7e-report worktree) and
+closed 4/4 gates. It is isolated from this data-first track (`data/processed/`,
+v7e-clean) but four of its findings bear directly here.
+
+### 8.1 Its result (for context)
+koaug3 drove OOD-FPR 0.135→0.0475 (KO augmentation, real lever). The other two
+gates (OOD-FNR, Youden-J) passed **without retraining — via eval-protocol fixes**,
+because the residual "gaps" were diagnosed as eval artifacts: 188 FNR misses were
+ALL one source (`constitution_rules_fnr`, redacted-placeholder query + withheld/
+refusal response); 30 Youden cases were empty queries. Scorable harmful (2,268)
+had recall 100%.
+
+### 8.2 Verification — this track is CLEAN of koaug's eval-routing artifact
+koaug found `constitution_rules_*` is entirely redacted-placeholder queries, so
+routing them as harm-detection cases is wrong. **Checked: `v8c_train` has 0
+`constitution_rules` items** (sources: wildguardmix_bio 1338, beavertails_bio
+1031, pubmedqa 915, falsereject 900, v4_b4_nonbio 242; 1 near-empty query). The
+#106 benchmark is `wildguard_test` + `beavertails330k_test` only. → my
+recall/FPR numbers do NOT inherit that artifact; they stand.
+
+### 8.3 koaug's "diagnose, the fix is often artifact" lesson, applied to v8c
+v8c added PubMedQA benign-bio volume to fix v8b's diagnosed over-refusal. Result
+on #106 was a Pareto MOVE, not a frontier expansion — and koaug's label-
+reliability lens sharpens the read:
+
+| source (label reliability) | v8b→v8c recall | v8b→v8c FPR |
+|---|---|---|
+| wildguard_test_bio (**reliable** response_harm) | 0.941 → 0.706 (**−0.235**) | 0.192 → 0.135 (−0.057) |
+| beavertails330k_test_bio (noisy crowd is_safe) | 0.911 → 0.800 (−0.111) | 0.435 → 0.348 (−0.087) |
+
+On the RELIABLE-label source, v8c paid 0.235 recall to buy 0.057 FPR — a bad
+trade. Much of the FPR "win" is on beavertails, where reducing FPR partly means
+agreeing with crowd-label noise, not removing real over-refusal. → **v8b stays
+the better model; benign VOLUME was the wrong lever** (confirms the §8.4 fix).
+
+### 8.4 Convergent frontier wall (the load-bearing finding)
+Both tracks independently hit the SAME constraint from opposite directions:
+- **koaug** deferred koaug4 because `cell_biology` dual-use harmful (e.g.
+  AAV-immune-evasion) is **0 examples** across wildguard/salad/alert/advbench —
+  published benches are explicit-CBRN only, no ambiguous dual-use bio.
+- **this track** concluded v8c's recall/FPR frontier only expands with
+  **contrastive pairs** (same bio content, harmful↔benign), which by definition
+  need the harmful side of ambiguous dual-use bio.
+
+Same missing distribution. This is independent confirmation of the §4.4 / §201
+crux: **the real positive class for shippable bio guarding cannot be sourced
+reuse-only.** A v8d contrastive build cannot be reuse-sourced either.
+
+### 8.5 Merge thesis
+koaug's KO **legitimate-research-blocker self-data** is precisely the missing
+ambiguous-dual-use-bio distribution §8.4 names. The merge is therefore not just
+combining models but combining DATA:
+`data/splits` (koaug: KO coverage + eval-protocol fixes + self-data positives)
+⊕ `data/processed` (this track: real-response bio recall, leakage-clean #106).
+Reconcile the two lineages (v2 post-audit splits vs processed) at merge time.
+Carry koaug's eval-protocol fixes (`FNR_EXCLUDE_SOURCES`, empty-query exclusion)
+into any shared scorecard. Isolation held to here (0 conflicts, separate repos);
+keep it until the deliberate merge.
