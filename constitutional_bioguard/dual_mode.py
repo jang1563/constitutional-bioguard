@@ -1,12 +1,23 @@
 """Dual-mode bio guard: combines hybrid prompt-head + response-head.
 
 Architecture:
-  prompt side   = lex (4-tier T1U/T1C/T2/T3) OR (deberta_pdual_v3 AND bio_ctx)
-  response side = deberta_v2 (pair-encoded query+response)
+  prompt side   = lex (4-tier T1U/T1C/T2-strong|weak/T3) OR (deberta_pdual_v3 AND bio_ctx)
+  response side = deberta_bioguard_v8b (pair-encoded query+response, sliding-window)
   joint         = prompt_flag OR response_flag
 
 Separate flags reported (not just joint) so users can pre-filter intent vs
 moderate output, which matches how WildGuard/LlamaGuard surface both axes.
+
+Recommended consumption (validated 2026-06-02 on the response-harm test set):
+  - Input / intent screening  -> use prompt_flag. Designed for this: in-dist
+    recall 0.948, benign-bio over-refusal ~0.01-0.05, nonbio-harm flag 0.004.
+  - Output moderation         -> use response_flag (v8b). On response-harm the
+    prompt axis adds FPR without proportional TPR (joint-OR buys +5.7pt TPR for
+    +7.1pt FPR over response-alone) because harmful responses often have benign
+    prompts. Do NOT fold the prompt axis into pure output moderation.
+  - Max-recall combined screen -> joint_flag (OR) when the FPR budget allows.
+  All three flags are returned independently; pick the axis per surface rather
+  than defaulting to joint.
 """
 from __future__ import annotations
 

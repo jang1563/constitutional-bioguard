@@ -250,6 +250,70 @@ over-flag 0.073 (vs learned 0.132) because T1C+no-method = PASS. The hybrid
 architecture is validated: transparent rules for the certain, learned model for
 the rest (with bio-context gating to prevent non-bio FP).
 
+**P2e: T2 STRONG/WEAK SPLIT + DUAL-MODE END-TO-END VALIDATION (2026-06-02).** The
+P2d table above is the pre-split lex/learned/hybrid comparison (its own harness,
+eval_pdual_hybrid). P2e records the serving wrapper (`dual_mode.py`) and two
+refinements found while validating it end-to-end.
+
+*Review-1 fixes (commit eee01f0).* The response head unpacked `predict_batch`'s
+3-tuple `(label, conf, prob_unsafe)` into 2 vars -> crash on every response/joint
+call, and would have thresholded on confidence=P(argmax) not P(unsafe); fixed.
+Also: learned-flag tier sentinel removed, stale "Option 3 chosen" §2 banner added,
+and pdual_v3 train==serve confirmed (pair pipeline, response=""). Response head
+switched to sliding-window to match serve.py (no effect on short responses;
+prevents 512-tok truncation under-recall on long ones).
+
+*T2 strong/weak split (commit fb7bc48).* Benign-bio over-refusal at scale
+(eval_overrefusal_bio) localized the residual to ONE pattern: T2 routine verbs
+(culture/cultivate/manufacture) x T3 generic-bio firing tier-2 on explicitly
+benign prompts ("culture HARMLESS bacteria" -- 8 of 11 lex flags on OR-Bench-
+health benign). Fix repartitions T2 (no terms added/removed): T2_STRONG
+(synthesize/aerosolize/weaponize/...) escalate with T1C OR generic T3; T2_WEAK
+(culture/cultivate/manufacture/propagate/stockpile/scale-up) escalate ONLY named
+select agents (T1C), deferring generic-bio to the learned head. "culture anthrax"
+still FLAGS (T1C+weak); "culture harmless bacteria" now PASSES. Before -> after:
+
+| prompt-axis metric | before | after |
+|--------------------|--------|-------|
+| OR-Bench-health benign over-refusal (n=740) | 0.022 (lex 11) | **0.011** (lex 3) |
+| in-dist neg FPR (n=1796) | 0.007 (lex 6) | **0.004** (lex 1) |
+| in-dist pos recall (n=58) | 0.948 | **0.948** (unchanged) |
+| OOD bio recall (n=9) | 0.444 | **0.444** (unchanged) |
+| WMDP dual-use stems (n=1273) | 0.125 | **0.119** |
+
+Over-refusal AND negative-FPR improved at zero real-harm recall cost (no positive
+relied on the weak+T3 rule; the learned head already caught them) -- the hybrid
+thesis in miniature: a more precise lexicon + delegation lowers FP for free.
+
+*Benign-bio over-refusal, final (curated sets, prompt axis, lower=better):*
+
+| set | n | flag-rate |
+|-----|---|-----------|
+| FalseReject-test bio-context | 142 | **0.000** |
+| OR-Bench-Hard-1k benign-bio | 34 | **0.000** |
+| OR-Bench-health benign | 740 | 0.011 |
+| WMDP-bio stems (dual-use boundary) | 1273 | 0.119 |
+
+The earlier wildguard "bio_benign" 0.667 was an n=3 artifact, now superseded.
+Field-best benign-bio FPR is ~0.03 (Meng/Zhang); we sit at 0.000-0.011 on curated
+benign-bio WITH a learned recall head, clearing the §4 target.
+
+*Dual-mode end-to-end (`dual_mode.py`; OOD wildguard cleaned + in-dist + joint on
+the response-harm test set n=500/pos=331):*
+
+| axis | metric | value |
+|------|--------|-------|
+| prompt | in-dist recall / nonbio-harm flag / benign-bio | 0.948 / 0.004 / 0.000-0.011 |
+| prompt | OOD bio recall (cleaned, n=9) | 0.444 |
+| response (v8b, sliding) | TPR / FPR | 0.662 / 0.047 |
+| joint OR | TPR / FPR | 0.719 / 0.118 |
+
+*Serving guidance (validated).* joint-OR buys +5.7pt TPR for +7.1pt FPR over
+response-alone on response-harm (harmful responses often have benign prompts), so
+consume PER AXIS: prompt_flag for input/intent screening, response_flag for output
+moderation, joint_flag only for max-recall combined screens. `dual_mode` returns
+all three independently.
+
 ## 4. Bio-selectivity: the metric (a contribution) + method
 
 The core specialization risk is flagging legitimate dual-use research. We define

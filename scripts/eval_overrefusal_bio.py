@@ -88,11 +88,14 @@ def main():
         stems.append(r.get("query", ""))
     report(guard, "wmdp_bio_stems_dualuse   ", stems, out)
 
-    # 4) XSTest: safe-bio contrast prompts (label==0, is_bio)
-    xs = load("xstest")
-    xs_safe = [r["query"] for r in xs
-               if int(r.get("label", 0)) == 0 and is_bio(r.get("query", ""))]
-    report(guard, "xstest_safe_bio          ", xs_safe, out)
+    # 4) FalseReject-test: curated benign-but-looks-harmful prompts, bio-context
+    #    subset. Cleaner hard-benign-bio set than XSTest (whose safe split is
+    #    violence homonyms, not biology -> 0 bio prompts). Filtered by
+    #    has_bio_context (the learned-head gate, the principled bio denominator).
+    #    TEST split only (train was used in v5, avoid leakage).
+    fr = load("false_reject_test")
+    fr_bio = [r["query"] for r in fr if has_bio_context(r.get("query", ""))]
+    report(guard, "falsereject_bio          ", fr_bio, out)
 
     op = DATA_PROCESSED.parent / "results" / "overrefusal_bio_eval.json"
     op.parent.mkdir(parents=True, exist_ok=True)
