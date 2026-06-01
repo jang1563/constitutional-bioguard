@@ -1,14 +1,14 @@
 #!/usr/bin/env python
-"""P2 build: prompt-harm bio dataset for the standalone prompt-head baseline.
+"""P2/P2b build: prompt-harm bio dataset for the standalone prompt-head.
 
-Assembles bio-harm PROMPT positives + benign-bio hard-negatives + non-bio easy-
-negatives from cache (reuse-only). Format query=prompt, response="" so it flows
-through the existing pair-encoding train pipeline unchanged (a prompt classifier =
-a response head trained on (prompt, empty); infer the same way). WMDP-bio is held
-out as the DUAL-USE boundary for the selectivity eval, never trained on.
+P2b adds NON-BIO harmful prompts as label-0 negatives so the head learns to flag
+bio-harm but NOT non-bio harm (directly optimizing the bio-selectivity ratio S).
+The non-bio-harm pool is split 80/20: 80% trains, 20% is HELD OUT as the
+selectivity denominator (no leakage). WMDP-bio is the dual-use boundary (held out,
+never trained). Format query=prompt, response="" (reuse the pair pipeline).
 
-Writes data/processed/pdual_{train,val}.jsonl + pdual_selectivity.jsonl (WMDP
-boundary + non-bio-harmful denominator) + pdual_class_weights.json. Content-blind.
+Writes data/processed/pdual_{train,val}.jsonl + pdual_selectivity.jsonl +
+pdual_class_weights.json. Content-blind.
 """
 from __future__ import annotations
 
@@ -26,17 +26,15 @@ from constitutional_bioguard.config import CONFIGS_DIR, DATA_EXTERNAL, DATA_PROC
 random.seed(42)
 BIO_KW = [k.lower() for k in json.load(open(CONFIGS_DIR / "bio_keywords_adv.json")).get("keywords", [])]
 
-# positive (bio-harm prompt) sources: apply bio filter to the prompt
 POS_FILES = ["saladbench_cbrn.jsonl", "alert_cbrn.jsonl", "advbench_bio.jsonl",
-             "harmbench_bio.jsonl", "jailbreakbench_bio.jsonl",
-             "scisafeeval_bio.jsonl", "clearharm_bio.jsonl"]
-# benign-bio hard negatives
+             "harmbench_bio.jsonl", "jailbreakbench_bio.jsonl", "clearharm_bio.jsonl"]
 NEG_BIO_FILES = ["or_bench_health.jsonl", "lab_bench.jsonl", "false_reject_train.jsonl",
                  "false_reject_test.jsonl", "med_qa_test.jsonl", "pubmed_qa_pqa_labeled.jsonl",
                  "or_bench_hard_1k.jsonl"]
-# non-bio easy negatives (sample from these, NON-bio rows only)
+# NON-BIO harmful prompts -> the selectivity-teaching negatives (label 0 for bio head)
+NEG_NONBIO_HARM_FILES = ["harmbench_full.jsonl", "advbench_full.jsonl", "saladbench_cbrn.jsonl",
+                         "alert_cbrn.jsonl", "wmdp_cyber.jsonl", "wmdp_chem.jsonl"]
 NEG_EASY_FILES = ["or_bench_hard_1k.jsonl", "false_reject_train.jsonl"]
-SCISAFE_CAP = 350   # cap templated SciSafeEval so it does not dominate
 
 
 def qh(t):
@@ -44,8 +42,7 @@ def qh(t):
 
 
 def is_bio(t):
-    t = str(t or "").lower()
-    return any(k in t for k in BIO_KW)
+    return any(k in str(t or "").lower() for k in BIO_KW)
 
 
 def prompt_of(r):
@@ -68,17 +65,15 @@ def main():
     def add(prompt, label, source):
         h = qh(prompt)
         if not prompt or len(prompt.strip()) < 8 or h in seen:
-            return
+            return False
         seen.add(h)
         items.append({"query": prompt.strip(), "response": "", "label": label, "source": source})
         src[source] += 1
+        return True
 
-    # positives
+    # positives (bio-harm prompts)
     for fn in POS_FILES:
-        rows = load(fn)
-        if "scisafeeval" in fn:
-            rows = rows[:SCISAFE_CAP]
-        for r in rows:
+        for r in load(fn):
             pr = prompt_of(r)
             if is_bio(pr):
                 add(pr, 1, fn.replace(".jsonl", ""))
@@ -88,9 +83,27 @@ def main():
         for r in load(fn):
             pr = prompt_of(r)
             if is_bio(pr):
-                add(pr, 0, "neg_" + fn.replace(".jsonl", ""))
+                add(pr, 0, "neg_bio_" + fn.split(".")[0][:10])
 
-    # non-bio easy negatives (sample)
+    # NON-BIO harmful -> collect, dedup, split 80 train / 20 held-out selectivity
+    nonbio_harm = []
+    nb_seen = set()
+    for fn in NEG_NONBIO_HARM_FILES:
+        for r in load(fn):
+            pr = prompt_of(r)
+            if pr and not is_bio(pr) and len(pr.strip()) >= 8:
+                h = qh(pr)
+                if h in seen or h in nb_seen:
+                    continue
+                nb_seen.add(h)
+                nonbio_harm.append(pr)
+    random.shuffle(nonbio_harm)
+    cut = int(len(nonbio_harm) * 0.8)
+    train_nbh, held_nbh = nonbio_harm[:cut], nonbio_harm[cut:]
+    for pr in train_nbh:
+        add(pr, 0, "neg_nonbio_harm")
+
+    # easy non-bio benign negatives (smaller now)
     easy = []
     for fn in NEG_EASY_FILES:
         for r in load(fn):
@@ -98,13 +111,11 @@ def main():
             if pr and not is_bio(pr) and qh(pr) not in seen:
                 easy.append(pr)
     random.shuffle(easy)
-    for pr in easy[:1200]:
+    for pr in easy[:500]:
         add(pr, 0, "neg_easy_nonbio")
 
     random.shuffle(items)
     pos = sum(it["label"] for it in items)
-    neg = len(items) - pos
-    # 85/15 split, stratified-ish by shuffle
     n_val = int(len(items) * 0.15)
     val, train = items[:n_val], items[n_val:]
     DATA_PROCESSED.mkdir(parents=True, exist_ok=True)
@@ -112,31 +123,27 @@ def main():
         with open(DATA_PROCESSED / f"{name}.jsonl", "w") as f:
             for it in data:
                 f.write(json.dumps(it, ensure_ascii=False) + "\n")
-    # class weights (auto SAFE)
     tp = sum(it["label"] for it in train); tn = len(train) - tp
     w = {"0": round(len(train) / (2 * tn), 4) if tn else 1.0, "1": 1.0}
     json.dump(w, open(DATA_PROCESSED / "pdual_class_weights.json", "w"))
 
-    # selectivity eval set: WMDP-bio (dual-use boundary, expect mostly NOT flagged)
-    # + non-bio harmful (the denominator: should NOT flag, that is other heads' job)
+    # selectivity set: WMDP-bio boundary + HELD-OUT non-bio-harm (disjoint from train)
     sel = []
     for r in load("wmdp_bio.jsonl"):
         pr = prompt_of(r)
         if is_bio(pr):
             sel.append({"query": pr, "response": "", "tier": "dual_use_boundary", "source": "wmdp_bio"})
-    for fn in ("harmbench_full.jsonl", "advbench_full.jsonl"):
-        for r in load(fn):
-            pr = prompt_of(r)
-            if pr and not is_bio(pr):
-                sel.append({"query": pr, "response": "", "tier": "nonbio_harm", "source": fn.replace(".jsonl", "")})
+    for pr in held_nbh:
+        sel.append({"query": pr, "response": "", "tier": "nonbio_harm", "source": "held_out"})
     with open(DATA_PROCESSED / "pdual_selectivity.jsonl", "w") as f:
         for it in sel:
             f.write(json.dumps(it, ensure_ascii=False) + "\n")
 
-    print(f"pdual: total={len(items)} pos={pos} neg={neg} ({round(100*pos/len(items),1)}% pos)")
+    print(f"pdual P2b: total={len(items)} pos={pos} neg={len(items)-pos} ({round(100*pos/len(items),1)}% pos)")
     print(f"  train={len(train)} val={len(val)}  class_weights={w}")
     print(f"  by_source: {dict(src.most_common())}")
-    print(f"  selectivity set: {len(sel)} ({dict(Counter(s['tier'] for s in sel))})")
+    print(f"  non-bio-harm: {len(nonbio_harm)} ({len(train_nbh)} train-neg / {len(held_nbh)} held-out selectivity)")
+    print(f"  selectivity set: {dict(Counter(s['tier'] for s in sel))}")
 
 
 if __name__ == "__main__":

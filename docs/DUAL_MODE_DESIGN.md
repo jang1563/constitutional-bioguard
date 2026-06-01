@@ -156,6 +156,18 @@ LAB-Bench, PubMedQA, OR-Bench are open.
   expandable via PubMedQA/BioASQ/MedMCQA. Modest but >> response-harm (n=62) and enough
   for a P2 baseline; the model card's small-n honesty framing carries over.
 
+**P2 BASELINE RESULT (2026-06-01, deberta_pdual_v1, standalone prompt-head, 428
+pos / 2115 neg).** First prompt-harm number + selectivity baseline, and it
+immediately surfaces the crux. In-dist val recall 0.984 / FPR 0 / AUROC 1.0 is a
+same-distribution SHORTCUT (63 val positives, trivially separable saladbench/alert
+vs or_bench style; not genuine harm-intent learning). The honest OOD signal:
+**bio-selectivity ratio S = recall(bio-harm) / flag-rate(non-bio-harm) = 0.984 /
+0.589 = 1.67 -> NOT bio-specific**; the head flags 59% of NON-bio harmful prompts,
+i.e. it learned GENERIC harm, not bio specifically. WMDP dual-use boundary
+over-flagged at 18%. Diagnosis: non-bio harm was absent from the negatives, so the
+head never learned "non-bio harm is not the bio head's job." Fix (P2b): add non-bio
+harmful prompts as label-0 negatives to directly optimize S (bio-specificity).
+
 ## 4. Bio-selectivity: the metric (a contribution) + method
 
 The core specialization risk is flagging legitimate dual-use research. We define
