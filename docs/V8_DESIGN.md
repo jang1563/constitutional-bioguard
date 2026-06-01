@@ -256,13 +256,36 @@ Same missing distribution. This is independent confirmation of the §4.4 / §201
 crux: **the real positive class for shippable bio guarding cannot be sourced
 reuse-only.** A v8d contrastive build cannot be reuse-sourced either.
 
-### 8.5 Merge thesis
-koaug's KO **legitimate-research-blocker self-data** is precisely the missing
-ambiguous-dual-use-bio distribution §8.4 names. The merge is therefore not just
-combining models but combining DATA:
-`data/splits` (koaug: KO coverage + eval-protocol fixes + self-data positives)
-⊕ `data/processed` (this track: real-response bio recall, leakage-clean #106).
-Reconcile the two lineages (v2 post-audit splits vs processed) at merge time.
-Carry koaug's eval-protocol fixes (`FNR_EXCLUDE_SOURCES`, empty-query exclusion)
-into any shared scorecard. Isolation held to here (0 conflicts, separate repos);
-keep it until the deliberate merge.
+### 8.5 Merge scoping — CORRECTED (the merge is an EVAL win, not a frontier win)
+An earlier draft of this section claimed koaug's self-data supplies the missing
+dual-use-bio **positives**. Inspecting `data/splits` directly **refutes that**:
+
+- **`ood_fpr.jsonl` (the money metric) is 1,284 records, ALL `legitimate`** (benign,
+  held-out, never-train). Its bio slice = 531, all legitimate; **134 are JK's
+  real session logs** (`session_logs_primary` 132 + `session_logs_secondary` 2 — legit
+  research that got blocked). → self-data is the **benign / over-refusal** side
+  and is a **held-out probe**, NOT trainable positives.
+- **`ood_fnr.jsonl` bio-harmful = 274, but 287/314 are `external_benchmark`**
+  (the public SALAD/WildGuard/ALERT reuse this track already harvests) + 27
+  `constitution_rules_fnr` (the redacted-placeholder artifact). → **0 new
+  ambiguous-dual-use-bio positives.** §8.4's frontier wall is now confirmed at the
+  DATA level, not just by koaug's koaug4 scoping.
+
+So the merge does **not** expand the positive class. What it genuinely offers:
+1. **A real over-refulsal money metric (high value, low effort).** Evaluate
+   v8b/v8c on `ood_fpr` bio (531 real legit items incl. 134 of JK's own sessions)
+   — leakage-clean for this track (none of those sources are in `data/processed`).
+   This is the most application-relevant number we can produce and directly
+   answers the Goodhart question ("does it work on *real* legit research?").
+   It may even **flip the v8b-vs-v8c verdict**: §8.3 ranked v8b > v8c on
+   semi-synthetic FPR; if v8c's lower over-refulsal holds on JK's REAL sessions,
+   v8c's recall trade could be the right ship.
+2. **koaug's eval-protocol fixes** (`FNR_EXCLUDE_SOURCES`, empty-query exclusion)
+   for any shared scorecard, if constitution_rules is ever routed.
+3. (Lower confidence) **`matched_triples.jsonl` as contrastive structure** — worth
+   inspecting, though its harmful side is still public-reuse.
+
+**Bottom line:** positive-class expansion stays blocked for reuse-only (both
+tracks agree). The actionable merge is the EVAL: measure v8b/v8c over-refusal on
+the real session-log money metric before any v8d. Isolation held (0 conflicts);
+keep `data/processed` and `data/splits` separate, read `ood_fpr` for eval only.
