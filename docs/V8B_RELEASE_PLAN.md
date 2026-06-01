@@ -46,7 +46,20 @@ credible release must adopt. So v8b ships **non-commercial**. Direct precedent:
 PKU's own `beaver-dam-7b` (BeaverTails-trained, publicly released, NC). A
 **commercial** release requires dropping BeaverTails + FalseReject and retraining
 on permissive data only (ODC-BY WildGuardMix and/or CC-BY-4.0 Aegis 2.0), then
-licensing Apache-2.0, the WildGuard/Aegis pattern. Tracked as an optional Phase C.
+licensing Apache-2.0, the WildGuard/Aegis pattern.
+
+**Decision (2026-06-01): Phase C deferred, ship non-commercial.** No commercial
+plans exist, and Phase C would drop 55% of training (BeaverTails 1,024 +
+FalseReject 891), which are exactly the two sources behind v8b's headline numbers
+(BeaverTails = the real bio-harmful-response positives behind recall 0.919;
+FalseReject = the hard-negatives behind the 2% real over-refusal). Permissive
+bio-harmful replacements barely exist (Aegis 2.0 is CC-BY-4.0 but has no bio
+category), so Phase C would likely regress quality for a hypothetical benefit.
+Commercial readiness also adds near-zero application value (safety labs deploy
+guards, they do not sell them). The option is NOT foreclosed: do Phase C later if
+a concrete commercial need appears, guided by the real requirement. Preserve the
+option cheaply by keeping the data pipeline source-toggleable, so a permissive-only
+retrain is a config flag, not a redesign.
 
 **1b. Eval sizing collides with the frontier wall, but only for TRAINING.** The
 sizing target below needs ~140 to 390 bio-harmful EVAL positives. These are
@@ -133,8 +146,8 @@ second grader), StrongREJECT, ftfy/NFKC.
    most publishable result (validate the exchange-classifier robustness claim).
 3. **R2 calibration**, small once R3's calibration split exists.
 4. **R4 packaging**, mechanical once R1-R3 numbers are in.
-5. (optional) **Phase C commercial**: retrain without BeaverTails + FalseReject;
-   relicense Apache-2.0.
+5. (deferred, see §1a) **Phase C commercial**: retrain without BeaverTails +
+   FalseReject; relicense Apache-2.0. Only if a concrete commercial need appears.
 
 R1-R3 are the real work (data harvest + adversarial harness + multi-turn). R2/R4
 are light. None requires new harmful generation.
