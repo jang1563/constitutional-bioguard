@@ -185,6 +185,19 @@ def eval_matched_triples(model, tokenizer, device):
             r = json.loads(line)
             records.append(r)
 
+    # Exclude records with empty/redacted query text — a query+response classifier
+    # cannot score them. The `constitution_rules_matched` binary-pair queries were
+    # redacted to empty during sanitization; scoring an empty string yields a
+    # constant p and collapses Youden's J for the affected domains
+    # (dual_use_chemistry 10/10, synthetic_biology 10/21, toxicology 10/24 empty).
+    # With them excluded, the corrected avg J rises from ~0.68 to ~0.83 (passes).
+    # See docs/V8_KOAUG_ANALYSIS.md and data/splits/README.md.
+    n_before = len(records)
+    records = [r for r in records if (r.get("query", "") or "").strip()]
+    if len(records) != n_before:
+        logger.info("  matched_triples: excluded %d empty-query records (unscoreable)",
+                    n_before - len(records))
+
     texts = []
     for r in records:
         q = r.get("query", "")
