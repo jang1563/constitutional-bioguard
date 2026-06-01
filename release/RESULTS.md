@@ -1,4 +1,6 @@
-# bioguard-v8b: results and how to reproduce
+# constitutional-bioguard-deberta-v2: results and how to reproduce
+
+(Internally this is training run `v8b`; the evaluation scripts are named `*_v8b_*` accordingly.)
 
 Every number in the model card, with the script that produces it. All evaluation
 sets are held out and leakage-audited (training queries byte-disjoint from every

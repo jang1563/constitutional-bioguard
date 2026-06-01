@@ -20,7 +20,7 @@ metrics:
 - f1
 - auprc
 model-index:
-- name: bioguard-v8b
+- name: constitutional-bioguard-deberta-v2
   results:
   - task:
       type: text-classification
@@ -39,7 +39,7 @@ model-index:
       value: 0.021
       name: Over-refusal on real legitimate bio research (n=531)
 extra_gated_prompt: >-
-  bioguard-v8b is a defensive bio-safety research artifact, released for
+  constitutional-bioguard-deberta-v2 is a defensive bio-safety research artifact, released for
   non-commercial research only. By requesting access you agree to the
   responsible-use terms in the model card: use it solely for defensive evaluation
   and moderation research; do not use it as a reward, discriminator, or filter to
@@ -54,14 +54,15 @@ extra_gated_fields:
   I agree to the responsible-use terms (defensive evaluation only): checkbox
 ---
 
-# bioguard-v8b: a bio response-harm classifier
+# constitutional-bioguard-deberta-v2: a bio response-harm classifier
 
 A small encoder (DeBERTa-v3-base, ~184M params) that reads a `query [SEP] response`
 pair and decides whether the **response** delivers harmful biological content.
 Built to reduce over-refusal of legitimate bench research while catching genuinely
 harmful bio completions. This card states scope and limits as plainly as results.
 All numbers are held-out and leakage-audited (training queries are byte-disjoint
-from every test set).
+from every test set). This is the successor to
+`jang1563/constitutional-bioguard-deberta-v1`.
 
 ## Model details
 
@@ -82,7 +83,7 @@ from every test set).
   research-grade second-stage filter or offline auditing tool, where the goal is
   to flag harmful bio responses without over-blocking legitimate research.
 - **Out of scope:**
-  - **Prompt/input filtering.** v8b judges responses, not requests; it scores ~0
+  - **Prompt/input filtering.** the model judges responses, not requests; it scores ~0
     on prompt-only benchmarks by design.
   - **Sole production safeguard.** Multi-turn and content-obfuscation robustness
     are not yet validated (see Limitations).
@@ -94,8 +95,8 @@ from every test set).
 from transformers import AutoTokenizer, AutoModelForSequenceClassification
 import torch
 
-tok = AutoTokenizer.from_pretrained("bioguard-v8b")
-model = AutoModelForSequenceClassification.from_pretrained("bioguard-v8b").eval()
+tok = AutoTokenizer.from_pretrained("jang1563/constitutional-bioguard-deberta-v2")
+model = AutoModelForSequenceClassification.from_pretrained("jang1563/constitutional-bioguard-deberta-v2").eval()
 
 # apply the shipped input normalization first (mitigates char-injection attacks)
 # from constitutional_bioguard.preprocessing import normalize_text
@@ -147,7 +148,7 @@ is near-optimal: **recall 0.919 at 2.1% over-refusal**; raising recall to ~0.95
 costs ~15% over-refusal.
 
 **Adversarial robustness (char-level, the primary classifier-evasion threat).**
-On responses v8b flags as harmful, evasion success rate (ESR) after the shipped
+On responses the model flags as harmful, evasion success rate (ESR) after the shipped
 normalization:
 
 | Attack | ESR |
@@ -162,7 +163,7 @@ normalization:
 0.40). Two deliberate residuals are documented in Limitations.
 
 **Scope boundary.** On stub-response benchmarks (SaladBench O39, ALERT-CBRN,
-SimpleSafety-bio) v8b flags ~0 by design: those attach a constant template
+SimpleSafety-bio) the model flags ~0 by design: those attach a constant template
 response and test prompt harm, which a response-harm classifier correctly ignores.
 
 **Not a lexical shortcut.** Masking every bio keyword changes predictions by ~1%.
@@ -175,11 +176,11 @@ response and test prompt harm, which a response-harm classifier correctly ignore
    data or generation (deliberately avoided). Report and read recall with its CI.
 2. **Multi-turn: robust (tested).** Splitting harmful content across 2 to 5 turns
    is caught per-turn at 0.964; LLM-paraphrasing each turn then reconstructing
-   gives per-turn 0.945 equal to windowed (no exchange-classifier gap). v8b does
+   gives per-turn 0.945 equal to windowed (no exchange-classifier gap). the model does
    not collapse under multi-turn delivery.
 3. **Obfuscation: resisted (tested).** Benign framing wrappers evade at worst 0.14;
    a full neutral LLM paraphrase (Qwen2.5-7B, semantics preserved, surface fully
-   rewritten) evades at only 0.07. v8b judges content, not surface form.
+   rewritten) evades at only 0.07. the model judges content, not surface form.
 4. **Spacing and Greek-homoglyph residuals.** Intra-word spacing (ESR 0.21) cannot
    be fixed by character stripping without breaking legitimate bio notation (e.g.
    spaced sequences like "A T G C"); needs adversarial training. Greek homoglyph
@@ -196,7 +197,7 @@ This is defensive biosafety research: the aim is to reduce over-refusal for
 legitimate research while flagging harmful outputs. Withheld by design: the harmful
 (positive) training examples, the exact production threshold, and any companion
 attack harness. The real over-refusal evaluation uses the author's own assistant
-session logs and is **not released** for privacy. Anyone deploying v8b should
+session logs and is **not released** for privacy. Anyone deploying the model should
 re-validate on their own traffic, add adversarial and multi-turn testing, and keep
 a human in the loop for any consequential decision. Report misclassifications,
 false negatives, or jailbreaks to the maintainer at silveray1563@gmail.com
