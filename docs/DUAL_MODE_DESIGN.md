@@ -209,6 +209,39 @@ the sole trigger). A pure learned text classifier cannot be the bio-prompt-harm 
 on this data. The drift review caught this BEFORE P3, exactly its purpose (10th
 eval-honesty catch of the effort).
 
+**P2d: LEXICOGRAPHIC HYBRID RESULT (2026-06-01).** After 4 iterations (v0 raw lex,
+v1 gap-fix adding coronavirus/botulinum/create/make to T1/T2, v2 T2 precision
+tightening removing generic verbs, v3 T1U/T1C split), the final 4-tier lexicon:
+- T1U (unconditional: bioweapon, gain-of-function, select-agent) flags on mention.
+- T1C (contextual: select-agents/toxins) flags only with T2 method co-occurrence.
+- T2 (high-precision bio-harm verbs: synthesize, aerosolize, weaponize, etc.).
+- T3 (generic bio: virus, pathogen, lab) never flags alone; modulates T2/T1C.
+Key design: "what is anthrax" = T1C mention only = PASS; "synthesize anthrax" =
+T1C+T2 = FLAG. Generic verbs (create, make, grow) excluded from T2 because they
+trigger on non-bio ("create phishing email") and benign-bio ("grow cells").
+
+ALSO DISCOVERED: the OOD eval set (19 "bio-harm" wildguard_test prompts) was
+**~80% garbage** (computer-virus/malware/cyber prompts matched by the broad
+`is_bio()` keyword filter, substring artifacts like "pricing" matching "ricin",
+Plague Inc game references). Cleaned to 9, of which only ~4 are genuine bio-harm.
+This is itself a contribution: evaluating bio-specialized classifiers requires
+domain-aware filtering, not naive keyword matching.
+
+| Metric | lex | learned | hybrid (lex OR learned-with-bio-ctx) |
+|--------|-----|---------|--------------------------------------|
+| OOD bio recall (n=9) | 0.000 | 0.444 | **0.444** |
+| nonbio-harm flag (n=730) | 0.001 | 0.005 | **0.004** |
+| in-dist recall (n=58) | 0.121 | 0.983 | **0.948** |
+| in-dist FPR (n=1796) | 0.003 | 0.006 | **0.007** |
+| dual-use over-flag (n=3272) | **0.073** | 0.132 | 0.167 |
+| nonbio selectivity | 0.001 | 0.001 | **0.001** |
+
+The lex alone is extreme high-precision low-recall (rule catches T1U/T1C+T2 only);
+the learned head provides recall; hybrid combines both. Lex's biggest win = dual-use
+over-flag 0.073 (vs learned 0.132) because T1C+no-method = PASS. The hybrid
+architecture is validated: transparent rules for the certain, learned model for
+the rest (with bio-context gating to prevent non-bio FP).
+
 ## 4. Bio-selectivity: the metric (a contribution) + method
 
 The core specialization risk is flagging legitimate dual-use research. We define
