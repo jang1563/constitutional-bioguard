@@ -41,9 +41,12 @@ def _fallback_normalize(text: str) -> str:
 
 
 try:
-    from constitutional_bioguard.preprocessing import normalize_text
-except Exception:  # released standalone, package not importable
-    normalize_text = _fallback_normalize
+    from preprocessing import normalize_text          # shipped alongside this file
+except Exception:
+    try:
+        from constitutional_bioguard.preprocessing import normalize_text
+    except Exception:  # last resort: minimal built-in (less robust)
+        normalize_text = _fallback_normalize
 
 
 _MODEL = None
@@ -62,8 +65,9 @@ def classify(query: str, response: str, threshold: float = DEFAULT_THRESHOLD):
     """Return {'p_harmful': float, 'flag': bool}. Normalizes inputs first."""
     model, tok = _load()
     q, r = normalize_text(query), normalize_text(response)
-    text = q + tok.sep_token + r
-    inp = tok(text, truncation=True, max_length=512, return_tensors="pt")
+    # pair encoding tok(query, response) matches how the model was trained/evaluated
+    # (do NOT manually concatenate with [SEP]; that yields a different token sequence)
+    inp = tok(q, r, truncation=True, max_length=512, return_tensors="pt")
     with torch.no_grad():
         p = model(**inp).logits.softmax(-1)[0, 1].item()
     return {"p_harmful": round(p, 4), "flag": p >= threshold}

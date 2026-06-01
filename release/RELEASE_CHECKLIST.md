@@ -18,8 +18,8 @@ Posture: gated HF repo, CC-BY-NC-4.0, withhold harmful corpus + exact threshold.
 
 ## Artifact bundle (what ships with the weights)
 - [x] `README.md` (the model card).
-- [x] Input normalization defense (`constitutional_bioguard/preprocessing.py::normalize_text`),
-      hardened for char-injection (ship as the deployed preprocessing).
+- [x] Input normalization defense SHIPPED as `preprocessing.py` (hardened
+      normalize_text; imported by inference.py; reproduces the char-injection robustness).
 - [x] `inference.py` (standalone load + normalize + classify; `release/inference.py`).
 - [x] `RESULTS.md` (consolidated eval table + per-metric script mapping + reproduce commands).
 - [x] `TRAINING.md` (data sources + licenses + hyperparameters + seed; harmful examples withheld).

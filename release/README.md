@@ -35,6 +35,9 @@ model-index:
     - type: auprc
       value: 0.938
       name: AUPRC
+    - type: recall
+      value: 0.694
+      name: General response-harm recall (WildGuard-native, n=1709, better-powered)
     - type: fpr
       value: 0.021
       name: Over-refusal on real legitimate bio research (n=531)
@@ -71,8 +74,8 @@ Constitutional Classifiers is cited as a methodological influence, not a basis).
 - **Architecture:** DeBERTa-v3-base (12 layers, hidden 768, ~184M params).
 - **Input:** `query [SEP] response`. **Output:** binary (harmful response vs not) + probability.
 - **Class of model:** response-harm classifier. It judges the response, not the request.
-- **Preprocessing (ships with the model):** an input normalization layer
-  (`normalize_text`) that strips invisible/zero-width/tag/variation-selector
+- **Preprocessing (`preprocessing.py`, shipped in this repo):** an input normalization
+  layer (`normalize_text`) that strips invisible/zero-width/tag/variation-selector
   characters, folds homoglyphs, decodes URL/base64/hex/ROT13, removes combining
   marks, and applies NFKC. This is a hardened adversarial-robustness defense (see
   Evaluation).
@@ -85,10 +88,10 @@ Constitutional Classifiers is cited as a methodological influence, not a basis).
   research-grade second-stage filter or offline auditing tool, where the goal is
   to flag harmful bio responses without over-blocking legitimate research.
 - **Out of scope:**
-  - **Prompt/input filtering.** the model judges responses, not requests; it scores ~0
+  - **Prompt/input filtering.** The model judges responses, not requests; it scores ~0
     on prompt-only benchmarks by design.
-  - **Sole production safeguard.** Multi-turn and content-obfuscation robustness
-    are not yet validated (see Limitations).
+  - **Sole production safeguard.** Production use needs serving infrastructure,
+    real-traffic threshold recalibration, and continuous monitoring first (see Limitations).
   - **High-consequence gating** without a human in the loop.
 
 ## How to use
@@ -100,14 +103,15 @@ import torch
 tok = AutoTokenizer.from_pretrained("jang1563/bioguard-deberta-v2")
 model = AutoModelForSequenceClassification.from_pretrained("jang1563/bioguard-deberta-v2").eval()
 
-# apply the shipped input normalization first (mitigates char-injection attacks)
-# from constitutional_bioguard.preprocessing import normalize_text
-# query, response = normalize_text(query), normalize_text(response)
+# apply the shipped input normalization first (preprocessing.py is in this repo;
+# it reproduces the reported char-injection robustness)
+from preprocessing import normalize_text
+query, response = normalize_text(query), normalize_text(response)
 
-text = query + tok.sep_token + response
-inp = tok(text, truncation=True, max_length=512, return_tensors="pt")
+# pair encoding tok(query, response) matches training/eval; do NOT concat with [SEP]
+inp = tok(query, response, truncation=True, max_length=512, return_tensors="pt")
 with torch.no_grad():
-    p_harmful = model(**inp).logits.softmax(-1)[0, 1].item()
+    p_harmful = model(**inp).logits.softmax(-1)[0, 1].item()  # class 1 = UNSAFE
 flag = p_harmful >= 0.5
 ```
 
@@ -134,7 +138,7 @@ The model license (CC-BY-NC-4.0) is inherited from the two NonCommercial sources
 | AUROC | 0.970 |
 | AUPRC | 0.938 |
 | Real bio-response recall | 0.919 (57/62; Wilson 95% CI 0.825-0.965; **directional**, small n) |
-| General response-harm (WildGuard-native, n=1709) | recall 0.69 / F1 0.667 / FPR 0.077 |
+| General response-harm (WildGuard-native, n=1709) | recall 0.694 / F1 0.667 / FPR 0.077 |
 
 **Over-refusal on real legitimate bio research** (the deployment-critical number):
 
@@ -174,15 +178,15 @@ response and test prompt harm, which a response-harm classifier correctly ignore
 
 1. **Small bio sample / directional recall.** The headline bio recall (n=62) is
    directional. Public real-response bio-harmful data is scarce; growing it under
-   reuse-only is capped near ~100 items, so a tighter CI would require gated-access
+   reuse-only is capped near ~75 to 100 items, so a tighter CI would require gated-access
    data or generation (deliberately avoided). Report and read recall with its CI.
 2. **Multi-turn: robust (tested).** Splitting harmful content across 2 to 5 turns
    is caught per-turn at 0.964; LLM-paraphrasing each turn then reconstructing
-   gives per-turn 0.945 equal to windowed (no exchange-classifier gap). the model does
+   gives per-turn 0.945 equal to windowed (no exchange-classifier gap). The model does
    not collapse under multi-turn delivery.
 3. **Obfuscation: resisted (tested).** Benign framing wrappers evade at worst 0.14;
    a full neutral LLM paraphrase (Qwen2.5-7B, semantics preserved, surface fully
-   rewritten) evades at only 0.07. the model judges content, not surface form.
+   rewritten) evades at only 0.07. The model judges content, not surface form.
 4. **Spacing and Greek-homoglyph residuals.** Intra-word spacing (ESR 0.21) cannot
    be fixed by character stripping without breaking legitimate bio notation (e.g.
    spaced sequences like "A T G C"); needs adversarial training. Greek homoglyph
@@ -205,8 +209,12 @@ a human in the loop for any consequential decision. Report misclassifications,
 false negatives, or jailbreaks to the maintainer at silveray1563@gmail.com
 (responsible disclosure welcome).
 
-## Citation
+## Influences and citation
 
-Part of the constitutional-bioguard line (v2 through v8). See the project's
-`docs/V8_DESIGN.md`, `docs/V8B_SHIP_EVIDENCE.md`, and `docs/V8B_RELEASE_PLAN.md`
-for design, gates, robustness, and the full result trail.
+Methodological influences (cited, not a basis): Anthropic Constitutional
+Classifiers (Sharma et al., arXiv:2501.18837) and its exchange-classifier
+successor (arXiv:2601.04603); WildGuard (Han et al., arXiv:2406.18495). Training
+data: WildGuardMix, BeaverTails (Ji et al., arXiv:2307.04657), FalseReject
+(Zhang et al., arXiv:2505.08054).
+
+Cite this model by its repository id `jang1563/bioguard-deberta-v2`.
