@@ -168,6 +168,18 @@ over-flagged at 18%. Diagnosis: non-bio harm was absent from the negatives, so t
 head never learned "non-bio harm is not the bio head's job." Fix (P2b): add non-bio
 harmful prompts as label-0 negatives to directly optimize S (bio-specificity).
 
+**P2b RESULT (2026-06-01, deberta_pdual_v2, + non-bio-harm negatives) - the fix
+worked decisively.** Adding non-bio harmful prompts as label-0 crashed the non-bio-
+harm flag-rate from 0.589 to **0.002** and lifted **bio-selectivity S from 1.67 to
+579**, while bio-harm recall held at 0.982 and benign-bio FPR stayed ~0 (0.004). The
+prompt head is now genuinely BIO-SPECIFIC: it flags bio-harm and passes non-bio harm,
+which no general guard (bio buried in one CBRNE bucket) can do. This is the first
+direct substantiation of differentiation Claim 1. Diagnose->fix->verify worked
+cleanly (P2 S=1.67 diagnosed generic-harm -> P2b non-bio-harm negatives -> S=579).
+Residual: WMDP dual-use boundary over-flag is 0.21 (the legitimate-dual-use-research
+over-refusal axis, Claim 2); next lever = add dual-use-research benign prompts as
+negatives (or the ABSTAIN tier) to reduce it.
+
 ## 4. Bio-selectivity: the metric (a contribution) + method
 
 The core specialization risk is flagging legitimate dual-use research. We define
