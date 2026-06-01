@@ -50,6 +50,14 @@ report these for honesty; we do not claim to win them.
 
 ## 2. Architecture decision
 
+> **SUPERSEDED (2026-06-01).** Option 3 (shared-encoder) was NOT built. Shipped
+> instead: the **lexicographic hybrid** (see §3 P2d, `dual_mode.py`) -- a standalone
+> `pdual_v3` prompt head, consulted only under bio-context, OR'd with the tiered
+> lexicon; `v8b` (`query [SEP] response`) as the response head. The prompt head is
+> served exactly as trained: pair pipeline with `response=""` (not the single-
+> sequence note in line below). The Option-3 rationale here is retained for
+> provenance and as future work if a single-model (~184M) footprint is ever needed.
+
 **Chosen: Option 3 = shared DeBERTa-v3-base encoder + two (or three) heads**, init
 the encoder from the existing response-harm checkpoint, trained multi-task with a
 staged-unfreeze schedule. Fallback to Option 2 (separate prompt model) if the

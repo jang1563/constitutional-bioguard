@@ -24,6 +24,11 @@ from constitutional_bioguard.config import MODELS_DIR
 PROMPT_MODEL = MODELS_DIR / "deberta_pdual_v3"
 RESPONSE_MODEL = MODELS_DIR / "deberta_bioguard_v8b"  # v2 response-harm from v8b release
 
+# T2_METHODS deliberately EXCLUDED from bio-context. Method verbs (synthesize,
+# culture, express, amplify, isolate) are polysemous and fire in non-bio text;
+# gating the learned head on bio NOUNS (T1/T3) keeps non-bio prompts off the
+# learned path. A method-only prompt with no bio noun ("aerosolize the powder")
+# thus fast-passes -- accepted, since it also never lex-flags on its own.
 _BIO_CTX_TERMS = T1_UNCONDITIONAL + T1_CONTEXTUAL + T3_GENERIC_BIO
 _BIO_CTX_RE = re.compile(
     "|".join(re.escape(t) for t in sorted(set(_BIO_CTX_TERMS), key=len, reverse=True)),
@@ -94,8 +99,10 @@ class DualModeGuard:
         m, t = self._response_clf
         preds = predict_batch(model=m, tokenizer=t,
                               queries=[prompt], responses=[response], normalize=True)
-        lab, prob = preds[0]
-        return int(lab), float(prob)
+        # predict_batch returns (label, confidence, prob_unsafe) -- index [2] is
+        # P(unsafe); confidence is max(softmax)=P(argmax), wrong for thresholding.
+        lab, _conf, prob_unsafe = preds[0]
+        return int(lab), float(prob_unsafe)
 
     def classify(self, prompt: str, response: Optional[str] = None) -> DualVerdict:
         # prompt-side hybrid
@@ -114,7 +121,9 @@ class DualModeGuard:
         else: source = "none"
 
         prompt_flag = lex_flag or learned_flag
-        prompt_tier = lex["tier"] if lex_flag else (None if not learned_flag else 3)
+        # tier belongs to the lexicon; learned-head flags carry source="learned",
+        # not a lexical tier (don't conflate with T3 "generic-bio").
+        prompt_tier = lex["tier"] if lex_flag else None
         prompt_reason = lex["reason"] if lex_flag else (
             "learned head + bio context" if learned_flag else "no bio harm signal")
 
