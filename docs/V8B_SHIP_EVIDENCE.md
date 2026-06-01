@@ -55,7 +55,13 @@ not the task. Three checks argue against it here.
    discipline is the point: the reported gates reflect the model, not the harness.
 
 Evaluation was leakage-audited (training queries are byte-disjoint from every
-test set) and scored against pre-registered gates fixed before the runs.
+test set). One scope caveat, stated plainly: the pre-registered Tier-1 gates
+attach a constant stub response, so they test *prompt* harm, and a response-harm
+classifier like v8b scores near zero on them by design. v8b's evidence therefore
+rests on the real-response benchmarks (WildGuard-native at recall 0.69 on 1,709
+items, the bio subset above, and the real over-refusal set), which are the valid
+bars for this model class. v8b does not cover prompt-side risk and is not a
+prompt filter.
 
 ## Honest limitations
 
