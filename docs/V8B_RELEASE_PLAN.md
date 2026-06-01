@@ -89,6 +89,26 @@ of existing data. Grade with StrongREJECT; keep only genuinely-harmful responses
 Negatives: FalseReject-Test held-out, XSTest-Resp, benign bio responses to
 dual-use-sounding questions, plus the real-session `ood_fpr` bio set.
 
+**R3 harvest RESULT (2026-06-01, `harvest_r3_assess.py` + `fetch_assess_wildjailbreak.py`).
+The bio-harmful real-response eval is fundamentally scarcity-capped under
+reuse-only.** Every cached/fetchable avenue hit a wall:
+- HarmBench cache = stub (all 171-char COMPLIANCE_TEMPLATE, uniqResp 10%) -> 0 real.
+- AdvBench = 82-char affirmative target-prefixes, not substantive responses -> low quality.
+- WildGuardMix bio = already in #106 / training.
+- BeaverTails subset = only **12 NEW** substantive real positives.
+- WildJailbreak = **gated (no access)** AND its harmful completions are refusals
+  (safety-training design) -> doubly blocked for positives.
+Net reuse-only ceiling ~74 (62 + 12) to ~96 (incl. low-quality AdvBench), which
+moves the recall Wilson CI only from +/-0.07 to ~+/-0.06. **Conclusion: growing
+the bio recall eval to the +/-0.05 (n=140) or +/-0.03 (n=390) target is NOT
+reuse-achievable** (the same bio real-response scarcity that caps the training
+positive class also caps the eval). This is a documentable inherent limitation of
+reuse-only bio guarding, not a fixable gap. Decision: do NOT build the marginal
+74-set; report recall as DIRECTIONAL with its Wilson CI (the model card already
+does). Gated datasets to request for a future revisit (none decisively solves the
+positive scarcity): ScaleAI/mhj (multi-turn track), allenai/wildjailbreak
+(refusals/over-refusal), TrustAIRLab/HarmfulQA + JailbreakQR (small, real Q+A).
+
 ### Phase R1: robustness eval (the largest readiness gap)
 v8b's `query [SEP] response` input is structurally the Constitutional
 Classifiers++ "exchange classifier" (judges response in full input context). The
