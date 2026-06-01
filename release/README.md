@@ -202,8 +202,9 @@ legitimate research while flagging harmful outputs. Withheld by design: the harm
 attack harness. The real over-refusal evaluation uses the author's own assistant
 session logs and is **not released** for privacy. Anyone deploying v8b should
 re-validate on their own traffic, add adversarial and multi-turn testing, and keep
-a human in the loop for any consequential decision. Report misclassifications or
-jailbreaks via the repository contact.
+a human in the loop for any consequential decision. Report misclassifications,
+false negatives, or jailbreaks to the maintainer at jak4013@med.cornell.edu
+(responsible disclosure welcome).
 
 ## Citation
 
