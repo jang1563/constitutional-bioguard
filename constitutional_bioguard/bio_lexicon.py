@@ -6,8 +6,12 @@ Four-tier priority (refined from Meng/Zhang Biosecurity Agent pattern):
   T1C CONTEXTUAL       - select agents/toxins. Flag ONLY with T2 method verb
                          co-occurrence. "what is anthrax" = PASS;
                          "synthesize anthrax" = FLAG.
-  T2  HARM-METHODS     - high-precision bio-harm verbs. Alone insufficient;
-                         flags with T1C or T3.
+  T2  HARM-METHODS     - split by precision:
+       T2_STRONG  harm-salient verbs (synthesize/aerosolize/weaponize). Flag
+                  with T1C OR generic T3.
+       T2_WEAK    routine lab/industrial verbs (culture/cultivate/manufacture).
+                  Escalate ONLY named select agents (T1C); with generic T3 they
+                  are benign microbiology -> PASS, deferred to the learned head.
   T3  GENERIC-BIO      - NEVER flags alone; modulates T2/T1C firing.
 """
 from __future__ import annotations
@@ -47,18 +51,28 @@ T1_CONTEXTUAL: list[str] = [
     "coronavirus", "sars-cov-2", "covid-19", "mers-cov",
 ]
 
-T2_METHODS: list[str] = [
-    # high-precision bio-harm verbs only
-    "synthesize", "synthesise", "synthesis of", "manufacture",
-    "cultivate", "culture", "propagate", "serial passage",
+# T2 STRONG: harm-salient verbs. Escalate even generic-bio (T3) context.
+T2_STRONG: list[str] = [
+    "synthesize", "synthesise", "synthesis of",
     "aerosolize", "aerosolise", "disseminate",
-    "weaponize", "weaponise",
+    "weaponize", "weaponise", "serial passage",
     "enhance transmissibility", "enhance virulence",
     "modify to increase", "make more lethal", "make more contagious",
     "evade detection", "evade screening", "bypass screening",
-    "stockpile", "scale up production",
     "cause an outbreak", "mass casualty",
 ]
+
+# T2 WEAK: routine lab/industrial verbs. Benign with generic bio ("culture
+# harmless bacteria"), so these escalate ONLY named select agents (T1C, e.g.
+# "culture anthrax"); with generic T3 they PASS and defer to the learned head.
+# (Demonstrated over-refusal source: OR-Bench-health benign, eval 2026-06-01.)
+T2_WEAK: list[str] = [
+    "manufacture", "cultivate", "culture", "propagate",
+    "stockpile", "scale up production",
+]
+
+# union retained for backward-compat / external callers
+T2_METHODS: list[str] = T2_STRONG + T2_WEAK
 
 T3_GENERIC_BIO: list[str] = [
     "virus", "viral", "bacteria", "bacterial",
@@ -86,16 +100,18 @@ def _compile(terms: list[str]) -> re.Pattern[str]:
 
 _T1U_RE = None
 _T1C_RE = None
-_T2_RE = None
+_T2S_RE = None
+_T2W_RE = None
 _T3_RE = None
 
 
 def _ensure():
-    global _T1U_RE, _T1C_RE, _T2_RE, _T3_RE
+    global _T1U_RE, _T1C_RE, _T2S_RE, _T2W_RE, _T3_RE
     if _T1U_RE is None:
         _T1U_RE = _compile(T1_UNCONDITIONAL)
         _T1C_RE = _compile(T1_CONTEXTUAL)
-        _T2_RE = _compile(T2_METHODS)
+        _T2S_RE = _compile(T2_STRONG)
+        _T2W_RE = _compile(T2_WEAK)
         _T3_RE = _compile(T3_GENERIC_BIO)
 
 
@@ -114,21 +130,30 @@ def classify(prompt: str) -> dict:
                 "reason": "T1U unconditional (operational term)"}
 
     t1c = _T1C_RE.findall(text)
-    t2 = _T2_RE.findall(text)
+    t2s = _T2S_RE.findall(text)
+    t2w = _T2W_RE.findall(text)
+    t2_any = t2s + t2w
 
-    if t1c and t2:
-        return {"tier": 1, "matched": t1c[:3] + t2[:2], "flag": True,
+    # named select agent + ANY method (strong or weak) -> flag
+    if t1c and t2_any:
+        return {"tier": 1, "matched": t1c[:3] + t2_any[:2], "flag": True,
                 "reason": "T1C select-agent + T2 method"}
-    if t1c and not t2:
+    if t1c and not t2_any:
         return {"tier": None, "matched": t1c[:3], "flag": False,
                 "reason": "T1C select-agent mention only (no method)"}
 
     t3 = _T3_RE.findall(text)
-    if t2 and t3:
-        return {"tier": 2, "matched": t2[:3] + t3[:3], "flag": True,
-                "reason": "T2 harm-method + T3 bio-context"}
-    if t2 and not t3:
-        return {"tier": None, "matched": t2[:3], "flag": False,
+    # strong harm-verb + generic bio -> flag
+    if t2s and t3:
+        return {"tier": 2, "matched": t2s[:3] + t3[:3], "flag": True,
+                "reason": "T2-strong harm-method + T3 bio-context"}
+    # weak/routine verb + generic bio -> PASS (benign microbiology), defer to
+    # the learned head rather than hard-flag (e.g. "culture harmless bacteria")
+    if t2w and t3:
+        return {"tier": None, "matched": t2w[:2] + t3[:2], "flag": False,
+                "reason": "T2-weak routine method + generic bio (defer to learned)"}
+    if t2_any and not t3:
+        return {"tier": None, "matched": t2_any[:3], "flag": False,
                 "reason": "T2 method only, no bio context"}
     if t3:
         return {"tier": None, "matched": t3[:3], "flag": False,
