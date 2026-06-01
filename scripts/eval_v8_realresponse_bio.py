@@ -42,7 +42,8 @@ def _qh(q):
 def _rh(r):
     return hashlib.sha1((r or "").strip().encode()).hexdigest()[:16]
 
-MODEL_DIRS = {"v8b": MODELS_DIR / "deberta_bioguard_v8b",
+MODEL_DIRS = {"v8c": MODELS_DIR / "deberta_bioguard_v8c",
+              "v8b": MODELS_DIR / "deberta_bioguard_v8b",
               "v8": MODELS_DIR / "deberta_bioguard_v8",
               "v4": MODELS_DIR / "deberta_bioguard_v4_response_diverse"}
 
@@ -57,7 +58,8 @@ def is_bio(q, r):
 def build_benchmark():
     # Leakage guard: anything whose QUERY the model trained on is excluded.
     train_q = set(); train_qr = set()
-    for tp in (DATA_PROCESSED / "v8b_train.jsonl", DATA_PROCESSED / "v8b_val.jsonl",
+    for tp in (DATA_PROCESSED / "v8c_train.jsonl", DATA_PROCESSED / "v8c_val.jsonl",
+               DATA_PROCESSED / "v8b_train.jsonl", DATA_PROCESSED / "v8b_val.jsonl",
                DATA_PROCESSED / "v8_train.jsonl", DATA_PROCESSED / "v8_val.jsonl"):
         if tp.exists():
             for line in open(tp):
@@ -132,7 +134,7 @@ def main():
     srcs = np.array([it["source"] for it in items])
 
     METRICS_DIR.mkdir(parents=True, exist_ok=True)
-    for model in ("v8b", "v8", "v4"):
+    for model in ("v8c", "v8b", "v8", "v4"):
         md = MODEL_DIRS[model]
         if not md.exists():
             print(f"{model}: missing {md}")
