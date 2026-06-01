@@ -289,3 +289,35 @@ So the merge does **not** expand the positive class. What it genuinely offers:
 tracks agree). The actionable merge is the EVAL: measure v8b/v8c over-refusal on
 the real session-log money metric before any v8d. Isolation held (0 conflicts);
 keep `data/processed` and `data/splits` separate, read `ood_fpr` for eval only.
+
+### 8.6 EVAL-merge RESULT — v8b is the ship; v8c is retired
+Ran v8c/v8b/v8/v4 on `ood_fpr` bio (531 real legit, 134 = JK's own sessions),
+leakage-clean. Over-refusal FPR (every item legit → any flag is a false positive):
+
+| model | overall | session_logs (134) | substantive (68) | withheld/short (463) |
+|-------|---------|--------------------|-------------------|----------------------|
+| **v8b** | 0.0207 | **0.0597** | 0.0147 | 0.0216 |
+| v8c | 0.0188 | 0.0746 | 0.0147 | 0.0194 |
+| v8  | 0.0640 | 0.2537 | 0.2206 | 0.0410 |
+| v4  | 0.0471 | 0.1343 | 0.3088 | 0.0086 |
+
+Three decisive reads (n is modest but the gaps are large and consistent):
+1. **The #106 over-refulsal scare was a semi-synthetic artifact.** v8b over-refuses
+   REAL legit bio research at **2% overall / 6% on JK's sessions / 1.5% on
+   substantive benign-bio** — not the 0.19–0.43 seen on wildguard/beavertails
+   negatives. Those benchmark negatives are noisy/borderline; v8b flagging some
+   was largely correct, not over-refulsal. (Third eval-artifact catch of the
+   session — §8.3's koaug label-noise lens, now confirmed by the real metric.)
+2. **v8c solved a non-problem.** On real over-refusal v8b ≈ v8c (0.0207 vs 0.0188),
+   and on the MOST-real session-logs v8b is *better* (0.0597 vs 0.0746). v8c's
+   0.235 wildguard-recall sacrifice (§8.3) bought ~zero real-world value. **Retire v8c.**
+3. **v8b clears BOTH tracks' bars.** This track's real-response recall **0.919**
+   (best, beats v4) AND koaug's OOD-FPR money metric ≤0.10 on the bio subset
+   (0.0597 session / 0.0207 overall). v8/v4 fail the money metric on session-logs
+   (0.25 / 0.13). → **v8b = the shippable bio guard / portfolio artifact.**
+
+Residual on v8b: ~8 of 134 real sessions flagged, mostly withheld-response cases
+(query-leaning); gate-passing, minor. Frontier (positive-class) ceiling unchanged
+— v8b IS the reuse-only ceiling, and it is good. A v8d only makes sense with
+genuinely new dual-use-bio positives (generation), which this track deliberately
+avoids; absent that, **v8b ships.**
