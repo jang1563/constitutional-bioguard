@@ -1,4 +1,4 @@
-# constitutional-bioguard-deberta-v2: results and how to reproduce
+# bioguard-deberta-v2: results and how to reproduce
 
 (Internally this is training run `v8b`; the evaluation scripts are named `*_v8b_*` accordingly.)
 

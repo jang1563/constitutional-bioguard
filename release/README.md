@@ -20,7 +20,7 @@ metrics:
 - f1
 - auprc
 model-index:
-- name: constitutional-bioguard-deberta-v2
+- name: bioguard-deberta-v2
   results:
   - task:
       type: text-classification
@@ -39,7 +39,7 @@ model-index:
       value: 0.021
       name: Over-refusal on real legitimate bio research (n=531)
 extra_gated_prompt: >-
-  constitutional-bioguard-deberta-v2 is a defensive bio-safety research artifact, released for
+  bioguard-deberta-v2 is a defensive bio-safety research artifact, released for
   non-commercial research only. By requesting access you agree to the
   responsible-use terms in the model card: use it solely for defensive evaluation
   and moderation research; do not use it as a reward, discriminator, or filter to
@@ -54,7 +54,7 @@ extra_gated_fields:
   I agree to the responsible-use terms (defensive evaluation only): checkbox
 ---
 
-# constitutional-bioguard-deberta-v2: a bio response-harm classifier
+# bioguard-deberta-v2: a bio response-harm classifier
 
 A small encoder (DeBERTa-v3-base, ~184M params) that reads a `query [SEP] response`
 pair and decides whether the **response** delivers harmful biological content.
@@ -62,7 +62,9 @@ Built to reduce over-refusal of legitimate bench research while catching genuine
 harmful bio completions. This card states scope and limits as plainly as results.
 All numbers are held-out and leakage-audited (training queries are byte-disjoint
 from every test set). This is the successor to
-`jang1563/constitutional-bioguard-deberta-v1`.
+`jang1563/constitutional-bioguard-deberta-v1` (this line drops the "constitutional"
+label: the model is standard supervised classification, not Constitutional AI;
+Constitutional Classifiers is cited as a methodological influence, not a basis).
 
 ## Model details
 
@@ -95,8 +97,8 @@ from every test set). This is the successor to
 from transformers import AutoTokenizer, AutoModelForSequenceClassification
 import torch
 
-tok = AutoTokenizer.from_pretrained("jang1563/constitutional-bioguard-deberta-v2")
-model = AutoModelForSequenceClassification.from_pretrained("jang1563/constitutional-bioguard-deberta-v2").eval()
+tok = AutoTokenizer.from_pretrained("jang1563/bioguard-deberta-v2")
+model = AutoModelForSequenceClassification.from_pretrained("jang1563/bioguard-deberta-v2").eval()
 
 # apply the shipped input normalization first (mitigates char-injection attacks)
 # from constitutional_bioguard.preprocessing import normalize_text
