@@ -24,7 +24,7 @@ import numpy as np
 
 from constitutional_bioguard.config import DATA_PROCESSED, METRICS_DIR, MODELS_DIR
 
-MODEL = MODELS_DIR / "deberta_pdual_v1"
+MODEL = MODELS_DIR / (sys.argv[1] if len(sys.argv) > 1 else "deberta_pdual_v1")
 
 
 def predict(qs):
