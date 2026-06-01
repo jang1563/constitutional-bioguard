@@ -244,8 +244,8 @@ are light. None requires new harmful generation.
 | Over-refusal | FPR substantive | <= 6% | 1.5% (n small) |
 | Calibration | ECE reported + reduced | yes | **DONE: 0.137->0.042 (T=0.24); AUROC 0.97/AUPRC 0.94** |
 | Operating point | recall@over-refusal<=5% | published | **DONE: tau=0.5 -> recall 0.919 @ 2.1%** |
-| License/gating | CC-BY-NC, gated, withholds | in place | not yet |
-| Model card | HF schema + taxonomy + model-index | complete | partial |
+| License/gating | CC-BY-NC, gated, withholds | in place | **DONE (release/README.md + CHECKLIST)** |
+| Model card | HF schema + taxonomy + model-index | complete | **DONE (release/README.md)** |
 
 ## 6. What this plan changes about the readiness verdict
 
