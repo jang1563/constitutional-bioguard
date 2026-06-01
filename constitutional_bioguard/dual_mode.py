@@ -94,14 +94,18 @@ class DualModeGuard:
         return int(preds[0][0])
 
     def _learned_response(self, prompt: str, response: str) -> tuple[int, float]:
-        from constitutional_bioguard.evaluation.evaluate_classifier import predict_batch
+        from constitutional_bioguard.evaluation.evaluate_classifier import \
+            predict_batch_sliding
         self._ensure_response()
         m, t = self._response_clf
-        preds = predict_batch(model=m, tokenizer=t,
-                              queries=[prompt], responses=[response], normalize=True)
-        # predict_batch returns (label, confidence, prob_unsafe) -- index [2] is
-        # P(unsafe); confidence is max(softmax)=P(argmax), wrong for thresholding.
-        lab, _conf, prob_unsafe = preds[0]
+        # Sliding-window to match serve.py: plain predict_batch truncates at 512
+        # tokens and under-recalls long responses. aggregation="max" over windows.
+        # Returns (label, confidence, p_unsafe, n_windows); index [2] is P(unsafe)
+        # (confidence is max(softmax)=P(argmax), wrong for thresholding).
+        preds = predict_batch_sliding(model=m, tokenizer=t,
+                                      queries=[prompt], responses=[response],
+                                      normalize=True, aggregation="max")
+        lab, _conf, prob_unsafe, _nw = preds[0]
         return int(lab), float(prob_unsafe)
 
     def classify(self, prompt: str, response: Optional[str] = None) -> DualVerdict:
