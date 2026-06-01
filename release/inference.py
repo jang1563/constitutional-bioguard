@@ -1,5 +1,5 @@
 #!/usr/bin/env python
-"""Standalone inference for bioguard-v8b (bio response-harm classifier).
+"""Standalone inference for constitutional-bioguard-deberta-v2 (bio response-harm classifier).
 
 Applies the shipped input-normalization defense (mitigates char-injection
 attacks), then classifies a `query [SEP] response` pair. The model judges whether
@@ -19,7 +19,7 @@ import unicodedata
 import torch
 from transformers import AutoModelForSequenceClassification, AutoTokenizer
 
-MODEL_ID = "bioguard-v8b"
+MODEL_ID = "jang1563/constitutional-bioguard-deberta-v2"
 DEFAULT_THRESHOLD = 0.5  # near-optimal: recall 0.919 at 2.1% over-refusal
 
 

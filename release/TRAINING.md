@@ -1,4 +1,6 @@
-# bioguard-v8b: training reproducibility
+# constitutional-bioguard-deberta-v2: training reproducibility
+
+(Public release name; internal training run name: `v8b`.)
 
 Enough to reproduce the model from the same public sources. The harmful (positive)
 training examples themselves are **not shipped** (see RELEASE_CHECKLIST withhold
