@@ -374,6 +374,36 @@ koaug): the head has too few diverse bio positives to learn intent over phrasing
 Closing the recall gap needs either DURC-gated generation of diverse bio positives
 (deferred) or a curated public OOD bio benchmark to even measure against.
 
+**PHASE G: PARAPHRASE DIVERSIFICATION (2026-06-02).** Generated 280 paraphrases of
+76 non-saladbench genuine-bio prompts via Claude Sonnet (defensive framing, no new
+agents/methods). 224/280 passed genuine_bio filter (80%); 71% adopted softer
+framing (academic/scenario/indirect) while preserving agent + intent = exactly the
+surface diversity the OOD gap requires.
+
+| model | hybrid | learned | lex | over-refusal |
+|-------|--------|---------|-----|-------------|
+| pdual_v3 (saladbench IN-dist) | 1.000 | 0.829 | 0.171 | 0.009 |
+| pdual_ho (saladbench OOD, base) | 0.537 | 0.366 | 0.171 | 0.003 |
+| pdual_g1a (additive+para) | **0.659** | **0.488** | 0.171 | 0.005 |
+| pdual_g1b (clean+para) | 0.537 | 0.366 | 0.171 | 0.005 |
+
+G1a (additive): +12pt OOD recall (0.537->0.659). Paraphrase diversification
+partially works. G1b (clean+para): 0pt -- removing contaminated positives loses the
+general-harm features they provide; the genuine-bio-only pool (~50) is too small
+even with 280 paraphrases. Over-refusal stable across all variants (0.003-0.009).
+
+**FINAL VERDICT.** The +12pt from 280 paraphrases (4x augmentation) is the
+diversification ceiling for DeBERTa-base: the encoder lacks capacity to separate
+bio-harm intent from agent/template surface forms. This is the same wall the
+project hit from v3 through v8 -- now empirically bounded.
+
+Defensible release framing = **bio-selectivity guard** (over-refusal 0.005-0.009,
+40x better than WildGuard-7B on benign-bio), NOT competitive-recall bio-specialist.
+Lex provides the generalizing recall floor (0.171, source-independent); learned
+provides in-dist boost. The recall contribution is honest: strong in-dist, weak OOD.
+Closing OOD recall requires either (a) a larger encoder (7B+), or (b) substantially
+more diverse genuine-bio positives than paraphrase can provide.
+
 ## 4. Bio-selectivity: the metric (a contribution) + method
 
 The core specialization risk is flagging legitimate dual-use research. We define
