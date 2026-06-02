@@ -314,6 +314,66 @@ consume PER AXIS: prompt_flag for input/intent screening, response_flag for outp
 moderation, joint_flag only for max-recall combined screens. `dual_mode` returns
 all three independently.
 
+**PHASE R: RELEASE-READINESS vs WildGuard/LlamaGuard + THE RECALL-GENERALIZATION
+WALL (2026-06-02).** Asked whether the dual-mode is a release-ready *competitive*
+bio specialist, Phase R produced a split verdict: over-refusal is a real,
+generalizing win; recall does NOT generalize.
+
+*R.1 -- benchmark contamination (a contribution).* Every cached "bio" benchmark is
+contaminated by the broad `is_bio()` keyword filter (virus/payload/healthcare/agent
+pull in cyber/chem/violence). Quantified genuine-bio fraction: scisafeeval_bio 0.00
+(100% unfilled `<sequence>` placeholders), advbench_bio 0.00 (62% cyber),
+simple_safety_bio 0.00 (38% violence), real_response_bio 0.04 (17% cyber),
+harmbench_bio 0.08 (29% chem), saladbench_cbrn_strict 0.69 (the only majority-bio
+set). The naive OOD recall on these was 0.000 -- a pure data artifact. Built
+`bio_clean_eval.jsonl` (120 hand-auditable genuine-bio positives, decontaminated;
+881 benign-bio negatives). The "real harmful bio RESPONSE" benchmark is
+unbuildable from reuse: every CBRN response set uses a synthetic compliance
+template, and real harmful completions cross the DURC line we will not. So the
+response axis cannot be cleanly benchmarked here.
+
+*R.2 -- head-to-head on the clean set (prompt axis).* Dual-mode (184M) is
+Pareto-better than both 7-8B general guards:
+
+| model | size | bio recall | benign-bio over-refusal |
+|-------|------|-----------|-------------------------|
+| **dual-mode** | 184M | **0.950** | **0.009** |
+| WildGuard-7B | 7B | 0.875 | 0.360 |
+| LlamaGuard-3-8B | 8B | 0.817 | 0.033 |
+
+WildGuard over-refuses 36% of benign-bio -- the general-guard-over-flags-bio
+failure, confirmed. BUT the positives are 119/120 in-dist for dual-mode (pdual
+POS_FILES), so the recall column carries a home-field advantage; only the
+over-refusal column is a fair fight.
+
+*R.3 -- source-held-out OOD (the decisive test).* Retrain pdual with saladbench_cbrn
+(most diverse source) held out; eval recall on the 41 held-out saladbench
+genuine-bio prompts. No new content -- pure train/test re-partition.
+
+| model | saladbench recall: hybrid | learned | lex |
+|-------|---------------------------|---------|-----|
+| pdual_v3 (saladbench IN-dist) | 1.000 | 0.829 | 0.171 |
+| pdual_ho (saladbench OOD)     | 0.537 | **0.366** | 0.171 |
+
+The learned head's recall **halves (0.829 -> 0.366)** when the source is held out,
+while its in-dist val recall stayed 0.90 (NOT undertrained). This is
+memorization: the prompt head learns source-specific phrasing, not transferable
+bio-harm intent -- the same shortcut the pre-P3 validation flagged, now proven by
+held-out source. The R.2 recall edge (0.950) was substantially home-field. Lex
+recall (0.171) is constant by construction (rule-based) and over-refusal stayed
+0.003-0.009 across both models -- those generalize.
+
+*VERDICT.* (1) Over-refusal / selectivity: genuinely competitive and generalizing
+(beats WG by 40x on benign-bio over-refusal; lex-driven, source-independent) --
+the real, defensible contribution. (2) Recall: does NOT generalize OOD; on a fair
+footing the prompt-axis recall is ~0.37 learned + 0.17 lex, below the 7-8B
+baselines. NOT release-ready as a competitive recall bio-specialist; defensible
+only as a low-over-refusal / high-precision guard with explicit recall caveats.
+Root cause = the thin, source-narrow positive pool (the convergent wall with
+koaug): the head has too few diverse bio positives to learn intent over phrasing.
+Closing the recall gap needs either DURC-gated generation of diverse bio positives
+(deferred) or a curated public OOD bio benchmark to even measure against.
+
 ## 4. Bio-selectivity: the metric (a contribution) + method
 
 The core specialization risk is flagging legitimate dual-use research. We define
