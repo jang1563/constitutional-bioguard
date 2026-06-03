@@ -120,10 +120,21 @@ SafeRoute-style), or (C) ship with the conservative-on-borderline-bio limitation
 competitive than the teacher's 0.166). Objective levers (DKD/logit-std) are second-order and
 unlikely to fix lexical overfitting without the domain data.
 
-## Artifacts (Step-1b)
-scripts/build_borderline_aug.py (decon + stratified sample), train_v7c_distill.py (--pool,
---unsafe-weight), postaug_eval.py, realbio_eval.py. Aug model: Cayuga
-models/deberta_v7c_distill_aug/final. Aug pool: data/processed/distill_pool_aug.jsonl.
+## EXECUTED: option (A) bio-borderline GENERATION (JK-approved 2026-06-03)
+Generated bio-borderline-benign prompts two ways (both hard_label=0, decontaminated vs all eval
+sets, 0 exact + 0 8-gram overlaps): (1) a TEMPLATE generator (33 dangerous-sounding topics x 10
+legit frames x 11 question templates -> 1200 sampled, scripts/gen_bio_borderline.py); (2) an
+LLM-REWRITE generator (Claude Sonnet, 60 seeds x 12 -> 551, scripts/gen_bio_borderline_llm.py,
+more natural/diverse). Trained the 184M student on bio pool + each.
+
+RESULT on the 79 genuinely-biological borderline (realbio_eval): original 0.671 -> +template
+0.532 -> +LLM-rewrite 0.544 (recall held: 0.983 template / 0.975 LLM; clean legit-bio 0.022).
+Generation HELPED (0.671 -> 0.53) but BOTH approaches PLATEAU at ~0.53 -- the LLM rewrite did not
+beat the template. This empirically bounds the query-only head: even with domain-matched generated
+borderline data, the saturated prompt head cannot fully separate harmful-bio from dangerous-
+sounding-benign-bio at the QUERY level (threshold sweep: 0.481 even at tau=0.99). The residual is
+resolved by ARCHITECTURE in Step 2 (the response gate disambiguates: 0.532 -> 0.076), not by more
+data. See STEP2_DUALMODE_2026-06-03.md.
 
 ## Sources (primary, verified)
 DKD 2203.08679 · FalseReject 2505.08054 · DCR 2603.03323 · XSTest 2308.01263 · OR-Bench 2405.20947 ·

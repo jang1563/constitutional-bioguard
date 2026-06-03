@@ -9,7 +9,8 @@ teacher separates cleanly, 0.924 vs 0.064) for a robust feasibility read.
 
 Train: data/processed/distill_pool.jsonl ({query, hard_label}).
 Eval (held-out, leakage-disjoint): bio_clean_eval recall/over-refusal + bio-overrefusal-v0.1.
-Teacher reference: recall 0.883 / bio-overrefusal 0.023 / AUROC 0.897.
+Teacher reference (v7.C-aug2): recall 0.900 (length-norm prob@0.5, matched to the student's
+@0.5 thresholding; the greedy-argmax recall is 0.883) / bio-overrefusal 0.023 / AUROC 0.897.
 """
 from __future__ import annotations
 import argparse
@@ -155,7 +156,7 @@ def main():
 
     print("\n" + "=" * 60)
     print("FOOTPRINT PILOT RESULT (DeBERTa-v3-base 184M student @0.5)")
-    print(f"  bio_clean_eval recall (120 harmful): {recall:.3f}  [teacher 0.883]")
+    print(f"  bio_clean_eval recall (120 harmful): {recall:.3f}  [teacher 0.900 LN /0.883 greedy]")
     print(f"  bio_clean_eval over-refusal (881):   {overref:.3f}")
     print(f"  bio-overrefusal-v0.1 over-refusal:   {bor_or:.3f}  [teacher 0.023]")
     print(f"  bio_clean_eval AUROC:                {auroc:.4f}  [teacher 0.897]")
@@ -165,7 +166,7 @@ def main():
     print(f"  FORK: {fork}")
     (ROOT / "results").mkdir(exist_ok=True)
     json.dump({"recall": recall, "over_refusal_bce": overref, "bor_over_refusal": bor_or,
-               "auroc": float(auroc), "teacher_recall": 0.883, "fork": fork},
+               "auroc": float(auroc), "teacher_recall_ln": 0.900, "teacher_recall_greedy": 0.883, "fork": fork},
               open(ROOT / "results" / "v7c_distill_pilot.json", "w"), indent=2)
 
 

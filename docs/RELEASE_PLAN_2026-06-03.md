@@ -84,11 +84,13 @@ Bio/Chem Hard) + the Step-0 bio recall set. Report a **per-bio axis no competito
    most likely plan-changer; Step 1 is designed to detect it early and cheaply.
 2. **A dual-mode second axis sharply cuts over-refusal**: ~~NOT supported by surviving
    evidence~~ **NOW MEASURED AND CONFIRMED (2026-06-03 bridge experiment).** On the public
-   expert set bio-overrefusal-v0.1 (176 legit, leakage-clean), the response head v8b
-   over-refuses 14.8% (density-bias, worst pathogen_biology 45%); the v7.C prompt head
-   over-refuses 2.3% and **clears 100% of v8b's 26 false-positives** (it never sees the
-   dense answer, so it judges the legit query as benign). An AND policy drives over-refusal
-   to **0.0%** on this set. The two axes have COMPLEMENTARY failure modes. This REPRIORITIZES
+   expert set bio-overrefusal-v0.1 (leakage-clean), the response head v8b over-refuses 14.9%
+   (27/181, density-bias, worst pathogen_biology 45.5%); the v7.C prompt head over-refuses
+   2.3% (4/176) and **clears all 26 of v8b's false-positives that fall in the shared set**
+   (v8b flags 27 on its 181-item set; 26 are shared with the prompt head's 176-item set and
+   all 26 are cleared; 1, t2_toxicology_0003, is outside the prompt-head set). It never sees
+   the dense answer, so it judges the legit query as benign. An AND policy drives over-refusal
+   to **0.0%** on the shared (n=176) set. The two axes have COMPLEMENTARY failure modes. This REPRIORITIZES
    dual-mode integration (Step 2) as a validated high-leverage move, not a speculative one.
    CAVEAT: this is the over-refusal side; a naive AND trades recall, so the deployed policy
    is a consistency table (response-harm primary, prompt-benign veto on density-FPs) whose
