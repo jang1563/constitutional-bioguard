@@ -9,11 +9,12 @@ model's probability of the "harmful" vs "unharmful" class label as a continuous
 score and SWEEP a threshold to get the full recall-vs-over-refusal ROC. No
 retraining.
 
-Method (tokenization-robust): for each prompt, score the two label verbalizations
-"Prompt harm: harmful" and "Prompt harm: unharmful" by summed completion
-log-likelihood given the (prompt-only) chat prompt; softmax -> p_harmful. One
-forward pass per label, no autoregressive generation (faster than generate()).
-tau=0.5 should approximately reproduce the prior argmax point (sanity check).
+Method (tokenization-robust, length-normalized): teacher-force the shared
+"Prompt harm:" prefix and score only the discriminating label (" harmful" vs
+" unharmful") by MEAN per-token log-prob, then softmax -> p_harmful. Mean (not
+sum) removes the verbalization-length bias ("unharmful" has more tokens than
+"harmful"), so tau is calibrated rather than offset. One forward pass per label,
+no autoregressive generation (faster than generate()).
 """
 from __future__ import annotations
 
@@ -36,28 +37,32 @@ LABELS = ["harmful", "unharmful"]  # index 0 = harmful
 
 
 @torch.no_grad()
-def completion_logprob(model, tokenizer, prompt_text: str, completion: str) -> float:
-    """Summed log-prob of `completion` tokens given `prompt_text` (teacher-forced).
+def label_mean_logprob(model, tokenizer, prefix_text: str, label: str) -> float:
+    """MEAN per-token log-prob of `label` given `prefix_text` (teacher-forced).
 
-    Manual token concat (add_special_tokens=False on both) avoids boundary-merge
-    ambiguity; the chat-template string already carries its special tokens.
+    Length-normalized (mean, not sum) so the harmful-vs-unharmful verbalization
+    length does not bias the score. Manual token concat (add_special_tokens=False)
+    avoids boundary-merge ambiguity; the chat-template string already carries its
+    special tokens.
     """
-    prompt_ids = tokenizer(prompt_text, add_special_tokens=False).input_ids
-    comp_ids = tokenizer(completion, add_special_tokens=False).input_ids
-    full = torch.tensor([prompt_ids + comp_ids], device=model.device)
+    pre_ids = tokenizer(prefix_text, add_special_tokens=False).input_ids
+    lab_ids = tokenizer(label, add_special_tokens=False).input_ids
+    full = torch.tensor([pre_ids + lab_ids], device=model.device)
     logits = model(full).logits[0]  # [T, V]
     logprobs = torch.log_softmax(logits[:-1].float(), dim=-1)  # predicts tokens 1..T-1
     targets = full[0, 1:]
     tok_lp = logprobs[torch.arange(targets.shape[0]), targets]
-    n_prompt = len(prompt_ids)
-    return float(tok_lp[n_prompt - 1:].sum())  # completion-token logprobs only
+    return float(tok_lp[len(pre_ids) - 1:].mean())  # label tokens only, mean
 
 
 def p_harmful(model, tokenizer, query: str) -> float:
     messages = build_messages(query, NO_RESPONSE)
     text = tokenizer.apply_chat_template(messages, tokenize=False, add_generation_prompt=True)
-    lps = [completion_logprob(model, tokenizer, text, f"Prompt harm: {lab}") for lab in LABELS]
-    return float(torch.softmax(torch.tensor(lps), dim=0)[0])  # p(harmful)
+    # Score only the discriminating label after the shared "Prompt harm:" prefix,
+    # length-normalized -> removes the verbalization-length bias (the Step-1 caveat).
+    prefix = text + "Prompt harm:"
+    scores = [label_mean_logprob(model, tokenizer, prefix, f" {lab}") for lab in LABELS]
+    return float(torch.softmax(torch.tensor(scores), dim=0)[0])  # p(harmful)
 
 
 def auroc(pos_scores: np.ndarray, neg_scores: np.ndarray) -> float:
