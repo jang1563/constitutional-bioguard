@@ -2,7 +2,7 @@
 
 [![License: MIT](https://img.shields.io/badge/License-MIT-green.svg)](LICENSE)
 [![Python 3.10+](https://img.shields.io/badge/python-3.10%2B-blue)](pyproject.toml)
-[![HF Model](https://img.shields.io/badge/%F0%9F%A4%97%20Hugging%20Face-v4-yellow)](https://huggingface.co/jang1563/constitutional-bioguard-v4)
+[![HF Model](https://img.shields.io/badge/%F0%9F%A4%97%20Hugging%20Face-deberta--v1-yellow)](https://huggingface.co/jang1563/constitutional-bioguard-deberta-v1)
 
 > **TL;DR.** Research prototype biological dual-use content classifier built using Anthropic's [Constitutional Classifiers](https://arxiv.org/abs/2501.18837) methodology. A 56-rule biosafety constitution across 7 NSABB categories drives synthetic data generation and DeBERTa-v3-base fine-tuning. **v4 response-diverse is the recommended release checkpoint**: it breaks v3's compliance-template shortcut, reaches 2.1% FPR on truly held-out OR-Bench-Hard-1K, 0% XSTest FPR, 32% WildGuard native bio recall, and 0.45 BioThreat-Eval F1 at 184M parameters. **v5 was tested but not released**: PairCFR fixed one artificial hybrid-response Goodhart case but collapsed key bio recall. The project is a transparent case study in shortcut diagnosis, data-centric remediation, leakage auditing, and honest non-release decisions. It is not a production-equivalent safeguard.
 
@@ -20,6 +20,20 @@
 | External validation | v4/v5 gate metrics and leakage audit reported in `data/metrics/` and `docs/TECHNICAL_REPORT.md` |
 | Independent review | Not yet externally audited |
 | Responsible-use scope | [`SAFETY.md`](SAFETY.md) |
+
+### Model versions (which is which)
+
+Single source of truth for the checkpoint story, so the README, the Hugging Face
+cards, and `CITATION.cff` agree:
+
+| Checkpoint | Access | What it is / use it for |
+|---|---|---|
+| [`constitutional-bioguard-deberta-v1`](https://huggingface.co/jang1563/constitutional-bioguard-deberta-v1) | **Public** | The runnable public model. Synthetic-trained `query [SEP] response` encoder; powers the Inference Quickstart below. |
+| `constitutional-bioguard-v4` (response-diverse) | Private preview | Shortcut-fixed checkpoint; the recommended *internal* checkpoint (request access). |
+| dual-mode (prompt + response) | In development | Reuse-only response head + a generative prompt head; not yet released. See `docs/DUAL_MODE_DESIGN.md`. |
+
+The Inference Quickstart targets the **public `deberta-v1`**. The results tables below
+report the internal v4/v5 gates; treat v4 numbers as private-preview evidence.
 
 ### Latest Run Snapshot (2026-05-25)
 
@@ -180,13 +194,13 @@ pytest tests/ -v
 
 ### Inference-Only Quickstart
 
-Pull the trained classifier from Hugging Face and run a single batch. No Anthropic API key needed; no training pipeline needed. The v4 checkpoint is currently a private preview, so the Hugging Face account running this snippet must have access.
+Pull the trained classifier from Hugging Face and run a single batch. No Anthropic API key needed; no training pipeline needed. This snippet uses the **public `deberta-v1`** checkpoint; the response-diverse `v4` preview is private (request access) — see the Model versions table above.
 
 ```python
 from transformers import AutoTokenizer, AutoModelForSequenceClassification
 import torch
 
-model_id = "jang1563/constitutional-bioguard-v4"
+model_id = "jang1563/constitutional-bioguard-deberta-v1"
 tokenizer = AutoTokenizer.from_pretrained(model_id)
 model = AutoModelForSequenceClassification.from_pretrained(model_id).eval()
 

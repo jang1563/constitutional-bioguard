@@ -1,0 +1,239 @@
+---
+library_name: transformers
+tags:
+  - safety
+  - biosecurity
+  - content-classification
+  - constitutional-classifiers
+  - deberta-v3
+  - dual-use
+  - nsabb
+  - biology
+language:
+  - en
+license: mit
+datasets:
+  - custom
+metrics:
+  - f1
+  - roc_auc
+base_model: microsoft/deberta-v3-base
+model-index:
+  - name: BioGuard DeBERTa v1
+    results:
+      - task:
+          type: text-classification
+          name: Biological Dual-Use Content Classification
+        metrics:
+          - name: F1
+            type: f1
+            value: 0.9800
+          - name: AUROC
+            type: roc_auc
+            value: 0.9978
+          - name: Precision
+            type: precision
+            value: 0.9843
+          - name: Recall
+            type: recall
+            value: 0.9756
+          - name: Over-Refusal FPR
+            type: false_positive_rate
+            value: 0.0
+---
+
+# BioGuard DeBERTa v1
+
+Binary classifier for detecting unsafe biological dual-use content, built using
+Anthropic's [Constitutional Classifiers](https://arxiv.org/abs/2501.18837) methodology.
+Defines a 56-rule biosafety constitution across all 7 NSABB categories, generates
+synthetic training data via Claude API, and fine-tunes DeBERTa-v3-base for binary
+SAFE / UNSAFE classification.
+
+**GitHub**: [jang1563/constitutional-bioguard](https://github.com/jang1563/constitutional-bioguard)  
+**Author**: JangKeun Kim, Weill Cornell Medicine
+
+> **Note (2026):** v1 is the initial public release. The line has since progressed to a
+> reuse-only response-harm head and a dual-mode (prompt + response) design; see
+> [Project status & roadmap](#project-status--roadmap-2026) below.
+
+---
+
+## Project status & roadmap (2026)
+
+v1 is the initial public release: a synthetic-trained, `query [SEP] response` encoder.
+The line has since moved toward a **dual-mode (prompt + response), bio-specialized
+guard**, with two changes that directly address v1's limitations below:
+
+- **Reuse-only response head.** Later response-harm classifiers are trained on reused,
+  leakage-audited real data instead of synthetic-only generation, closing the
+  distribution gap noted in Limitation #2, and are validated on *real* legitimate-research
+  over-refusal rather than a synthetic holdout.
+- **Separate prompt head + dual-mode policy.** v1's "external validation gap"
+  (Limitation #3) was an architectural prompt-vs-response labeling mismatch: v1 labels a
+  query but was scored against response-based labels. The current design judges
+  prompt-harm and response-harm on separate heads with independent thresholds, so the two
+  axes are no longer conflated.
+
+Positioning is informed by a 2026 review of open guards (Llama Guard, WildGuard,
+ShieldGemma, Aegis, Qwen3Guard, Granite Guardian): general-purpose guards bucket all
+weapons into a single CBRNE / "violent" category and report no per-bio metric, so an
+**open, bio-specialized, dual-mode guard with a separately reported bio taxonomy** is
+still open space. Newer checkpoints are in development and not yet released; this card
+will be updated when they are.
+
+---
+
+## Model Details
+
+| Property | Value |
+|----------|-------|
+| Base model | microsoft/deberta-v3-base |
+| Parameters | ~184M |
+| Task | Binary text classification (SAFE=0 / UNSAFE=1) |
+| Input format | `query [SEP] response` |
+| Max token length | 512 |
+| Training data | ~4,500 synthetic examples (Claude API) |
+| Training epochs | 2 (early stopping at epoch 4) |
+| Batch size | 16 |
+| Learning rate | 2.0e-5 |
+| Class weights | {SAFE: 1.47, UNSAFE: 0.76} |
+| Hardware | NVIDIA A100 (1 GPU) |
+
+---
+
+## Performance
+
+### Overall Metrics (664-sample held-out test set)
+
+| Metric | Value |
+|--------|-------|
+| F1 | 0.980 |
+| AUROC | 0.998 |
+| Precision | 0.984 |
+| Recall | 0.976 |
+| Accuracy | 0.973 |
+| Over-Refusal FPR | 0.00% (325 benign queries) |
+| Adversarial mean ASR | 9.79% (20 attack types) |
+| External kappa (TL≥4) | 0.414 |
+
+> The held-out test set above is synthetic (same generator as training). For real-world
+> over-refusal, later models in this line are measured on real legitimate-research
+> queries; see Project status above.
+
+### Per-Category F1 (7 NSABB Categories)
+
+| Category | F1 | AUROC | FPR |
+|----------|----|-------|-----|
+| enhance_harm | 1.000 | 1.000 | 0.0% |
+| enhance_susceptibility | 0.993 | 1.000 | 0.0% |
+| generate_reconstruct | 0.991 | 0.997 | 0.0% |
+| increase_stability | 0.978 | 0.999 | 0.0% |
+| alter_host_range | 0.978 | 0.998 | 14.3% |
+| confer_resistance | 0.971 | 0.996 | 5.0% |
+| disrupt_immunity | 0.952 | 0.993 | 12.5% |
+
+### Adversarial Robustness (20 attack types)
+
+| Attack Category | Mean ASR |
+|-----------------|----------|
+| Semantic (passive voice, euphemism, hypothetical, negation) | 0.0% |
+| Multilingual (code-switching, mixed script) | 0.0% |
+| Character-level (homoglyphs, leetspeak, case swap, typos) | 5.1% |
+| Encoding (ROT13, base64, hex, URL-encode) | 21.5% |
+
+---
+
+## Intended Use
+
+**Designed for:**
+- Content moderation in AI systems handling biological research queries
+- Output safety filtering in agentic bioinformatics systems (see [AgentShield](https://github.com/jang1563/agentshield))
+- Research on dual-use content detection and biosafety compliance
+- Rapid screening where LLM-based classifiers (4-8B params) are too expensive or slow
+
+**Out of scope:**
+- General-purpose harm detection (use Llama Guard, WildGuard, or ShieldGemma)
+- Definitive biosecurity enforcement without human oversight
+- Non-biological dual-use content (nuclear, chemical, radiological)
+
+---
+
+## Usage
+
+```python
+from transformers import AutoTokenizer, AutoModelForSequenceClassification
+import torch
+
+tokenizer = AutoTokenizer.from_pretrained("jang1563/constitutional-bioguard-deberta-v1")
+model = AutoModelForSequenceClassification.from_pretrained("jang1563/constitutional-bioguard-deberta-v1")
+model.eval()
+
+# Input: "query [SEP] response"
+text = "How does CRISPR-Cas9 work? [SEP] CRISPR uses guide RNA to target specific DNA sequences..."
+inputs = tokenizer(text, return_tensors="pt", truncation=True, max_length=512)
+
+with torch.no_grad():
+    logits = model(**inputs).logits
+    probs = torch.softmax(logits, dim=-1)
+    label = "UNSAFE" if probs[0, 1] > 0.5 else "SAFE"
+    print(f"{label} (p_unsafe={probs[0, 1]:.3f})")
+```
+
+With encoding normalization (mitigates ROT13/base64/URL-encode attacks):
+
+```python
+# pip install constitutional-bioguard
+from constitutional_bioguard.preprocessing import normalize_text
+
+query = "How does CRISPR work?"
+response = "CRISPR uses guide RNA..."
+text = normalize_text(f"{query} [SEP] {response}")
+# then tokenize and run inference as above
+```
+
+---
+
+## Training Data
+
+- **Source**: Synthetic examples generated by Claude API from a 56-rule biosafety constitution
+- **Constitution**: Covers all 7 NSABB dual-use research categories with explicit permitted/restricted/boundary rules
+- **Size**: 4,267 total: 2,968 train / 635 val / 664 test
+- **Class balance**: ~68% UNSAFE, ~32% SAFE (class weights applied during training)
+- **Splits**: Stratified by NSABB category and fine label
+- **Augmentation**: Translation (5 languages), jailbreak templates, formality variation, prefill attacks
+- **Benign holdout**: 325 legitimate biology research queries (0.00% FPR)
+
+The dataset is not publicly released; the generation pipeline is open-source and reproducible (~$15 with Claude Sonnet/Haiku).
+
+---
+
+## Limitations
+
+1. **Encoding bypass**: ROT13 achieves 47.9% ASR, URL-encode 29.2%. Use `preprocessing.normalize_text()` to mitigate.
+2. **Synthetic-only training**: All examples are Claude-generated; real-world distribution shift is uncharacterized. *(Addressed in later reuse-only models; see Project status.)*
+3. **External validation gap**: External kappa = 0.414 vs. target 0.80. The benchmark (BioThreat-Eval) uses response-based labeling; this classifier labels queries: an architectural mismatch that accounts for the gap. *(Addressed by the dual-mode prompt/response split; see Project status.)* See [GitHub README](https://github.com/jang1563/constitutional-bioguard#limitations) for full explanation.
+4. **English-centric**: Evaluation is English-only despite multilingual augmentation in training.
+5. **Single LLM training data**: All data from Claude; cross-LLM calibration is unknown.
+6. **Not a complete defense**: Mean adversarial ASR = 9.79%; should be used as one layer in a broader safety system.
+
+---
+
+## Ethical Considerations
+
+This model detects potentially dangerous biological content to support biosafety compliance in AI systems. The training data contains synthetic descriptions of potentially harmful topics: necessary to teach the classifier what to flag, not to enable harm.
+
+Do not use this model to identify exploitable gaps in biosafety systems for malicious purposes, or as the sole safety mechanism in contexts where a false negative could enable serious harm.
+
+---
+
+## Citation
+
+```bibtex
+@software{kim2025bioguard,
+  author = {Kim, JangKeun},
+  title  = {Constitutional BioGuard: A Biosafety Content Classifier},
+  year   = {2025},
+  url    = {https://github.com/jang1563/constitutional-bioguard},
+}
+```

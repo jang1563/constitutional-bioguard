@@ -13,6 +13,7 @@ prompt or a yes/no parser makes train != eval and silently zeroes recall (the
 v7.B2 mismatch lesson; see eval_v7b_qwen3_cot.py).
 """
 from __future__ import annotations
+
 import argparse
 import json
 import os
@@ -22,20 +23,21 @@ from pathlib import Path
 sys.path.insert(0, str(Path(__file__).parent.parent))  # repo root -> constitutional_bioguard pkg
 sys.path.insert(0, str(Path(__file__).parent))          # scripts/  -> sibling eval module
 
-import torch
 import numpy as np
-from peft import PeftModel
-from transformers import AutoTokenizer, AutoModelForCausalLM, BitsAndBytesConfig
+import torch
 
-from constitutional_bioguard.config import DATA_PROCESSED, MODELS_DIR
 # Canonical, train-matched prompt + parser (see module docstring).
 from eval_v7b_qwen3_cot import (
-    SYSTEM_TMPL,
-    DUAL_LABEL_POLICY,
     BIO_TAXONOMY,
+    DUAL_LABEL_POLICY,
+    SYSTEM_TMPL,
     USER_TMPL_PLAIN,
     parse_output,
 )
+from peft import PeftModel
+from transformers import AutoModelForCausalLM, AutoTokenizer, BitsAndBytesConfig
+
+from constitutional_bioguard.config import DATA_PROCESSED, MODELS_DIR
 
 NO_RESPONSE = "(no response provided)"
 
@@ -50,7 +52,7 @@ def load_model(base_model_id: str = "meta-llama/Llama-3.1-8B-Instruct"):
         "V7C_ADAPTER_DIR", str(MODELS_DIR / "llama31_8b_bioguard_v7c" / "adapter"))
     print(f"Loading {base_model_id}...")
     tokenizer = AutoTokenizer.from_pretrained(base_model_id)
-    print(f"Loading base model with 4-bit quant...")
+    print("Loading base model with 4-bit quant...")
     # Match v7.C training quantization exactly (train_v7c_llama_nocot.py):
     # nf4 + bf16 compute + double quant, model dtype bf16.
     bnb_config = BitsAndBytesConfig(
