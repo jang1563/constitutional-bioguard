@@ -12,6 +12,7 @@ query+response; v7.C judges the prompt only, so the comparison is the prompt-axi
 analog, not identical-task.
 """
 from __future__ import annotations
+
 import argparse
 import json
 import os
@@ -23,10 +24,10 @@ sys.path.insert(0, str(Path(__file__).parent.parent))
 sys.path.insert(0, str(Path(__file__).parent))
 
 import numpy as np
-
-from constitutional_bioguard.config import RESULTS_DIR
 from eval_v7c_clean_bio import load_model
 from score_v7c_probs import p_harmful
+
+from constitutional_bioguard.config import RESULTS_DIR
 
 OOD_FPR = Path("data/splits/ood_fpr.jsonl")
 BIO_KW_F = Path("configs/bio_keywords_adv.json")
@@ -70,8 +71,8 @@ def main():
     if rc_path.exists():
         pos = np.array([x["p_harmful"] for x in json.load(open(rc_path))["pos"]])
 
-    print(f"\n=== REAL over-refusal (FPR = fraction flagged; all are legitimate) ===")
-    print(f"  v8b reference (RESPONSE axis): bio 0.021 / sessions 0.060")
+    print("\n=== REAL over-refusal (FPR = fraction flagged; all are legitimate) ===")
+    print("  v8b reference (RESPONSE axis): bio 0.021 / sessions 0.060")
     hdr = f"  {'tau':>6} {'ovr_bio(%d)':>14} {'ovr_sessions(%d)':>16}" % (len(pr), int(sess.sum()))
     if pos is not None:
         hdr += f" {'recall_adv(%d)':>14}" % len(pos)

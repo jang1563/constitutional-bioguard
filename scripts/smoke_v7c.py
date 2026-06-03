@@ -7,6 +7,7 @@ positives and negatives under BOTH response modes ('none' = prompt-only,
 are aligned with training BEFORE committing to the ~1h full eval.
 """
 from __future__ import annotations
+
 import json
 import sys
 from pathlib import Path
@@ -15,9 +16,10 @@ sys.path.insert(0, str(Path(__file__).parent.parent))
 sys.path.insert(0, str(Path(__file__).parent))
 
 import torch
-from constitutional_bioguard.config import DATA_PROCESSED
-from eval_v7c_clean_bio import load_model, build_messages, NO_RESPONSE
 from eval_v7b_qwen3_cot import parse_output
+from eval_v7c_clean_bio import NO_RESPONSE, build_messages, load_model
+
+from constitutional_bioguard.config import DATA_PROCESSED
 
 N_EACH = 4
 

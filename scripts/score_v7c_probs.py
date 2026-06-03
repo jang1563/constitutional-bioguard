@@ -16,6 +16,7 @@ forward pass per label, no autoregressive generation (faster than generate()).
 tau=0.5 should approximately reproduce the prior argmax point (sanity check).
 """
 from __future__ import annotations
+
 import argparse
 import json
 import os
@@ -25,11 +26,11 @@ from pathlib import Path
 sys.path.insert(0, str(Path(__file__).parent.parent))
 sys.path.insert(0, str(Path(__file__).parent))
 
-import torch
 import numpy as np
+import torch
+from eval_v7c_clean_bio import NO_RESPONSE, build_messages, load_model
 
 from constitutional_bioguard.config import DATA_PROCESSED, RESULTS_DIR
-from eval_v7c_clean_bio import load_model, build_messages, NO_RESPONSE
 
 LABELS = ["harmful", "unharmful"]  # index 0 = harmful
 
