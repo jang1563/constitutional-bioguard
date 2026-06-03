@@ -186,11 +186,17 @@ def main():
     for s, f in sorted(src_flags.items()):
         print(f"    {s:28s} n={len(f):3d} recall={np.mean(f):.3f}")
 
-    # Compare to pdual_ho
+    # Compare to pdual_ho. NOTE: pdual_ho 0.366 is the DeBERTa prompt head's
+    # saladbench-HELD-OUT recall; the recall above is over ALL 120 clean-bio
+    # positives (6 sources), so this delta is INDICATIVE, not source-matched.
+    sb = [int(pr) for r, pr in zip(pos, pos_preds)
+          if pr is not None and str(r.get("source", "")).startswith("saladbench")]
+    sb_recall = float(np.mean(sb)) if sb else float("nan")
     print("\n=== COMPARISON: pdual_ho vs v7.C ===")
-    print("  pdual_ho (DeBERTa-base, saladbench OOD): learned recall 0.366")
-    print(f"  v7.C     (Llama-3.1-8B, saladbench OOD): prompt recall {recall:.3f}")
-    print(f"  delta: {recall - 0.366:+.3f}")
+    print("  pdual_ho (DeBERTa-base, saladbench held-out): learned recall 0.366")
+    print(f"  v7.C (Llama-3.1-8B, full clean-bio 120-pos):  prompt recall {recall:.3f}")
+    print(f"  v7.C (Llama-3.1-8B, saladbench subset n={len(sb)}):   prompt recall {sb_recall:.3f}")
+    print(f"  delta vs pdual_ho (saladbench-matched): {sb_recall - 0.366:+.3f}")
 
 
 if __name__ == "__main__":
