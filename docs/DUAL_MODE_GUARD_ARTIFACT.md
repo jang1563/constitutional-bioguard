@@ -47,7 +47,24 @@ reject-option / abstain on the uncertain middle).
 - expert legit-bio (prior bridge, n=176 shared): and **0.000**, v8b alone 0.149, prompt alone 0.023
 - bio harmful recall (n=120, query-only): prompt_only **0.983**
 
-## Caveat
-The `and` recall and the jailbreak recall under every policy are NOT yet measured on a harmful
-(query, harmful-response) set -- the over-refusal sets are all-benign. Release-plan Step 0/4
-must measure recall under the chosen policy on a paired harmful set (e.g. FORTRESS ARS).
+## Paired-set recall (MEASURED on real_response_bio, n=137: 62 harmful / 75 benign, real responses)
+| policy | recall | over-refusal |
+|---|---|---|
+| prompt_only | 0.903 | 0.627 |
+| response_only | **0.919** | 0.267 |
+| and | 0.855 | 0.213 |
+| or | 0.968 | 0.680 |
+
+This set contains JAILBREAKS (benign-framed query -> harmful response), so it exposes the real
+cost the all-benign over-refusal sets hide:
+- `and` recall DROPS to 0.855 (from response_only 0.919): the prompt head says "benign query"
+  on the jailbreaks, so `and` discards those true positives. The "and clears over-refusal for
+  free" result (Step 2: 0.532->0.076) holds ONLY on jailbreak-free legit traffic.
+- `response_only` (0.919 recall / 0.267 over-refusal) DOMINATES prompt_only on both axes and is
+  the strongest single operating point here. The response head is the workhorse.
+- The remaining over-refusal (0.267 response_only) is v8b's density bias on dense bio answers;
+  the right fix is density-debiasing or conformal abstain (Step 3), NOT `and` (which trades recall).
+
+STILL OPEN: a larger paired bio set (FORTRESS ARS/ORS, Health-ORSC) for Step 4 competitor
+comparison; n=137 here is small. real_response_bio's benign slice is bio-dense (density bias
+bites), so its over-refusal is higher than the project's headline real-session 0.02-0.06.
