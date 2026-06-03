@@ -37,17 +37,19 @@ reuse-only sources surfaced (need a short characterization pass for size/license
   label positive (induces over-refusal); use as the dual-use-ambiguous ABSTAIN / over-refusal set.
 Leakage-audit byte-disjoint vs train, as before.
 
-### STEP 1 (highest leverage, ~1-2 wk, HIGH uncertainty) - bio-distillation pilot
-HarmAug recipe: 8B generative teacher (v7.C-aug2) -> 184-435M DeBERTa student, KL+BCE
-(lambda=0.5), teacher soft labels on a large unlabeled bio+benign pool. Score the student
-on the Step-0 bio recall set + the real over-refusal set.
-- **Fork 1a (recall transfers within tolerance)**: distillation closes the footprint
-  blocker. Ship the small student as the prompt head; proceed to Step 2.
-- **Fork 1b (recall degrades - the plan-changing risk)**: 8B stays a blocker. Pivot to
-  EITHER a capacity-gap-aware objective (TAID, arXiv:2501.16937, time-adaptive
-  interpolation; or scheduled-checkpoint distillation) OR direct 184M-encoder fine-tuning
-  on the bio corpus with no generative teacher (JurEE route, arXiv:2410.08442 - a single
-  DeBERTa-v3-base 184M matched a 6x ensemble). Direct-encoder is the safer fallback.
+### STEP 1 (highest leverage) - bio-distillation pilot -- DONE 2026-06-03 (see STEP1_DISTILL_PILOT_2026-06-03.md)
+HarmAug recipe: 8B generative teacher (v7.C-aug2) -> 184M DeBERTa student, hard CE and
+soft-CE (lambda=0.5). **RESULT: the fork SPLIT.**
+- **RECALL = Fork 1a (transfers).** Student 184M recall 0.983 >= teacher 0.900; clean
+  expert legit-bio over-refusal 0.017 ~ teacher 0.023. Footprint is NOT a recall blocker.
+- **BORDERLINE-BENIGN OVER-REFUSAL = Fork 1b (materialized).** On the same 739 OR-Bench-health
+  borderline prompts: teacher 0.166 vs student ~0.83. Capacity-gap mode-averaging on the
+  over-refusal axis; **soft labels did not close it** (pool benign is clean, doesn't cover
+  the borderline region). Capacity is sufficient; the gap is DATA COMPOSITION.
+- **NEXT (Step 1b):** augment the distill pool with borderline-benign hard negatives
+  (OR-Bench-style, leakage-disjoint) + teacher soft labels, re-distill. Fallback if it does
+  not close: TAID (arXiv:2501.16937) or a 435M student. Trainer bug fixed (deberta-v3 loaded
+  fp16 by default in transformers 5.9.0 -> forced `dtype=float32`).
 
 ### STEP 2 (~1-2 wk, LOW risk, well-specified) - dual-mode integration
 Wire the two heads. Reference designs: Qwen3Guard-Stream (arXiv:2510.14276 - shared backbone,
