@@ -46,6 +46,8 @@ def main():
     ap.add_argument("--soft", action="store_true",
                     help="HarmAug soft-label distillation (KL/soft-CE on teacher soft_label + hard CE)")
     ap.add_argument("--lam", type=float, default=0.5, help="hard-CE weight; (1-lam) on soft-CE")
+    ap.add_argument("--pool", default=None, help="override pool jsonl (e.g. distill_pool_aug.jsonl)")
+    ap.add_argument("--unsafe-weight", type=float, default=1.5, help="CE weight on harmful class")
     args = ap.parse_args()
 
     import numpy as np
@@ -55,7 +57,9 @@ def main():
                               TrainingArguments, Trainer, DataCollatorWithPadding)
 
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
-    src = POOL_SOFT if args.soft else POOL
+    src = Path(args.pool) if args.pool else (POOL_SOFT if args.soft else POOL)
+    if not src.is_absolute():
+        src = ROOT / src if not src.exists() else src
     pool = [json.loads(l) for l in open(src, encoding="utf-8") if l.strip()]
     n_harm = sum(r["hard_label"] for r in pool)
     mode = f"SOFT-label distill (lam={args.lam})" if args.soft else "hard-label CE"
@@ -87,8 +91,8 @@ def main():
             batch["soft"] = soft
         return batch
 
-    # v8b proven convention: class0=benign=1.0, class1=harmful=1.5 (recall-favoring)
-    w = torch.tensor([1.0, 1.5], dtype=torch.float).to(device)
+    # v8b proven convention: class0=benign=1.0, class1=harmful=unsafe_weight (recall-favoring)
+    w = torch.tensor([1.0, args.unsafe_weight], dtype=torch.float).to(device)
     F = torch.nn.functional
 
     class WeightedTrainer(Trainer):
