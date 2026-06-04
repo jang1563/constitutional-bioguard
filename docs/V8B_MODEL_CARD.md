@@ -1,5 +1,9 @@
 # Model Card: bioguard-v8b (bio response-harm classifier)
 
+> **⚠️ Superseded (2026-06).** `bioguard-v8b` was renamed to `constitutional-bioguard-response`, and the
+> shipped checkpoint is now the density-debiased **v8bh**. The authoritative card is
+> [`MODEL_CARD.md`](MODEL_CARD.md); this file documents the earlier v8b lineage only.
+
 A small encoder that judges whether a model **response** delivers harmful
 biological content, built to reduce over-refusal of legitimate bench research
 while catching genuinely harmful bio completions. This card states scope and

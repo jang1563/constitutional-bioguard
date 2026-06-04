@@ -69,6 +69,11 @@ model-index:
 
 # Constitutional BioGuard v4
 
+> **⚠️ Superseded (2026-06).** This documents the v4 single-head checkpoint — a historical milestone in
+> the research arc, not the released model. The authoritative card is [`MODEL_CARD.md`](MODEL_CARD.md)
+> (dual-mode guard, response head **v8bh**); v4 stays a private preview and is **not** recommended. See
+> the honest evaluation in [`CASE_STUDY_eval_self_red_team.md`](CASE_STUDY_eval_self_red_team.md).
+
 A 184M-parameter domain-specialist classifier for biological dual-use content.
 It fine-tunes `microsoft/deberta-v3-base` on a 56-rule biosafety constitution
 plus corrective augmentation designed to diagnose and reduce shortcut learning.
