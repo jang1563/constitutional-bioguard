@@ -1,4 +1,4 @@
-# bioguard-deberta-v2: training reproducibility
+# constitutional-bioguard-response: training reproducibility
 
 (Public release name; internal training run name: `v8b`.)
 
