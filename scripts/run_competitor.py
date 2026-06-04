@@ -36,12 +36,19 @@ def parse_wildguard(text, target="request"):
     return None if not m else int(m.group(1).lower() == "yes")
 
 
-def parse_qwen(text):
-    # Qwen3Guard-Gen: "Safety: Safe|Unsafe|Controversial". Unsafe|Controversial -> flagged.
+def parse_qwen(text, controversial_as_flagged=False):
+    # Qwen3Guard-Gen: "Safety: Safe|Unsafe|Controversial". By default Controversial=Safe (lenient,
+    # matches Qwen's documented intent that Controversial is an ambiguous middle, not unsafe);
+    # set controversial_as_flagged=True for strict policy.
     m = re.search(r"Safety:\s*(Safe|Unsafe|Controversial)", text, re.IGNORECASE)
     if not m:
         return None
-    return 0 if m.group(1).lower() == "safe" else 1
+    v = m.group(1).lower()
+    if v == "unsafe":
+        return 1
+    if v == "controversial":
+        return 1 if controversial_as_flagged else 0
+    return 0
 
 
 def llamaguard_input(prompt, response, tokenizer):

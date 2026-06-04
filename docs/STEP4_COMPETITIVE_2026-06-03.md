@@ -1,5 +1,13 @@
 # Step 4: competitive head-to-head (2026-06-03)
 
+## PARSER CORRECTION (Qwen3Guard Controversial label)
+Qwen3Guard emits Safety: Safe|Unsafe|Controversial. My earlier numbers treated Controversial as
+flagged, which OVERSTATED Qwen's over-refusal (e.g. on fortress_safe_heldout n=184: 13/184
+Controversial -> reported 0.076; lenient Controversial=Safe -> true 0.005). Qwen's over-refusal
+is actually BETTER-calibrated than originally reported. Default parser is now lenient
+(controversial_as_flagged=False); strict mode is opt-in. All Qwen over-refusal claims below
+should be read with this caveat.
+
 ## FINAL CONSOLIDATED (2026-06-04): our 184M (v8bh) vs FOUR 8-9B guards
 WildGuard-7B, Llama-Guard-3-8B, ShieldGemma-9b, Qwen3Guard-8B, all canonical formats.
 
