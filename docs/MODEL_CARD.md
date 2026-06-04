@@ -1,5 +1,8 @@
 # Model Card: Constitutional BioGuard (dual-mode, 2x184M)
 
+> **Authoritative card** for the released dual-mode guard (response head **v8bh** + prompt head).
+> Supersedes `MODEL_CARD_V4.md` and `V8B_MODEL_CARD.md`.
+
 **Name caveat.** Despite "Bio" in the name, the response head is a GENERAL response-harm guard
 (bio-selectivity S = 1.03). The name reflects the project's origin, not a validated selectivity
 claim. See Limitation 1.
