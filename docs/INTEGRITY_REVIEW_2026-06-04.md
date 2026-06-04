@@ -268,6 +268,29 @@ general response classifier behind it. AND policy adds real value on expert legi
 discriminates bio from non-bio harm. Novelty: small-footprint two-encoder configurable-policy
 guard (cite WildGuard as prior tri-mode).
 
+## F. FINAL competitive verdict (the AND policy is NOT an over-refusal edge)
+Measured competitors on the SAME expert legit-bio set (n=181, prompt-harm over-refusal):
+Llama-Guard 0.000, ShieldGemma 0.000, WildGuard 0.006, Qwen 0.006; OURS prompt 0.022, OURS AND
+0.000. The competitors ALREADY do not over-refuse expert legit-bio research queries -- our AND
+"0.000" merely ties them, and our prompt head alone (0.022) is WORSE than 3 of 4. The dual-mode
+AND value exists only to fix OUR prompt head's over-firing, a problem the competitors don't have.
+=> We have NO over-refusal advantage on clean expert legit-bio.
+
+HONEST SCORECARD (every quality axis):
+| axis | ours | best competitor | verdict |
+|---|---|---|---|
+| bio response recall | 0.921 | Qwen 0.956 | behind (tied WildGuard) |
+| bio response, matched-FPR | 0.878@0.10 | WildGuard 0.904 | behind |
+| bio prompt recall (SOSBench n=500) | 0.752 | WildGuard 0.912 | 3rd |
+| over-ref borderline (OR-Bench-bio) | 0.845 | Llama 0.005 | WORST |
+| over-ref expert legit-bio | 0.022 | Llama/SG 0.000 | behind |
+| char-robustness (leetspeak) | 0.128 | untested (likely better) | liability |
+| bio-specificity (S) | 1.03 | n/a | none |
+| SIZE | 184M | 7-9B | **40x smaller (only win)** |
+
+The ONLY clear advantage is size. No size-peer comparison (Llama-Guard-1B, ShieldGemma-2B,
+Granite-Guardian-2B, GLiNER) was run, so even "best small guard" is UNVERIFIED.
+
 ## Sources
 WildGuard 2406.18495 · FORTRESS 2506.14922 · OR-Bench 2405.20947 · Contrast Sets 2004.02709 ·
 ORFuzz 2508.11222 · Sainz et al. contamination EMNLP'23 · guard-degradation 2511.22047 (unrefereed,
