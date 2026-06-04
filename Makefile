@@ -1,6 +1,6 @@
 .PHONY: validate generate augment benign prepare train evaluate external adversarial overrefusal figures all clean test
 
-PYTHON := python
+PYTHON ?= python3
 
 validate:
 	$(PYTHON) scripts/validate_constitution.py
@@ -38,7 +38,7 @@ figures:
 all: validate generate augment benign prepare train evaluate external adversarial overrefusal figures
 
 test:
-	pytest tests/ -v
+	$(PYTHON) -m pytest tests/ -v
 
 clean:
 	rm -rf data/raw/*.jsonl data/augmented/*.jsonl data/processed/*.jsonl

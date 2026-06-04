@@ -27,20 +27,14 @@ model-index:
       name: Bio response-harm detection
     metrics:
     - type: recall
-      value: 0.919
-      name: Real bio-response recall (n=62, directional, Wilson 95% CI 0.825-0.965)
+      value: 0.921
+      name: Bio response-harm recall (v8bh; n=554, 95% CI 0.89-0.95)
     - type: auroc
-      value: 0.970
-      name: AUROC (harmful bio vs real legitimate research)
-    - type: auprc
-      value: 0.938
-      name: AUPRC
-    - type: recall
-      value: 0.694
-      name: General response-harm recall (WildGuard-native, n=1709, better-powered)
+      value: 0.952
+      name: AUROC (v8bh)
     - type: fpr
-      value: 0.021
-      name: Over-refusal on real legitimate bio research (n=531)
+      value: 0.194
+      name: Over-refusal on benign bio responses (v8bh)
 extra_gated_prompt: >-
   constitutional-bioguard-response is a defensive bio-safety research artifact, released for
   non-commercial research only. By requesting access you agree to the
@@ -59,10 +53,11 @@ extra_gated_fields:
 
 # constitutional-bioguard-response: a bio response-harm classifier
 
-> **Note (2026-06):** the HF repo `jang1563/constitutional-bioguard-response` now ships the
-> **density-debiased v8bh** checkpoint. This package documents the v8b lineage; for the
-> integrity-corrected v8bh figures (recall 0.921, over-refusal 0.194, AUROC 0.952,
-> Pareto-dominated by Qwen3Guard-0.6B) see [MODEL_CARD.md](../docs/MODEL_CARD.md) and the HF model card.
+> **⚠️ Superseded — historical (v8b lineage).** The HF repo `jang1563/constitutional-bioguard-response`
+> ships the density-debiased **v8bh** checkpoint, and the **authoritative card** is
+> [`docs/MODEL_CARD.md`](../docs/MODEL_CARD.md) (and the live HF card). **Every metric in the body below is
+> v8b-era**; the integrity-corrected v8bh headline is **recall 0.921, over-refusal 0.194, AUROC 0.952**
+> (Pareto-dominated by Qwen3Guard-0.6B; bio-selectivity S=1.03). Read this file only for the v8b-lineage trail.
 
 A small encoder (DeBERTa-v3-base, ~184M params) that reads a `query [SEP] response`
 pair and decides whether the **response** delivers harmful biological content.
