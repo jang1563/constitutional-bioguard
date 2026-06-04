@@ -40,12 +40,16 @@ artifact, scripts/dual_mode_guard.py):
    (-11pt recall, cross-distribution regression). No free universal fix; recipe = debias the served
    distributions + conformal operating point (Step 3). Mechanism proven on held-out data.
 
-## Headline
-Our 184M bio-specialized dual-mode pair sits at an aggressive operating point: higher bio recall
-than 40x-larger general guards (best on held-out FORTRESS), a real generalization edge on
-un-memorized harmful data, BUT a real over-refusal weakness vs the competitors on held-out safe
-responses. Certified over-refusal bound (Step 3) is the lever to manage that weakness, trading
-recall. Honest claim: best-bio-recall-per-parameter + certifiable, not universal dominance.
+## Headline (FINAL, 5-guard + v8bh debiased)
+Our 184M bio-specialized guards are competitive-to-best against four 8-9B guards (WildGuard-7B,
+Llama-Guard-3-8B, ShieldGemma-9b, Qwen3Guard-8B): BEST bio prompt-recall (0.967, held out from
+all), 2nd response recall (0.921, behind only Qwen3Guard 0.956), and -- after density debiasing
+(v8bh) -- 2nd-best held-out over-refusal (0.016, near WildGuard/Llama, beating Qwen/ShieldGemma;
+was 0.288 worst pre-debias). At 40x smaller. Qwen3Guard-8B is the strongest competitor. Honest
+gaps: real_response_bio over-refusal 0.194 is mid-pack (Qwen-like, above WildGuard/Llama 0.05-0.10);
+prompt-head saturation; small bio-slice n; SafeRLHF contamination favors competitors on the response
+set. Net: best-bio-recall-per-parameter + competitive calibration (debiased) + certifiable, not
+universal dominance.
 
 ## Open items
 - DATA: a larger bio response set held out from ALL guards' training would firm up the
