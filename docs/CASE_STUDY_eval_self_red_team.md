@@ -1,8 +1,8 @@
 # When a small bio-safety classifier looks competitive and isn't: a self-red-teaming case study
 
-**One-sentence summary.** I set out to build a 184M dual-mode bio-safety guard competitive with
-7-9B models; through adversarial self-evaluation I established that it is NOT competitive, and more
-usefully, identified the specific, transferable ways small-guard evaluations mislead.
+**One-sentence summary.** A 184M dual-mode bio-safety guard was built to compete with 7-9B models;
+adversarial self-evaluation established that it is NOT competitive, and more usefully, identified
+the specific, transferable ways small-guard evaluations mislead.
 
 ## Why this is worth reading
 Most safety-classifier reports lead with a favorable benchmark number. This is the opposite: a
@@ -23,15 +23,16 @@ a single-threshold recall, when claiming preserved capability.**
 
 ### 2. Benchmark contamination flips the ranking
 On a 554-item bio response set (wildguard_test + BeaverTails + SafeRLHF), competitors scored
-higher (Qwen 0.956, WildGuard 0.904). But the set is 70% SafeRLHF, which the competitors likely
-trained on; decontaminating only against MY training flattered them. On the wildguard_test slice
+higher (Qwen 0.956, WildGuard 0.904). But the set is 70% SafeRLHF, which appears in competitors' published training pipelines (e.g.
+WildGuardMix includes BeaverTails/SafeRLHF-derived items, per the WildGuard paper); decontaminating
+only against MY training did not control for this overlap. On the wildguard_test slice
 (held out from WildGuard) WildGuard's recall fell to 0.53. **Lesson: contamination must be measured
 PER benchmark PER model; decontaminate against all comparands, report per-source breakdowns, and
 never infer a causal "they memorize / we generalize" from a held-out slice (all guards degrade on
 novel prompts).**
 
 ### 3. "Best at n=30" is a coin-flip, not a result
-On FORTRESS-bio (n=30 harmful, the full public bio adversarial set) our prompt head scored 0.967,
+On FORTRESS-bio (n=30 harmful, the full FORTRESS biological sub-domain) our prompt head scored 0.967,
 "best" of five guards. On SOSBench-bio (n=500) the same head scored 0.752 = 3rd, behind WildGuard
 0.912 (CIs non-overlapping). McNemar on the n=30: ours vs WildGuard p=0.219 (not different). The
 n=30 "best" was a small-sample artifact; one flipped item moves recall 3.3pt. **Lesson: report
@@ -64,8 +65,9 @@ guard.**
 ### 7. An efficiency claim requires the SIZE-PEER class
 "Competitive at 40x smaller" implicitly compares to 7-9B guards. Against the actual peer class, the
 openly-available Qwen3Guard-0.6B PARETO-DOMINATES our 184M (recall 0.933 vs 0.921 AND over-refusal
-0.142 vs 0.194), and Granite-Guardian-2B scores 0.990 on the prompt task vs our 0.752. There is no
-operating regime where ours is the right choice. **Lesson: benchmark against the size-peer class,
+0.142 vs 0.194), and Granite-Guardian-2B scores 0.990 on the prompt task vs our 0.752. On the benchmarks tested, there is no
+operating regime where ours is the clearly better choice (a conformal certificate and AND-policy
+expert over-refusal are modest differentiators, not performance advantages). **Lesson: benchmark against the size-peer class,
 not only the large models you hope to "match at a fraction of the size."**
 
 ## The meta-lesson
@@ -90,4 +92,5 @@ All numbers reproduce from committed code (corrected_metrics.py, audit_leakage.p
 audit_bio_specificity.py, audit_robustness.py, final_table.py) and result files; leakage verified
 clean. Benchmarks: SOSBench 2505.21605, FORTRESS 2506.14922, OR-Bench 2405.20947. Competitors:
 WildGuard 2406.18495, Llama-Guard-3, ShieldGemma, Qwen3Guard, Granite-Guardian.
-Full audit trail: INTEGRITY_REVIEW_2026-06-04.md and POSTMORTEM_2026-06-04.md.
+Full audit trail: INTEGRITY_REVIEW_2026-06-04.md and POSTMORTEM_2026-06-04.md. All in the
+constitutional-bioguard repository, branch v7e-clean.
