@@ -1,5 +1,9 @@
 # Model Card: Constitutional BioGuard (dual-mode, 2x184M)
 
+**Name caveat.** Despite "Bio" in the name, the response head is a GENERAL response-harm guard
+(bio-selectivity S = 1.03). The name reflects the project's origin, not a validated selectivity
+claim. See Limitation 1.
+
 An honest model card. Unlike most guard releases, this documents exactly where the model LOSES,
 its robustness profile, contamination caveats, and a size-peer comparison. The value of this
 release is the transparency, not the performance.
@@ -33,7 +37,9 @@ RESPONSE-harm, real bio responses (n=554, 343 harm / 211 benign):
 | Granite-Guardian-2B | 2B | 0.880 | 0.123 |
 | Llama-Guard-3-8B | 8B | 0.851 | 0.052 |
 | ShieldGemma-9B | 9B | 0.615 | 0.033 |
-threshold-free AUROC (this) = 0.952.
+threshold-free AUROC (this) = 0.952. All models tested on the SAME items (n=554); competitor CIs
+omitted (binary outputs, no score -- CI width ~similar at same n). Recall 0.921 vs WildGuard 0.904:
+McNemar p=0.248 (not statistically different); vs Qwen 0.956: McNemar p=0.027 (Qwen wins).
 
 PROMPT-harm, SOSBench-bio (n=500 harmful):
 | model | recall [95% CI] |
@@ -69,7 +75,9 @@ PROMPT-harm, SOSBench-bio (n=500 harmful):
 - Treat as one layer, not a sole safety boundary.
 
 ## Training data
-Response head: WildGuardMix bio + BeaverTails bio (harmful) + FalseReject + non-bio negatives
+Response head: WildGuardMix bio (a GENERAL safety-training mixture filtered to bio items, which is
+why the head is general rather than bio-selective) + BeaverTails bio (harmful) + FalseReject +
+non-bio negatives
 (benign), + FORTRESS dense-safe hard negatives (v8bh debiasing). Prompt head: distilled from an
 8B Llama-3.1+QLoRA generative teacher on a bio prompt pool + generated bio-borderline-benign.
 All evaluations decontaminated by query-hash against this training (audit_leakage.py: 0 overlap).
@@ -137,3 +145,11 @@ Clopper-Pearson CIs, McNemar paired tests, matched-operating-point and AUROC com
 per-source contamination breakdowns, size-peer benchmarking, character-robustness probing,
 bio-selectivity ratio, AUPRC. See CASE_STUDY_eval_self_red_team.md, INTEGRITY_REVIEW_2026-06-04.md,
 and POSTMORTEM_2026-06-04.md.
+
+## License
+Apache 2.0. The model weights, evaluation code, and documentation are open. No harmful training
+examples are distributed.
+
+## Citation
+If citing the evaluation methodology or negative findings, reference this model card and the
+accompanying CASE_STUDY_eval_self_red_team.md.
