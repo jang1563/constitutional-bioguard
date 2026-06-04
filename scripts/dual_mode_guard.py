@@ -18,7 +18,9 @@ from transformers import AutoTokenizer, AutoModelForSequenceClassification
 
 ROOT = Path(__file__).parent.parent
 DEFAULT_PROMPT_HEAD = ROOT / "models" / "deberta_v7c_distill_bioborder" / "final"
-DEFAULT_RESPONSE_HEAD = ROOT / "models" / "deberta_bioguard_v8b"
+# v8bh = v8b + FORTRESS dense-safe hard negatives (Step 4b): held-out FORTRESS over-refusal
+# 0.288->0.016 at -2.4pt recall; the density-bias-debiased response head. v8b is the prior default.
+DEFAULT_RESPONSE_HEAD = ROOT / "models" / "deberta_bioguard_v8bh"
 # Honest tradeoff (validated this session, see docs/STEP2_DUALMODE):
 #   and = over-refusal-optimal (clears BOTH heads' decorrelated FPs on legit traffic) BUT
 #         misses jailbreaks (benign query + harmful response look like a density-FP to the heads)
