@@ -1,6 +1,6 @@
 # Dual-Mode Bio Guard: design (bioguard-deberta, prompt + response)
 
-Goal: extend the shipped response-harm classifier (bioguard-deberta-v2) into a
+Goal: extend the shipped response-harm classifier (constitutional-bioguard-response) into a
 dual-mode (prompt-harm + response-harm) BIO-specialized guard that genuinely
 exceeds the published bar where it matters, not by chasing a leaderboard a 184M
 model cannot win, but by owning the bio axis no general guard reports. Synthesized
