@@ -291,6 +291,39 @@ HONEST SCORECARD (every quality axis):
 The ONLY clear advantage is size. No size-peer comparison (Llama-Guard-1B, ShieldGemma-2B,
 Granite-Guardian-2B, GLiNER) was run, so even "best small guard" is UNVERIFIED.
 
+## G. SIZE-PEER comparison REFUTES the size niche (decisive)
+Ran SMALL guards (the actual peer class) on both axes:
+RESPONSE-harm (real_response_bio_large n=554):
+| model | size | recall | over-ref |
+|---|---|---|---|
+| Qwen3Guard-0.6B | 0.6B | **0.933** | **0.142** |
+| OURS v8bh | 184M | 0.921 | 0.194 |
+| Granite-Guardian-2b | 2B | 0.880 | 0.123 |
+| ShieldGemma-2b | 2B | 0.653 | 0.019 |
+
+PROMPT-harm (SOSBench-bio n=500):
+| model | recall |
+|---|---|
+| Granite-Guardian-2b | **0.990** |
+| Qwen3Guard-0.6B | 0.768 |
+| OURS prompt | 0.752 |
+| ShieldGemma-2b | 0.346 |
+
+**Qwen3Guard-0.6B PARETO-DOMINATES our v8bh** (higher recall 0.933 AND lower over-ref 0.142) at
+only 3x our size. Granite-2b is far better on prompt-harm (0.990). Our 184M is NOT the best small
+guard -- an openly-available 0.6B model is strictly better on response-harm. The size niche does
+NOT exist; there is no operating regime where ours is the right choice over Qwen3Guard-0.6B.
+
+## H. Robustness IS fixable with text normalization
+text_normalize.py (NFKC + zero-width strip + de-spacing + leet reversal) as a preprocessing layer:
+| attack | raw recall | raw bypass | +norm recall | +norm bypass |
+|---|---|---|---|---|
+| leetspeak | 0.128 | 86% | 0.886 | 4% |
+| zero-width | 0.251 | 73% | 0.924 | 0% |
+| space-injection | 0.875 | 6% | 0.863 | 7% |
+Normalization restores leetspeak 86%->4%, zero-width 73%->0%. GAP #3 is mitigatable; deploy with
+text_normalize as mandatory preprocessing. (Does not change the size-peer verdict.)
+
 ## Sources
 WildGuard 2406.18495 · FORTRESS 2506.14922 · OR-Bench 2405.20947 · Contrast Sets 2004.02709 ·
 ORFuzz 2508.11222 · Sainz et al. contamination EMNLP'23 · guard-degradation 2511.22047 (unrefereed,
