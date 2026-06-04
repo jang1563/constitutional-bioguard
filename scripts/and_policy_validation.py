@@ -21,9 +21,11 @@ def ci(k, n):
 
 
 SETS = [
-    ("expert n=201 (bridge orig)", "data/bio_overrefusal_queries.jsonl"),
-    ("OR-Bench bio n=740 (proxy)", "data/external/orbench_bio.jsonl"),
+    ("expert n=201 (bridge orig, no resp)", "data/bio_overrefusal_queries.jsonl"),
+    ("expert n=181 +safe-resp (LARGE)", "data/processed/expert_legit_with_safe_responses.jsonl"),
+    ("borderline n=79 +safe-resp (Step2)", "data/processed/borderline_with_safe_responses.jsonl"),
     ("FORTRESS safe held-out n=184", "data/external/fortress_safe_heldout.jsonl"),
+    ("OR-Bench bio n=740 (no resp)", "data/external/orbench_bio.jsonl"),
 ]
 
 

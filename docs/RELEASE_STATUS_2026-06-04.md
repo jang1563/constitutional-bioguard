@@ -57,8 +57,11 @@ RESPONSE HEAD (v8bh, 184M) is the releasable value: AUROC 0.952, recall 0.921 (t
 WildGuard, behind Qwen) at ~40x smaller, with within-distribution density-debiasing and a
 response-head conformal certificate. PROMPT HEAD is NOT competitive on OOD bio: 3rd at recall
 (SOSBench n=500: 0.752 vs WildGuard 0.912) and WORST at over-refusal (OR-Bench-bio n=740:
-0.845 vs Llama-Guard 0.005, ~170x). AUPRC 0.121 vs teacher 0.605 = saturated gate. AND policy
-adds 15x over-ref reduction on clean legit-bio via still-orthogonal FPs.
+0.845 vs Llama-Guard 0.005, ~170x). AUPRC 0.121 vs teacher 0.605 = saturated gate. AND policy on expert legit-bio achieves over-refusal **0.000** (n=181, 95% CI [0.000, 0.020]),
+clearing all 4 of v8bh's remaining FPs -- reproducing the original n=176 bridge finding on a
+separately-generated larger expert set, so it is NOT a small-sample artifact. AND on
+borderline/FORTRESS-style benign is only marginal (1.0-1.5x); the AND value is expert-distribution-
+specific.
 Honest positioning: ship v8bh as a competitive small-footprint bio response-harm classifier;
 ship the prompt head ONLY as an experimental supplementary recall gate for AND-policy use.
 See INTEGRITY_REVIEW_2026-06-04.md for full audit.
