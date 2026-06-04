@@ -54,7 +54,11 @@ The HONEST headline below is the corrected, defensible version.
 
 ## Headline (FINAL CORRECTED, post-integrity-review + corrected metrics)
 A 184M two-head bio guard IN THE SAME BAND as 8-9B guards on response-harm (AUROC 0.952; recall
-tied with WildGuard p=0.248, significantly beaten by Qwen3Guard p=0.027) at ~40x smaller. The
+tied with WildGuard p=0.248, significantly beaten by Qwen3Guard p=0.027) at ~40x smaller.
+DUAL-MODE orthogonality IS preserved on clean expert legit-bio (AND policy over-ref 0.005 vs
+v8bh-alone 0.075 on n=201 -- 15x better), but is marginal on diverse noisy benign (0.147 vs
+0.185, -2.7pt recall cost). The "response_only is now best" framing was incomplete; AND policy
+adds real value where the heads' FPs are orthogonal. The
 PROMPT HEAD is a high-recall pre-gen gate but NOT a calibrated classifier (AUPRC 0.121 vs teacher
 0.605 -- CLAIM 1 "footprint solved" is FALSE; it is a saturated recall-first gate). The RESPONSE
 HEAD (v8bh) is the workhorse, well-calibrated, with within-distribution debiasing + conformal

@@ -134,6 +134,32 @@ SafeRLHF contamination favoring competitors. AUROC (threshold-free): ours 0.952 
 | and | 0.901 [0.86, 0.93] | 0.171 [0.12, 0.23] |
 | or | 0.980 [0.96, 0.99] | 0.635 [0.57, 0.70] |
 
+## E1.5 DUAL-MODE ORTHOGONALITY: distribution-dependent (PARTIAL CORRECTION to my earlier "response_only is now best")
+Re-tested AND-vs-single after v8bh debiasing (check_orthogonality.py + paired AND policy):
+
+bio_overrefusal_queries (n=201 expert-curated legit-bio, all benign):
+| policy | FP count | over-ref |
+|---|---|---|
+| prompt only | 5 | 0.025 |
+| v8bh only | 15 | 0.075 |
+| AND (both) | **1** | **0.005** |
+
+real_response_bio_large (n=554, 343 harm / 211 benign):
+| policy | recall | over-ref |
+|---|---|---|
+| prompt | 0.959 | 0.611 |
+| v8bh | 0.945 | 0.185 |
+| AND | 0.918 | 0.147 |
+
+DISTRIBUTION-DEPENDENT orthogonality: on clean expert-curated legit-bio the two heads' FPs are
+nearly disjoint (only 1/15 v8bh FPs also flagged by prompt) -> AND drives over-ref to 0.005,
+~15x lower than v8bh alone. On diverse/noisy benign the prompt head over-fires (0.611), so AND
+only marginally improves over v8bh alone (0.185 -> 0.147) at -2.7pt recall. CORRECTED dual-mode
+claim: "AND-policy adds value on CLEAN legit-bio distributions (orthogonal FPs); on diverse
+benign the prompt head is too saturated to help (marginal AND gain at recall cost)." So the
+dual-mode value is NOT universally refuted -- it is real on the distribution where it was
+originally demonstrated (the bridge experiment, n=176 expert legit-bio).
+
 ## E. What remains genuinely defensible (CORRECTED honest claim)
 A 184M two-head configurable bio guard that is IN THE SAME BAND as 8-9B guards on bio response-
 harm (AUROC 0.952; recall tied with WildGuard, beaten by Qwen at matched significance), at ~40x

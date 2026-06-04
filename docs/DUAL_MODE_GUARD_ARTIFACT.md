@@ -1,8 +1,13 @@
-# Constitutional BioGuard -- unified dual-mode artifact
+# Constitutional BioGuard -- unified dual-mode artifact (bio-specialized small-footprint guard)
 
 `scripts/dual_mode_guard.py` packages the two validated 184M DeBERTa-v3 heads into one
 deployable classifier (`DualModeGuard`) plus an eval harness. fp32 loading is baked in
 (transformers 5.9.0 loads deberta-v3 in fp16 by default, which NaNs the attention).
+
+**Prior art**: WildGuard (arXiv 2406.18495, NeurIPS 2024) is a prior single-model tri-mode
+moderation guard (prompt-harm + response-harm + refusal) that predates Qwen3Guard. Our novelty
+is the small-footprint TWO-encoder configurable-policy bio-specialized design (~40x smaller
+than the 7-9B competitors), not joint prompt+response moderation itself.
 
 ## UPDATE 2026-06-04: response head is now v8bh (density-debiased)
 The default RESPONSE head is `deberta_bioguard_v8bh` (= v8b + FORTRESS dense-safe hard negatives,
@@ -10,9 +15,13 @@ Step 4b). On held-out FORTRESS safe responses its over-refusal is 0.016 (v8b was
 WildGuard/Llama-Guard, at a -2.4pt recall cost (real_response_bio_large 0.945->0.921). Verified
 with the artifact: response_only over-ref 0.016 (FORTRESS held-out) / 0.194 (real, recall 0.921);
 and 0.011/0.171; or 0.679/0.635.
-RECOMMENDED CONFIG with v8bh: **response_only** is now a strong single gate (well-calibrated +
-jailbreak-safe), because v8bh ABSORBS the density-FP clearing that was the prompt head's dual-mode
-rationale. The prompt head's remaining value is (a) a pre-generation gate on clearly-harmful
+RECOMMENDED CONFIG with v8bh: depends on deployment distribution.
+- For CLEAN legit-bio traffic (expert/research queries): use **AND policy** -- the two heads'
+  FPs are still nearly orthogonal (14/15 v8bh FPs are not flagged by prompt on n=201 expert set);
+  AND over-ref 0.005 vs v8bh-alone 0.075 = 15x reduction. Original dual-mode value HOLDS here.
+- For DIVERSE/NOISY benign traffic: use **response_only** -- prompt head over-fires (0.611 on
+  real_response_bio_large benign) so AND adds only marginal gain (0.185->0.147) at -2.7pt recall.
+The The prompt head's remaining value is (a) a pre-generation gate on clearly-harmful
 queries and (b) a recall booster via `or` (recall 0.921->0.980) at a real over-refusal cost
 (0.194->0.635) -- use only when recall is prioritized. To revert, set DEFAULT_RESPONSE_HEAD back
 to deberta_bioguard_v8b.

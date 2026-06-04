@@ -1,6 +1,14 @@
 #!/usr/bin/env python
 """Constitutional BioGuard -- unified DUAL-MODE classifier (deployable artifact).
 
+CHARACTERIZATION (post-integrity-review 2026-06-04):
+- PROMPT head: high-recall pre-generation GATE (recall 0.983 @ over-ref 0.611 on real bio benign,
+  AUPRC 0.121 -- it is a recall-first screen, NOT a calibrated standalone classifier).
+- RESPONSE head v8bh: well-calibrated workhorse (AUROC 0.952, recall 0.92, response-harm).
+- DUAL-MODE: AND policy preserves orthogonality on CLEAN legit-bio (over-ref 0.005 vs 0.075 single
+  head on n=201 expert); marginal on diverse noisy benign. Recommend AND for clean traffic, else
+  response_only. Prior art: WildGuard (arXiv 2406.18495) is a prior single-model tri-mode guard.
+
 Combines two validated 184M DeBERTa-v3 heads with a configurable policy:
   PROMPT head (query-only): bio prompt-harm. RESPONSE head v8b (query+response pair): bio
   response-harm. See docs/STEP2_DUALMODE_2026-06-03.md for the validation.
