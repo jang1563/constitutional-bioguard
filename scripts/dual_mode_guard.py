@@ -74,8 +74,14 @@ class DualModeGuard:
             out += torch.softmax(model(**enc).logits.float(), -1)[:, 1].cpu().tolist()
         return np.array(out)
 
-    def score_batch(self, queries, responses=None):
-        """Return (p_prompt, p_response). p_response is None if no responses given."""
+    def score_batch(self, queries, responses=None, normalize_text=True):
+        """Return (p_prompt, p_response). p_response is None if no responses given.
+        normalize_text=True applies char-level evasion defense (leetspeak 86%->4% bypass)."""
+        if normalize_text:
+            from text_normalize import normalize as _nrm
+            queries = [_nrm(q) for q in queries]
+            if responses is not None:
+                responses = [_nrm(r) if r else r for r in responses]
         empty = [""] * len(queries)
         p_prompt = self._score(self.ptok, self.pmodel, queries, empty)
         p_response = None
