@@ -27,8 +27,12 @@ from pathlib import Path
 from typing import Optional
 
 from constitutional_bioguard.bio_lexicon import (
+    T1_CONTEXTUAL,
+    T1_UNCONDITIONAL,
+    T3_GENERIC_BIO,
+)
+from constitutional_bioguard.bio_lexicon import (
     classify as lex_classify,
-    T1_CONTEXTUAL, T1_UNCONDITIONAL, T3_GENERIC_BIO,
 )
 from constitutional_bioguard.config import MODELS_DIR
 
@@ -86,14 +90,16 @@ class DualModeGuard:
 
     def _ensure_prompt(self):
         if self._prompt_clf is None:
-            from constitutional_bioguard.evaluation.evaluate_classifier import \
-                load_model_and_tokenizer
+            from constitutional_bioguard.evaluation.evaluate_classifier import (
+                load_model_and_tokenizer,
+            )
             self._prompt_clf = load_model_and_tokenizer(self.prompt_model_path)
 
     def _ensure_response(self):
         if self._response_clf is None:
-            from constitutional_bioguard.evaluation.evaluate_classifier import \
-                load_model_and_tokenizer
+            from constitutional_bioguard.evaluation.evaluate_classifier import (
+                load_model_and_tokenizer,
+            )
             self._response_clf = load_model_and_tokenizer(self.response_model_path)
 
     def _learned_prompt(self, prompt: str) -> int:
@@ -105,8 +111,7 @@ class DualModeGuard:
         return int(preds[0][0])
 
     def _learned_response(self, prompt: str, response: str) -> tuple[int, float]:
-        from constitutional_bioguard.evaluation.evaluate_classifier import \
-            predict_batch_sliding
+        from constitutional_bioguard.evaluation.evaluate_classifier import predict_batch_sliding
         self._ensure_response()
         m, t = self._response_clf
         # Sliding-window to match serve.py: plain predict_batch truncates at 512
@@ -130,10 +135,14 @@ class DualModeGuard:
             # non-bio-harm leakage from the keyword shortcut
             learned_flag = bool(self._learned_prompt(prompt))
 
-        if lex_flag and learned_flag: source = "both"
-        elif lex_flag: source = "lex"
-        elif learned_flag: source = "learned"
-        else: source = "none"
+        if lex_flag and learned_flag:
+            source = "both"
+        elif lex_flag:
+            source = "lex"
+        elif learned_flag:
+            source = "learned"
+        else:
+            source = "none"
 
         prompt_flag = lex_flag or learned_flag
         # tier belongs to the lexicon; learned-head flags carry source="learned",
@@ -154,7 +163,8 @@ class DualModeGuard:
         joint_flag = prompt_flag or response_flag
         if joint_flag:
             parts = []
-            if prompt_flag: parts.append(f"prompt:{prompt_reason}")
+            if prompt_flag:
+                parts.append(f"prompt:{prompt_reason}")
             if response_flag:
                 parts.append(f"response:p={r_score:.3f}>=tau={self.response_threshold}")
             reason = "; ".join(parts)

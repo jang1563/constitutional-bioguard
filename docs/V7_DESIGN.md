@@ -1,5 +1,9 @@
 # V7 Design: 3-Tier Production-Grade Bio Specialist Ladder
 
+> **⚠️ Historical design doc.** Forward-looking v7 plan. The "v4 4.85x bio-selectivity / v4 remains
+> primary" baselines cited here were later refuted by the integrity audit — the shipped response head is
+> **not** bio-selective (S=1.03). Authoritative current card: [`MODEL_CARD.md`](MODEL_CARD.md).
+
 **Status:** APPROVED for execution (2026-05-28). User decisions locked:
 - Q1 Scope = Full ladder: v7.A + v7.B + v7.C, 5-7 days
 - Q2 Training data = v4 + WildGuardMix bio + Meng/Zhang Biosecurity Agent (if public)

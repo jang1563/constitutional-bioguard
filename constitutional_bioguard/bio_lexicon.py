@@ -15,6 +15,7 @@ Four-tier priority (refined from Meng/Zhang Biosecurity Agent pattern):
   T3  GENERIC-BIO      - NEVER flags alone; modulates T2/T1C firing.
 """
 from __future__ import annotations
+
 import re
 
 # T1U: unconditional -- these terms ARE operational intent

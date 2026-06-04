@@ -1,5 +1,10 @@
 # v8b: a shippable bio response-harm classifier (ship evidence)
 
+> **⚠️ Superseded (historical).** Documents **v8b**; the shipped checkpoint is now the density-debiased
+> **v8bh** and the authoritative card is [`MODEL_CARD.md`](MODEL_CARD.md). The over-refusal "0.021" and
+> recall "0.919" below are v8b in-distribution figures — the integrity-corrected v8bh numbers are
+> over-refusal **0.194** / recall **0.921** (the 0.021 did NOT transfer to real benign distributions).
+
 One-page evidence memo. Every number below was measured this cycle on held-out,
 leakage-audited data. Companion design and caveats live in `docs/V8_DESIGN.md` §8.
 

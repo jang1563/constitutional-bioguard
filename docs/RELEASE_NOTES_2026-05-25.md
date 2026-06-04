@@ -1,5 +1,10 @@
 # Constitutional BioGuard v0.2.0 Release Notes
 
+> **⚠️ Superseded (historical).** A point-in-time v0.2.0 release note. "v4 recommended" and its gate
+> numbers (e.g. OR-Bench-Hard 2.1%) were later overturned by the v7/v8 work and the integrity audit; the
+> shipped model is the dual-mode guard (v8bh response head) and the authoritative card is
+> [`MODEL_CARD.md`](MODEL_CARD.md).
+
 ## Release Overview
 
 This release promotes **v4 response-diverse** as the recommended release
