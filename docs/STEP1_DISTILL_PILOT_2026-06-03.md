@@ -45,10 +45,13 @@ Breakdown of the bio_clean_eval 881 benign (the over-refusal that looks bad):
   teacher 0.570, hard for both.)
 
 ## Fork resolution (splits the plan)
-**RECALL: Fork 1a confirmed.** The narrow bio harmful-recall signal compresses into 184M
-cleanly: student recall 0.983 >= teacher 0.900, and clean expert-curated legit-bio
-over-refusal transfers (0.017 ~ teacher 0.023). An 18x-smaller encoder matches/beats the 8B
-teacher on both axes for in-distribution bio. The footprint is NOT a recall blocker.
+**RECALL at the 0.5 operating point transfers** (student 0.983 >= teacher 0.900), and clean
+expert-curated legit-bio over-refusal transfers (0.017 ~ teacher 0.023). HOWEVER, the student's
+AUPRC is 0.121 vs teacher 0.605 -- the student achieves high recall by SATURATION (pushing most
+items above 0.5, sacrificing precision), not by preserving the teacher's discrimination. The
+student is a recall-first pre-generation gate, NOT a calibrated capability-compressed classifier.
+"Footprint solved" as originally stated (CLAIM 1) is FALSE at AUPRC; honest framing: "recall at
+the chosen threshold transfers, but overall discrimination does not."
 
 **BORDERLINE-BENIGN CALIBRATION: Fork 1b materialized.** On the *same* 739 OR-Bench-health
 borderline-benign prompts, teacher over-refuses 16.6% but the student over-refuses ~83%

@@ -52,14 +52,16 @@ leakage is CLEAN, but SEVERAL HEADLINE FRAMINGS were OVERCLAIMED and are correct
 - Must cite WildGuard as prior dual/tri-mode guard; reframe novelty as small-footprint two-encoder policy.
 The HONEST headline below is the corrected, defensible version.
 
-## Headline (CORRECTED, post-integrity-review)
-A 184M two-head configurable bio guard COMPETITIVE with four 8-9B guards on bio response-harm
-(threshold-free AUROC 0.952, on par with or above them; recall in the same band) at ~40x smaller,
-with a within-distribution density-debiasing recipe and a response-head over-refusal certificate.
-NOT "best/dominant": at matched operating points it does not clearly beat the binary competitors on
-the (contamination-affected) response set, and the bio prompt-recall edge rests on n=30. Defensible
-as: competitive-bio-guard-at-a-fraction-of-the-size, reported with paired metrics + CIs + per-source
-decontamination + a non-causal generalization narrative.
+## Headline (FINAL CORRECTED, post-integrity-review + corrected metrics)
+A 184M two-head bio guard IN THE SAME BAND as 8-9B guards on response-harm (AUROC 0.952; recall
+tied with WildGuard p=0.248, significantly beaten by Qwen3Guard p=0.027) at ~40x smaller. The
+PROMPT HEAD is a high-recall pre-gen gate but NOT a calibrated classifier (AUPRC 0.121 vs teacher
+0.605 -- CLAIM 1 "footprint solved" is FALSE; it is a saturated recall-first gate). The RESPONSE
+HEAD (v8bh) is the workhorse, well-calibrated, with within-distribution debiasing + conformal
+certificate. FORTRESS-bio prompt recall 0.967 is tied with WildGuard/Qwen (p=0.219, n=30, CIs
+overlap). No "best" / "dominant" / "they memorize" claims are defensible. Honest positioning:
+competitive-bio-guard-at-a-fraction-of-the-size, with all metrics paired + CI'd + per-source.
+See INTEGRITY_REVIEW_2026-06-04.md for the full audit.
 
 ## (superseded) earlier headline
 Our 184M bio-specialized guards are competitive-to-best against four 8-9B guards (WildGuard-7B,

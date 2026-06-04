@@ -90,10 +90,12 @@ competitors appear to have TRAINED on. Per-source default-@0.5 recall reveals it
 | beavertails (103/67) | **0.881** | 0.716 | 0.537 |
 | saferlhf [competitor-trained?] (382/259) | 0.961 | **0.973** | 0.942 |
 
-**THE KEY FINDING:** competitors look strong only where they likely memorized (SafeRLHF: 0.97/0.94).
-On the slice HELD OUT from WildGuard's training (wildguard_test), WildGuard recall COLLAPSES to
-0.529 while our decontaminated 184M holds 0.941 -- our model GENERALIZES, the competitors partly
-MEMORIZE. Naive public-benchmark comparison is confounded by training-data overlap; controlling
+**OBSERVATION (NOT a causal claim):** competitors score higher on SafeRLHF (0.97/0.94, possibly in
+their training). On the wildguard_test slice (n=17 harmful, held out from WildGuard), WildGuard
+recall drops to 0.529 while ours holds 0.941. This is CONSISTENT WITH either memorization OR
+distribution shift -- a 2025 study shows ALL guards degrade on novel prompts (Qwen3Guard worst,
+91.0->33.8). We do NOT claim a causal memorization mechanism; the n=17 slice cannot distinguish
+the two explanations. Presented as a hypothesis-generating observation only. Naive public-benchmark comparison is confounded by training-data overlap; controlling
 for it favors us. Caveat: wildguard_test bio is small (17 harmful), so this is suggestive, not
 conclusive; a larger held-out-from-all-guards bio set would settle it.
 
