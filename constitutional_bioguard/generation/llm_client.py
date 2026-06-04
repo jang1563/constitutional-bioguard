@@ -9,6 +9,7 @@ from __future__ import annotations
 
 import logging
 import os
+import random
 import time
 from pathlib import Path
 from typing import Optional, TypeVar
@@ -65,6 +66,40 @@ def get_client():
     return _client
 
 
+# ── Transient-error classification ───────────────────────────────────────────
+
+_RETRYABLE_SUBSTRINGS = (
+    "overloaded", "rate_limit", "rate limit", "timeout", "429", "502", "503", "529",
+)
+
+
+def _is_retryable(exc: Exception) -> bool:
+    """True if ``exc`` is a transient API error worth retrying.
+
+    Prefers the Anthropic SDK's typed exceptions; falls back to substring
+    matching only if those types are unavailable or unrecognized (so behavior
+    does not silently depend on SDK error-message wording).
+    """
+    try:
+        import anthropic
+
+        if isinstance(
+            exc,
+            (
+                anthropic.RateLimitError,
+                anthropic.APITimeoutError,
+                anthropic.APIConnectionError,
+                anthropic.InternalServerError,
+            ),
+        ):
+            return True
+        if isinstance(exc, anthropic.APIStatusError):
+            return exc.status_code == 429 or exc.status_code >= 500
+    except Exception:
+        pass
+    return any(s in str(exc).lower() for s in _RETRYABLE_SUBSTRINGS)
+
+
 # ── Core API Call ────────────────────────────────────────────────────────────
 
 
@@ -111,18 +146,15 @@ def call_claude(
         _rate_limit(rpm)
         try:
             response = client.messages.create(**kwargs)
-            text = response.content[0].text
+            text = response.content[0].text if response.content else ""
             if not text:
                 raise RuntimeError("Claude returned empty response")
             return text
         except Exception as e:
             error_str = str(e)
-            # Retry on transient errors
-            if attempt < max_retries and any(
-                keyword in error_str.lower()
-                for keyword in ["overloaded", "rate_limit", "timeout", "529"]
-            ):
-                wait = retry_delay * (2**attempt)
+            # Retry on transient errors (typed SDK exceptions; see _is_retryable)
+            if attempt < max_retries and _is_retryable(e):
+                wait = retry_delay * (2**attempt) + random.uniform(0, retry_delay)
                 logger.warning(
                     "Transient error (attempt %d/%d): %s. Retrying in %.1fs",
                     attempt + 1,
