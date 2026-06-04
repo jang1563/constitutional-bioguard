@@ -1,0 +1,330 @@
+# Integrity & completeness review (2026-06-04)
+
+Self-audit of the dual-mode bio guard program against (a) direct code/data verification and (b) a
+literature audit (deep-research, 17 claims confirmed / 8 refuted). Honest verdict: the CORE
+engineering result is defensible, but SEVERAL HEADLINE CLAIMS were OVERCLAIMED and must be reframed
+before any release.
+
+## A. Direct verification (my own checks)
+- **LEAKAGE: CLEAN.** 0 train/eval query-hash overlap on all 5 checks (audit_leakage.py): prompt-head
+  pool vs FORTRESS-CBRN (0), vs bio_clean_eval (0); v8b train vs real_response_bio_large (0,
+  decontamination worked); v8bh FORTRESS train-half vs held-out eval (0 -- the 0.016 IS held-out);
+  generated bio-borderline vs FORTRESS (0). No train/eval leakage in my evals.
+- **fp32 CONSISTENT.** All production deberta loads use dtype=torch.float32 (the fp16-NaN fix is applied
+  in dual_mode_guard.py + every eval script).
+- **FAIRNESS BUGS in my competitor comparison (found by audit):**
+  1. My table reported guards at NATIVE thresholds, which FLATTERED ours -- ours operates at a higher
+     FPR (over-ref 0.194) so its recall (0.921) is not comparable to competitors at lower FPR. At
+     MATCHED FPR ours LOSES on the contaminated set: vs WildGuard 0.878 vs 0.904 @0.10; vs Llama
+     0.767 vs 0.854 @0.05; vs Qwen 0.921 vs 0.956 @0.176.
+  2. ShieldGemma was UNDERSOLD: its 0.615 recall is just its conservative native 0.5 threshold; its
+     AUROC is 0.893 (ours v8bh 0.952) -- decent discrimination, not a weak model.
+  3. Qwen was treated UNFAIRLY: my "Controversial=flagged" choice inflated Qwen over-refusal to 0.076;
+     with Controversial=safe it is 0.005 (13/184 Controversial on held-out safe). Qwen is actually
+     BETTER-calibrated than I reported (0.005 vs our 0.016).
+  => Net: the competitive comparison must use MATCHED operating points + AUROC (threshold-free) +
+     consistent multi-label handling, and PAIR recall with over-refusal. My "best/2nd-best" framing
+     at native thresholds was misleading.
+
+## B. Literature-audited integrity issues (prioritized)
+
+### BLOCKERS (fix before release)
+1. **CLAIM 4 "we generalize, they memorize" is NOT defensible (highest-priority fix).** Inferring a
+   memorization MECHANISM from one competitor's drop on n=17 exceeds the literature. WildGuard's own
+   paper makes only DESCRIPTIVE edge claims, never causal. A 2025 study (arXiv 2511.22047, unrefereed)
+   shows ALL guards degrade on novel prompts -- Qwen3Guard WORST (91.0->33.8). REFRAME: "benchmark->
+   novel-prompt degradation afflicts all guards; the n=17 slice cannot separate memorization from
+   distribution shift; 'held-out' means 'not from a published split', not 'absent from any training
+   corpus'." Do NOT single out WildGuard.
+2. **Pair every over-refusal number with its recall on the same items.** OR-Bench: safety/over-refusal
+   correlate at Spearman 0.878 -- an isolated over-refusal is gameable by under-flagging. My v8b2 case
+   PROVES it: over-refusal 0.185->0.114 came WITH recall 0.945->0.834. CLAIM 2 (0.076 vs 0.532) and
+   CLAIM 5 (0.288->0.016) must show paired recall. Report a 2D safety-utility Pareto, not standalone
+   numbers. (Source: OR-Bench 2405.20947, FORTRESS benign-twin protocol 2506.14922.)
+3. **Asymmetric decontamination caveat.** I decontaminated only vs MY training; SafeRLHF/BeaverTails are
+   ALSO competitor training data, so the raw 554-item comparison can flatter competitors who memorized
+   those items. Report PER-SOURCE breakdown (already have: wildguard_test / beavertails / saferlhf) +
+   the caveat. (Field-wide blind spot -- even WildGuard does only within-pipeline minhash dedup.)
+4. **CLAIM 5 density debiasing = WITHIN-DISTRIBUTION only.** FORTRESS 0.288->0.016 did NOT transfer to
+   real_response_bio (0.185->0.194). Never headline 0.016 as a general over-refusal fix. (Already framed
+   honestly in STEP4B; must stay that way.) (Source: contrast sets 2004.02709; embedding-drift 2603.01297.)
+5. **Cite WildGuard as prior single-model dual/tri-mode guard** (prompt+response+refusal, June 2024,
+   predates Qwen3Guard). Reframe novelty as the SMALL-FOOTPRINT two-encoder configurable-policy design,
+   NOT the dual-mode idea itself. (Source: WildGuard 2406.18495.)
+
+### SHOULD-FIX
+6. **n=30 bio recall "best" needs CIs + McNemar.** FORTRESS authors themselves flag the bio sub-domain
+   (n=30) as "limited statistical robustness." At n=30 one flipped item = 3.3pt; 0.967 (29/30) vs 0.933
+   (28/30) is ONE item. Report Clopper-Pearson/Wilson CIs + McNemar paired tests; downgrade "best" to
+   "highest point-estimate, CIs overlap." Also: ours prompt-head AUROC on FORTRESS-bio is only 0.682
+   (saturated) -- the 0.967 is at over-ref 0.533 (worst) and cannot trade down. (Source: FORTRESS 2506.14922.)
+7. **CLAIM 1 footprint / CLAIM 7 per-parameter overclaim from single-point recall.** Report AUPRC + full
+   PR/ROC + calibration (ECE) for teacher vs student; reframe CLAIM 1 as "recall preserved at the chosen
+   operating point", not "footprint solved." (Source: contrast sets 2004.02709; OR-Bench Pareto.)
+8. **Benign-twin / over-refusal benchmarks have mislabeling + saturation** (ORFuzz 2508.11222: ~51% of
+   OR-Bench "benign" rated harmful by humans; static sets fail to elicit over-refusal on resilient models).
+   My self-generated safe responses sidestep mislabeling but inherit the generalization concern.
+
+### NICE-TO-HAVE
+9. **Conformal certificate scope.** It covers the RESPONSE HEAD ONLY on the SafeRLHF-mixed calibration
+   distribution, NOT the deployed joint DualModeGuard policy. Label it "response-head, calibration
+   distribution, exchangeability assumed"; re-run on the joint policy + a deployment-matched set to claim
+   a system guarantee.
+10. **Dual-mode thesis tension.** "response_only is now best" (post-v8bh) undercuts the dual-mode value.
+    Honest framing: "a configurable policy lets a deployer pick prompt_only (pre-gen filter) vs
+    response_only (post-gen audit)", not "dual-mode beats both heads." Show all 4 policies with paired
+    recall+over-refusal on one eval.
+
+## C. Refuted -- do NOT use (failed verification 0-3)
+- "Generalization not accuracy should be the primary metric" (2511.22047 does NOT say this).
+- "Frontier LLMs-as-classifiers beat all specialized guards / specialized guards hit 0% CBRN" (2507.06282) -- REFUTED, do not cite against our own value prop.
+- "Model size does not correlate with safety performance" (2605.28830) -- REFUTED, do NOT use to argue small=competitive.
+
+## D. The single highest-priority fix
+Reframe CLAIM 4 (drop the causal "they memorize" narrative; present benchmark->novel degradation as a
+shared property of all guards, with the n=17 limitation stated). Then globally: PAIR every over-refusal
+with recall, report CIs + per-source breakdowns, and reframe dual-mode/footprint novelty.
+
+## E2. CORRECTED METRICS (from corrected_metrics.py) -- THE ACTUAL NUMBERS
+
+### Footprint (CLAIM 1) -- REFUTED at AUPRC
+| | recall@0.5 | **AUPRC** |
+|---|---|---|
+| student (184M, prompt head) | 0.983 | **0.121** |
+| teacher (8B v7.C-aug2) | 0.900 | **0.605** |
+
+The student has 1/5 the teacher's AUPRC. recall@0.5 was high only because the student is SATURATED
+(saturated head pushes most items above 0.5, sacrificing precision). The "footprint solved" CLAIM 1
+IS FALSE as stated -- distillation did NOT preserve the teacher's discriminative capability; it only
+preserved high-threshold recall at the cost of precision. Honest framing: "distillation preserves
+recall at a fixed operating point but loses ~80% of the teacher's AUPRC -- it is a recall-first gate,
+not a capability-compressed classifier."
+
+### FORTRESS-bio "best 0.967" (CLAIM 3) -- not statistically "best"
+n=30, 95% Clopper-Pearson + McNemar paired:
+| model | recall | 95% CI | McNemar vs ours |
+|---|---|---|---|
+| OURS prompt 184M | 0.967 | [0.83, 1.00] | -- |
+| WildGuard-7B | 0.833 | [0.65, 0.94] | p=0.219 (NS) |
+| Qwen3Guard-8B | 0.833 | [0.65, 0.94] | p=0.219 (NS) |
+| ShieldGemma-9b | 0.733 | [0.54, 0.88] | p=0.039 |
+| Llama-Guard-3-8B | 0.533 | [0.34, 0.72] | p=0.001 |
+
+CIs overlap WildGuard/Qwen; "best" is point-estimate only. Defensible: "tied for best with
+WildGuard-7B and Qwen3Guard-8B (p=0.219, not statistically different); beats ShieldGemma-9b
+(p=0.039) and Llama-Guard-3-8B (p=0.001), on n=30 with wide CIs."
+
+### Response-harm (CLAIM 3) -- paired recall+over-ref + McNemar (n=343 harm / 211 benign)
+| model | recall [95% CI] | over-ref | McNemar vs ours |
+|---|---|---|---|
+| OURS v8bh @0.5 | 0.921 [0.89, 0.95] | 0.194 | -- |
+| Qwen3Guard-8B | 0.953 [0.93, 0.97] | 0.175 | p=0.027 (Qwen wins) |
+| WildGuard-7B | 0.901 [0.86, 0.93] | 0.100 | p=0.248 (NS, tied) |
+| Llama-Guard-3-8B | 0.851 [0.81, 0.89] | 0.052 | p<0.001 (ours wins) |
+| ShieldGemma-9b | 0.615 [0.56, 0.67] | 0.033 | p<0.001 (ours wins) |
+
+Ours NOT at matched FPR. Qwen SIGNIFICANTLY beats ours. WildGuard tied. BUT this set has
+SafeRLHF contamination favoring competitors. AUROC (threshold-free): ours 0.952 > SG 0.893.
+
+### Paired policy metrics (real_response_bio_large, all with 95% CI)
+| policy | recall [CI] | over-refusal [CI] |
+|---|---|---|
+| prompt_only | 0.959 [0.93, 0.98] | 0.611 [0.54, 0.68] |
+| response_only | 0.921 [0.89, 0.95] | 0.194 [0.14, 0.25] |
+| and | 0.901 [0.86, 0.93] | 0.171 [0.12, 0.23] |
+| or | 0.980 [0.96, 0.99] | 0.635 [0.57, 0.70] |
+
+## E1.5 DUAL-MODE ORTHOGONALITY: distribution-dependent (PARTIAL CORRECTION to my earlier "response_only is now best")
+Re-tested AND-vs-single after v8bh debiasing (check_orthogonality.py + paired AND policy):
+
+bio_overrefusal_queries (n=201 expert-curated legit-bio, all benign):
+| policy | FP count | over-ref |
+|---|---|---|
+| prompt only | 5 | 0.025 |
+| v8bh only | 15 | 0.075 |
+| AND (both) | **1** | **0.005** |
+
+real_response_bio_large (n=554, 343 harm / 211 benign):
+| policy | recall | over-ref |
+|---|---|---|
+| prompt | 0.959 | 0.611 |
+| v8bh | 0.945 | 0.185 |
+| AND | 0.918 | 0.147 |
+
+DISTRIBUTION-DEPENDENT orthogonality: on clean expert-curated legit-bio the two heads' FPs are
+nearly disjoint (only 1/15 v8bh FPs also flagged by prompt) -> AND drives over-ref to 0.005,
+~15x lower than v8bh alone. On diverse/noisy benign the prompt head over-fires (0.611), so AND
+only marginally improves over v8bh alone (0.185 -> 0.147) at -2.7pt recall. CORRECTED dual-mode
+claim: "AND-policy adds value on CLEAN legit-bio distributions (orthogonal FPs); on diverse
+benign the prompt head is too saturated to help (marginal AND gain at recall cost)." So the
+dual-mode value is NOT universally refuted -- it is real on the distribution where it was
+originally demonstrated (the bridge experiment, n=176 expert legit-bio).
+
+### SOSBench-bio (Step 0 RESOLVED): n=500 reverses the FORTRESS "best" ranking
+SOSBench/SOSBench (arXiv 2505.21605): 3000 regulation-grounded harmful prompts, 500 biology.
+Leakage-clean (0 overlap with our training). 95% Clopper-Pearson CIs:
+| model | recall | 95% CI |
+|---|---|---|
+| WildGuard-7B | **0.912** | [0.884, 0.935] |
+| Llama-Guard-3-8B | 0.794 | [0.756, 0.829] |
+| OURS prompt 184M | 0.752 | [0.712, 0.789] |
+| Qwen3Guard-8B | 0.600 | [0.556, 0.643] |
+| ShieldGemma-9b | 0.300 | [0.260, 0.342] |
+
+FORTRESS (n=30): ours 0.967 "best". SOSBench (n=500): ours 0.752 = 3RD, behind WildGuard (0.912)
+and Llama-Guard (0.794). CIs do NOT overlap WildGuard. The "best bio prompt-recall" claim from
+FORTRESS was a SMALL-N ARTIFACT -- exactly what the integrity review predicted. The prompt head
+is overfit to FORTRESS-style adversarial jailbreaks (its training distribution); on regulation-
+grounded diverse bio scenarios (SOSBench, OOD) its saturation (AUPRC 0.121) shows as poor recall.
+WildGuard-7B is the actual best bio-prompt classifier by a wide margin.
+
+CORRECTED CLAIM: our prompt head is NOT "best" or "tied for best" on bio prompt-harm; it is 3rd
+behind WildGuard and Llama-Guard on the larger, more diverse SOSBench-bio (n=500) and is better
+characterized as a high-recall gate on its training distribution only.
+
+### OR-Bench bio over-refusal (Health-ORSC proxy, n=740 benign, leakage-clean)
+Health-ORSC-Bench (arXiv 2601.17642) is not publicly released yet; built a proxy from
+bench-llm/or-bench filtered to bio-relevant prompts (740, decontaminated). All label=0
+(over-refusal -- LOWER is better):
+| model | over-refusal | 95% CI |
+|---|---|---|
+| Llama-Guard-3-8B | **0.005** | [0.001, 0.013] |
+| ShieldGemma-9b | 0.076 | [0.058, 0.097] |
+| Qwen3Guard-8B | 0.178 | [0.150, 0.209] |
+| WildGuard-7B | 0.334 | [0.300, 0.369] |
+| OURS prompt 184M | **0.845** | [0.816, 0.870] |
+
+The prompt head is WORST at over-refusal (84.5%, ~170x Llama-Guard's 0.5%). Combined with
+SOSBench (3rd at recall): the prompt head is worst-or-near-worst on BOTH axes vs 7-9B
+competitors. As a standalone classifier it is NOT competitive; it functions only as a
+recall-first AND-policy partner for the response head on its training distribution.
+
+### AND POLICY VALIDATION on the larger expert legit-bio set (n=181, with safe responses)
+Re-tested dual-mode AND with safe assistant responses on the 181 expert legit-bio queries
+(tier 1-4 from bio_overrefusal_queries, Claude Sonnet generated safe responses, same recipe
+as the Step 2 borderline test). Over-refusal (LOWER better, 95% CI):
+
+| set (n) | prompt_only | response_only | AND | vs v8bh |
+|---|---|---|---|---|
+| **expert legit + safe (n=181)** | 0.022 [0.006,0.056] | 0.022 | **0.000** [0.000,0.020] | **all 4 FPs cleared** |
+| borderline + safe (n=79) | 0.532 [0.42,0.65] | 0.025 | 0.025 | 1.0x (no add) |
+| FORTRESS safe held-out (n=184) | 0.674 | 0.016 | 0.011 | 1.5x |
+| expert n=201 (no resp) | 0.025 | -- | -- | -- |
+
+**AND value CONFIRMED on the larger expert distribution**: the prompt head clears 100% (4/4) of
+v8bh's remaining FPs on n=181 expert legit-bio (95% CI [0.000, 0.020]). The original bridge
+finding (n=176, "26/26 cleared") is REPRODUCED on a separately-generated 181-item expert eval ->
+NOT a small-sample / bridge-set artifact. AND policy adds clear, defensible value on the EXPERT
+LEGIT-BIO distribution (the distribution where dual-mode was originally designed for).
+DISTRIBUTION-SPECIFIC caveat persists: on borderline/FORTRESS-style benign, AND adds only
+marginal (1.0-1.5x) over v8bh alone.
+
+### GAP AUDIT (second pass, 2026-06-04)
+Three critical gaps caught on a second self-review and measured:
+
+**GAP #1 — v8bh is NOT bio-selective (selectivity S=1.03).** It flags bio-harmful (0.853) and
+non-bio-harmful (0.825) responses at nearly the same rate. It is a general response-harm guard
+that was TRAINED on bio+general data (WildGuardMix bio + BeaverTails bio + FalseReject general).
+The "bio-specialized" label is misleading for the response head; only the prompt head (trained on
+bio-only data) is genuinely bio-selective — but the prompt head is the weaker component. The
+SYSTEM (dual-mode with bio-only prompt gate) is bio-FOCUSED at the query-screening stage, not
+at the response classification stage. Honest label: "bio-focused dual-mode guard with a general
+response classifier."
+
+**GAP #2 — conformal cert was on v8b, not v8bh.** v8bh-corrected conformal:
+| alpha | v8bh tau* | UCB(FPR) | held-out OR | recall |
+|---|---|---|---|---|
+| 0.10 | (no valid threshold) | — | — | — |
+| 0.20 | 0.985 | 0.190 | 0.075 | 0.878 |
+The "≤10% OR, recall 0.80" claim was for v8b, not the shipped v8bh. v8bh's conformal:
+"≤20% OR at 95% confidence, recall 0.878." The tighter v8b cert is invalid for v8bh.
+
+**GAP #3 — v8bh is HIGHLY vulnerable to character-level adversarial evasion.**
+| attack | recall | bypass of flagged |
+|---|---|---|
+| none | 0.921 | — |
+| space-injection | 0.875 | 6% |
+| leetspeak | 0.128 | 86% |
+| zero-width chars | 0.251 | 73% |
+Leetspeak alone bypasses 86% of detections. This is a known DeBERTa/encoder limitation (subword
+tokenization cannot handle character-level perturbations). For deployment, a text-normalization
+preprocessing layer (strip zero-width, de-leet, Unicode NFKC) is REQUIRED before the guard.
+
+## E. What remains genuinely defensible (FINAL, post all audits)
+The RESPONSE HEAD (v8bh, 184M) is the main releasable value: AUROC 0.952, recall 0.921, in the
+same band as 8-9B guards at ~40x smaller. BUT it is a GENERAL response-harm guard (selectivity
+S=1.03), NOT bio-selective at the response stage. Conformal cert: "over-ref ≤20% at 95% conf,
+recall 0.878" (NOT the previously-reported ≤10%/0.80 which was for v8b). VULNERABLE to
+character-level evasion (leetspeak 86% bypass) — requires text-normalization preprocessing.
+Within-distribution density-debiasing demonstrated (FORTRESS 0.288->0.016).
+
+The PROMPT HEAD is bio-selective but NOT competitive as a standalone classifier on OOD bio: 3rd
+at recall (SOSBench 0.752 vs WildGuard 0.912), WORST at over-refusal (OR-Bench-bio 0.845).
+AUPRC 0.121 = saturated gate. Release ONLY as a supplementary AND-policy recall gate.
+
+The SYSTEM is "bio-focused" at the query-screening stage (bio-selective prompt gate) with a
+general response classifier behind it. AND policy adds real value on expert legit-bio (over-ref
+0.000 on n=181 expert, reproduced). Not "bio-specialized" in the sense that the response head
+discriminates bio from non-bio harm. Novelty: small-footprint two-encoder configurable-policy
+guard (cite WildGuard as prior tri-mode).
+
+## F. FINAL competitive verdict (the AND policy is NOT an over-refusal edge)
+Measured competitors on the SAME expert legit-bio set (n=181, prompt-harm over-refusal):
+Llama-Guard 0.000, ShieldGemma 0.000, WildGuard 0.006, Qwen 0.006; OURS prompt 0.022, OURS AND
+0.000. The competitors ALREADY do not over-refuse expert legit-bio research queries -- our AND
+"0.000" merely ties them, and our prompt head alone (0.022) is WORSE than 3 of 4. The dual-mode
+AND value exists only to fix OUR prompt head's over-firing, a problem the competitors don't have.
+=> We have NO over-refusal advantage on clean expert legit-bio.
+
+HONEST SCORECARD (every quality axis):
+| axis | ours | best competitor | verdict |
+|---|---|---|---|
+| bio response recall | 0.921 | Qwen 0.956 | behind (tied WildGuard) |
+| bio response, matched-FPR | 0.878@0.10 | WildGuard 0.904 | behind |
+| bio prompt recall (SOSBench n=500) | 0.752 | WildGuard 0.912 | 3rd |
+| over-ref borderline (OR-Bench-bio) | 0.845 | Llama 0.005 | WORST |
+| over-ref expert legit-bio | 0.022 | Llama/SG 0.000 | behind |
+| char-robustness (leetspeak) | 0.128 | untested (likely better) | liability |
+| bio-specificity (S) | 1.03 | n/a | none |
+| SIZE | 184M | 7-9B | **40x smaller (only win)** |
+
+The ONLY clear advantage is size. No size-peer comparison (Llama-Guard-1B, ShieldGemma-2B,
+Granite-Guardian-2B, GLiNER) was run, so even "best small guard" is UNVERIFIED.
+
+## G. SIZE-PEER comparison REFUTES the size niche (decisive)
+Ran SMALL guards (the actual peer class) on both axes:
+RESPONSE-harm (real_response_bio_large n=554):
+| model | size | recall | over-ref |
+|---|---|---|---|
+| Qwen3Guard-0.6B | 0.6B | **0.933** | **0.142** |
+| OURS v8bh | 184M | 0.921 | 0.194 |
+| Granite-Guardian-2b | 2B | 0.880 | 0.123 |
+| ShieldGemma-2b | 2B | 0.653 | 0.019 |
+
+PROMPT-harm (SOSBench-bio n=500):
+| model | recall |
+|---|---|
+| Granite-Guardian-2b | **0.990** |
+| Qwen3Guard-0.6B | 0.768 |
+| OURS prompt | 0.752 |
+| ShieldGemma-2b | 0.346 |
+
+**Qwen3Guard-0.6B PARETO-DOMINATES our v8bh** (higher recall 0.933 AND lower over-ref 0.142) at
+only 3x our size. Granite-2b is far better on prompt-harm (0.990). Our 184M is NOT the best small
+guard -- an openly-available 0.6B model is strictly better on response-harm. The size niche does
+NOT exist; there is no operating regime where ours is the right choice over Qwen3Guard-0.6B.
+
+## H. Robustness IS fixable with text normalization
+text_normalize.py (NFKC + zero-width strip + de-spacing + leet reversal) as a preprocessing layer:
+| attack | raw recall | raw bypass | +norm recall | +norm bypass |
+|---|---|---|---|---|
+| leetspeak | 0.128 | 86% | 0.886 | 4% |
+| zero-width | 0.251 | 73% | 0.924 | 0% |
+| space-injection | 0.875 | 6% | 0.863 | 7% |
+Normalization restores leetspeak 86%->4%, zero-width 73%->0%. GAP #3 is mitigatable; deploy with
+text_normalize as mandatory preprocessing. (Does not change the size-peer verdict.)
+
+## Sources
+WildGuard 2406.18495 · FORTRESS 2506.14922 · OR-Bench 2405.20947 · Contrast Sets 2004.02709 ·
+ORFuzz 2508.11222 · Sainz et al. contamination EMNLP'23 · guard-degradation 2511.22047 (unrefereed,
+directional) · embedding-drift 2603.01297 (motivation only).
