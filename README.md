@@ -6,6 +6,8 @@
 
 > **TL;DR.** Research prototype biological content classifier built using Anthropic's [Constitutional Classifiers](https://arxiv.org/abs/2501.18837) methodology. Iterated through 10 checkpoints (v1-v8bh) diagnosing shortcuts, recall collapse, and Goodhart effects. The latest dual-mode system (response head + prompt head, 2x184M DeBERTa-v3) is in the same recall band as 7-9B guards but is **Pareto-dominated by the openly-available Qwen3Guard-0.6B** and is **not bio-selective** (selectivity S=1.03). A rigorous self-audit (`docs/CASE_STUDY_eval_self_red_team.md`) reversed several headline claims, producing a reusable 8-point evaluation checklist. The project is a transparent case study in iterative diagnosis, self-red-teaming, and honest non-release decisions. It is not a production-equivalent safeguard.
 
+> **Start here (reviewers).** The curated read is three docs, in order: [`docs/MODEL_CARD.md`](docs/MODEL_CARD.md) (what shipped + honest performance), [`docs/CASE_STUDY_eval_self_red_team.md`](docs/CASE_STUDY_eval_self_red_team.md) (the 8-point evaluation lessons), and [`docs/INTEGRITY_REVIEW_2026-06-04.md`](docs/INTEGRITY_REVIEW_2026-06-04.md) (the full audit trail). Everything else in `docs/` is the supporting research record.
+
 > **Portfolio context.** This DeBERTa-v3 prototype is trained on the [ConstitutionRules](https://github.com/jang1563/bio-constitution-rules) 56-rule constitution and evaluated alongside [OverRefusal](https://github.com/jang1563/bio-overrefusal-v0.1) (FPR finding) and [AmbiguityCasebook](https://github.com/jang1563/ambiguity-casebook) (DURC boundary).
 
 **Author:** JangKeun Kim, Weill Cornell Medicine (jak4013@med.cornell.edu)
@@ -14,12 +16,11 @@
 
 | Surface | Status |
 |---------|--------|
-| Code | v0.2.0 research prototype, MIT-licensed on GitHub |
-| Model | `jang1563/constitutional-bioguard-v4` private Hugging Face preview |
+| Code | v0.2.0 research prototype, **MIT**-licensed on GitHub |
+| Released models | **`constitutional-bioguard-response`** (v8bh response head) + **`constitutional-bioguard-prompt`** — public, **gated**, **CC BY-NC 4.0**. Legacy **`constitutional-bioguard-deberta-v1`** is public/MIT (cited, arXiv:2501.18837). `constitutional-bioguard-v4` stays a private preview. |
+| Authoritative card | [`docs/MODEL_CARD.md`](docs/MODEL_CARD.md) (supersedes `MODEL_CARD_V4.md`, `V8B_MODEL_CARD.md`) |
 | Constitution | 56 rules / 7 NSABB categories (`constitution/biosafety_constitution.yaml`) |
-| External validation | v4/v5 gate metrics and leakage audit reported in `data/metrics/` and `docs/TECHNICAL_REPORT.md` |
-| Dual-mode eval | Self-audited; see `docs/INTEGRITY_REVIEW_2026-06-04.md` |
-| Independent review | Not yet externally audited |
+| Evaluation | Self-audited; see `docs/INTEGRITY_REVIEW_2026-06-04.md`. **Not** yet externally/independently audited. |
 | Responsible-use scope | [`SAFETY.md`](SAFETY.md) |
 
 ### Model lineage (which is which)
@@ -45,13 +46,12 @@ head", "the prompt head") rather than version numbers.
 The Inference Quickstart targets the **public `deberta-v1`**. The v4 and dual-mode
 results below report different checkpoints; each section states which.
 
-### Latest Run Snapshot (2026-05-25)
+### Current status (2026-06-04)
 
-- **Recommended checkpoint: v4 response-diverse.** v4 keeps the v3 bio-specialist scope while breaking a phrase-specific compliance-template shortcut: CRT compliance flag rate drops from 100% to 29%, with content discrimination restored (44% UNSAFE vs 14% SAFE under identical template).
-- **Clean held-out gates.** v4 reaches 2.1% FPR on OR-Bench-Hard-1K, 0% FPR on XSTest, 32% recall / 0.43 F1 on WildGuard native bio, and 0.45 F1 on BioThreat-Eval.
-- **Goodhart audit.** The earlier OR-Bench-Health 1.22% number was 100% train/eval overlap and is now treated as training-distribution evidence only. HarmBench/AdvBench "held-out" recall from v3-era reporting is also restated as training-distribution recall.
-- **v5 non-release.** v5 PairCFR fixes the artificial refusal+compliance hybrid FPR (68% -> 10%) but fails the specialist recall gate (WildGuard native recall 17.1%, SimpleSafetyTests/SaladBench/ALERT CBRN recall 0%). v4 remains the release model.
-- **Efficiency.** v4 is reported at 15.6x faster than WildGuard 7B and 6.7x faster than LLaMA-Guard 3 8B at batch=1, with roughly 7x lower GPU memory use.
+- **Shipped:** a dual-mode guard — response head (**v8bh**, 184M) + prompt head (184M) — public and gated on Hugging Face. [`docs/MODEL_CARD.md`](docs/MODEL_CARD.md) is the authoritative card.
+- **Honest headline:** the response head is in the same recall band as 7–9B guards (recall 0.921, AUROC 0.952) but is **Pareto-dominated by the openly-available Qwen3Guard-0.6B** (0.933 recall / 0.142 over-refusal at ~3x the size) and is **not bio-selective** (S = 1.03 — a general response-harm guard). The prompt head is a saturated recall gate (AUPRC 0.121), not a standalone classifier.
+- **The contribution is the methodology, not the model:** leakage-clean splits, AUPRC over single-threshold recall, matched operating points, per-source contamination control, size-peer benchmarking, character-robustness probes, and five self-audits that each reversed a prior conclusion ([`docs/CASE_STUDY_eval_self_red_team.md`](docs/CASE_STUDY_eval_self_red_team.md)).
+- **Earlier checkpoints (v1–v5)** are diagnostic milestones, not the recommendation — see *Research arc* under Results.
 
 ## Reviewer Framing
 
@@ -59,46 +59,10 @@ This repository is a **prototype** showing one concrete instantiation of the Con
 
 ## Results
 
-### Recommended: v4 Response-Diverse (2026-05-25)
+### Current deliverable & honest evaluation — dual-mode guard (2026-06-04)
 
-After diagnosing shortcut learning in v1, recall collapse in v2, and a
-phrase-specific compliance-template shortcut in v3, **v4 response-diverse**
-is the recommended checkpoint. It was trained with four augmentation blocks
-that decouple response style from unsafe labels while preserving the model's
-bio-specialist boundary.
-
-**Clean behavioral gates and mechanism probes:**
-
-| Gate / Probe | v3 | **v4** | Interpretation |
-|---|---:|---:|---|
-| OR-Bench-Hard-1K FPR | n/a | **2.1%** | Clean held-out over-refusal gate |
-| XSTest FPR | 94.0% | **0.0%** | Clean transfer beyond v4 augmentation |
-| WildGuard native bio recall | 2.0% | **32.0%** | Real-response OOD bio recall |
-| WildGuard native F1 | 0.04 | **0.43** | Specialist utility on native labels |
-| BioThreat-Eval F1 | 0.43 | **0.45** | Preserved despite shortcut fix |
-| CRT compliance flag rate | 100% | **29%** | Template no longer sufficient |
-| CRT compliance TPR / FPR | 100% / 100% | **44% / 14%** | Content discrimination restored |
-| Refusal+compliance UNSAFE recall | n/a | **64%** | No refusal-prefix bypass observed |
-| Refusal+compliance SAFE FPR | n/a | 68% | Artificial hybrid Goodhart caveat |
-
-**v5 release decision:**
-
-| Gate | Target | v4 | v5_baseline | v5 PairCFR |
-|---|---:|---:|---:|---:|
-| OR-Bench-Hard-1K FPR | < 5% | **2.1%** | 55.3% | **0.0%** |
-| XSTest FPR | 0% | **0.0%** | 16.0% | **0.0%** |
-| WildGuard native bio recall | >= 28% | **32.0%** | **62.5%** | 17.1% |
-| CRT hybrid FPR | < 35% | 68% | 100% | **10%** |
-
-v5 fixes the artificial hybrid-response failure but loses too much bio recall,
-so it is documented as an honest negative result rather than released. The next
-useful experiment is a lower PairCFR weight (`lambda=0.1` or `0.15`) or a
-cascade-first v6 design.
-
-### Dual-mode evaluation (2026-06-04)
-
-After v4/v5, the project explored a dual-mode design: a response head (v8bh,
-184M) + a prompt head (184M, distilled from an 8B teacher). A self-audit
+This is the released system: a response head (v8bh, 184M) + a prompt head (184M,
+distilled from an 8B teacher). A self-audit
 (`docs/INTEGRITY_REVIEW_2026-06-04.md`) then stress-tested every claim. Key findings:
 
 **Response head (v8bh) vs 6 guards on bio response-harm (n=554, 343 harm / 211 benign):**
@@ -133,14 +97,18 @@ the same set, so this is not a differentiator.
 Full details: `docs/MODEL_CARD.md`, `docs/INTEGRITY_REVIEW_2026-06-04.md`,
 `docs/POSTMORTEM_2026-06-04.md`.
 
-### Historical Baselines
+### Research arc — historical (v1 → v5)
+
+These are the diagnostic milestones that led to the current dual-mode guard; **none is the recommended
+model** — the dual-mode evaluation above supersedes the earlier "v4 is recommended" framing. Full
+detail and the corrective-experiment trail: `docs/TECHNICAL_REPORT.md`.
 
 | Version | Primary fix | Main failure mode | Status |
 |---|---|---|---|
 | v1 A_full | Synthetic-only baseline | Adversarial-framing shortcut; cross-domain FAR up to 73% | Deprecated |
 | v2 augmented | SAFE augmentation | Bio recall collapsed to ~0% | Diagnostic |
 | v3 balanced | Reduced SAFE + targeted UNSAFE + weight 2.0 | Compliance-template shortcut; OR-Bench-Health leakage in old reporting | Diagnostic |
-| **v4 response-diverse** | Response-style diversity + label decoupling | Artificial refusal+compliance hybrid FPR | **Recommended** |
+| v4 response-diverse | Response-style diversity + label decoupling | Broke the v3 shortcut (recommended single-head checkpoint at the time); over-flags an artificial hybrid | Superseded by dual-mode |
 | v5 PairCFR | Clean splits + contrastive loss | Bio recall collapse at lambda=0.3 | Not released |
 
 ### v1 (original, synthetic-only training)
@@ -445,4 +413,6 @@ A machine-readable [`CITATION.cff`](CITATION.cff) is also provided.
 
 ## License
 
-MIT
+- **Code (this repository): MIT.**
+- **Released model weights** (`constitutional-bioguard-response`, `constitutional-bioguard-prompt`): **CC BY-NC 4.0** (non-commercial), gated, inheriting NonCommercial terms from training sources (BeaverTails, FalseReject).
+- **Legacy `constitutional-bioguard-deberta-v1`** checkpoint: **MIT** (unchanged; cited as arXiv:2501.18837).
