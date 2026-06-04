@@ -85,14 +85,66 @@ Reframe CLAIM 4 (drop the causal "they memorize" narrative; present benchmark->n
 shared property of all guards, with the n=17 limitation stated). Then globally: PAIR every over-refusal
 with recall, report CIs + per-source breakdowns, and reframe dual-mode/footprint novelty.
 
-## E. What remains genuinely defensible (the honest claim)
-A 184M two-head configurable guard COMPETITIVE with 8-9B guards on bio response-harm (AUROC 0.952,
-discrimination on par/above; recall in the same band as Qwen/WildGuard) at 40x smaller, with a
-within-distribution density-debiasing recipe and a response-head over-refusal certificate -- IF reported
-with paired metrics, matched operating points, per-source decontamination, confidence intervals, and the
-reframed (non-causal, no-unqualified-novelty) narrative. The audit's instincts (leakage, Goodhart, small-n,
-missed prior art) were all correct and match published standards. Leakage is clean; the overclaiming was
-in FRAMING (operating points, causal narrative, small-n "best", novelty), not in fabricated numbers.
+## E2. CORRECTED METRICS (from corrected_metrics.py) -- THE ACTUAL NUMBERS
+
+### Footprint (CLAIM 1) -- REFUTED at AUPRC
+| | recall@0.5 | **AUPRC** |
+|---|---|---|
+| student (184M, prompt head) | 0.983 | **0.121** |
+| teacher (8B v7.C-aug2) | 0.900 | **0.605** |
+
+The student has 1/5 the teacher's AUPRC. recall@0.5 was high only because the student is SATURATED
+(saturated head pushes most items above 0.5, sacrificing precision). The "footprint solved" CLAIM 1
+IS FALSE as stated -- distillation did NOT preserve the teacher's discriminative capability; it only
+preserved high-threshold recall at the cost of precision. Honest framing: "distillation preserves
+recall at a fixed operating point but loses ~80% of the teacher's AUPRC -- it is a recall-first gate,
+not a capability-compressed classifier."
+
+### FORTRESS-bio "best 0.967" (CLAIM 3) -- not statistically "best"
+n=30, 95% Clopper-Pearson + McNemar paired:
+| model | recall | 95% CI | McNemar vs ours |
+|---|---|---|---|
+| OURS prompt 184M | 0.967 | [0.83, 1.00] | -- |
+| WildGuard-7B | 0.833 | [0.65, 0.94] | p=0.219 (NS) |
+| Qwen3Guard-8B | 0.833 | [0.65, 0.94] | p=0.219 (NS) |
+| ShieldGemma-9b | 0.733 | [0.54, 0.88] | p=0.039 |
+| Llama-Guard-3-8B | 0.533 | [0.34, 0.72] | p=0.001 |
+
+CIs overlap WildGuard/Qwen; "best" is point-estimate only. Defensible: "tied for best with
+WildGuard-7B and Qwen3Guard-8B (p=0.219, not statistically different); beats ShieldGemma-9b
+(p=0.039) and Llama-Guard-3-8B (p=0.001), on n=30 with wide CIs."
+
+### Response-harm (CLAIM 3) -- paired recall+over-ref + McNemar (n=343 harm / 211 benign)
+| model | recall [95% CI] | over-ref | McNemar vs ours |
+|---|---|---|---|
+| OURS v8bh @0.5 | 0.921 [0.89, 0.95] | 0.194 | -- |
+| Qwen3Guard-8B | 0.953 [0.93, 0.97] | 0.175 | p=0.027 (Qwen wins) |
+| WildGuard-7B | 0.901 [0.86, 0.93] | 0.100 | p=0.248 (NS, tied) |
+| Llama-Guard-3-8B | 0.851 [0.81, 0.89] | 0.052 | p<0.001 (ours wins) |
+| ShieldGemma-9b | 0.615 [0.56, 0.67] | 0.033 | p<0.001 (ours wins) |
+
+Ours NOT at matched FPR. Qwen SIGNIFICANTLY beats ours. WildGuard tied. BUT this set has
+SafeRLHF contamination favoring competitors. AUROC (threshold-free): ours 0.952 > SG 0.893.
+
+### Paired policy metrics (real_response_bio_large, all with 95% CI)
+| policy | recall [CI] | over-refusal [CI] |
+|---|---|---|
+| prompt_only | 0.959 [0.93, 0.98] | 0.611 [0.54, 0.68] |
+| response_only | 0.921 [0.89, 0.95] | 0.194 [0.14, 0.25] |
+| and | 0.901 [0.86, 0.93] | 0.171 [0.12, 0.23] |
+| or | 0.980 [0.96, 0.99] | 0.635 [0.57, 0.70] |
+
+## E. What remains genuinely defensible (CORRECTED honest claim)
+A 184M two-head configurable bio guard that is IN THE SAME BAND as 8-9B guards on bio response-
+harm (AUROC 0.952; recall tied with WildGuard, beaten by Qwen at matched significance), at ~40x
+smaller. The PROMPT HEAD is a high-recall pre-generation gate (recall 0.983 on bio_clean_eval)
+but NOT a calibrated classifier (AUPRC 0.121 vs teacher 0.605 -- saturation, not compression).
+The RESPONSE HEAD (v8bh) is well-calibrated and the workhorse. Within-distribution density-
+debiasing is demonstrated (FORTRESS 0.288->0.016 held-out); distribution-specific, not general.
+Response-head conformal certificate valid on calibration distribution. No "best" or "dominant"
+claim is defensible at current sample sizes; no causal "memorization" claim about competitors.
+Novelty: small-footprint two-encoder configurable-policy bio-specialized guard (cite WildGuard
+as prior single-model dual/tri-mode guard).
 
 ## Sources
 WildGuard 2406.18495 · FORTRESS 2506.14922 · OR-Bench 2405.20947 · Contrast Sets 2004.02709 ·
