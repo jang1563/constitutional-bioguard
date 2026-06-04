@@ -144,8 +144,10 @@ bio-selectivity ratio, AUPRC. See CASE_STUDY_eval_self_red_team.md, INTEGRITY_RE
 and POSTMORTEM_2026-06-04.md.
 
 ## License
-Apache 2.0. The model weights, evaluation code, and documentation are open. No harmful training
-examples are distributed.
+CC BY-NC 4.0 (non-commercial). The released dual-mode weights (prompt + response heads) are gated and
+inherit NonCommercial terms from their training sources (BeaverTails, FalseReject); the evaluation code
+and documentation are open. No harmful training examples are distributed. (The legacy
+`constitutional-bioguard-deberta-v1` checkpoint stays under its original MIT license.)
 
 ## Citation
 If citing the evaluation methodology or negative findings, reference this model card and the
