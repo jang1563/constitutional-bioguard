@@ -3,6 +3,30 @@
 **JangKeun Kim**
 Weill Cornell Medicine | jak4013@med.cornell.edu
 
+## Executive summary (read this first)
+
+**What this is.** A research log of building a small (184M DeBERTa-v3) bio-safety guard as a testbed
+for whether Constitutional Classifiers++ mechanisms transfer to biosafety. The honest bottom line,
+established by adversarial self-evaluation: **as a classifier the model is not competitive** — it is
+Pareto-dominated by the openly available Qwen3Guard-0.6B, and the shipped response head is a GENERAL
+response-harm guard (bio-selectivity S = 1.03), not bio-discriminating. **The durable contribution is
+the evaluation methodology, not the model**: leakage-clean splits, AUPRC over single-threshold recall,
+matched operating points, per-source contamination control, size-peer benchmarking, character-level
+robustness probing, and five documented self-audits that each reversed a prior conclusion.
+
+**How to read this report.** Sections 2–6 document the v1→v6 research arc *as it happened*, including
+interim claims that were **later overturned** — most notably the "v4 bio-selectivity 4.85x / first
+bio-domain-selective classifier" headline in the changelog below, which the final v7/v8 integrity audit
+refuted (the shipped response head is not bio-selective, S = 1.03). For the current, reconciled verdict
+do not rely on the body headlines; read, in order: [MODEL_CARD.md](MODEL_CARD.md),
+[CASE_STUDY_eval_self_red_team.md](CASE_STUDY_eval_self_red_team.md), and
+[INTEGRITY_REVIEW_2026-06-04.md](INTEGRITY_REVIEW_2026-06-04.md). This report is retained as the full
+primary-evidence trail; the changelog blocks below are historical.
+
+---
+
+### Changelog (research arc, v1–v6 — historical; see Executive summary above for the final verdict)
+
 **Version:** 1.20 (2026-05-28) — **v6 honest negative result documented (Section 6.20)**. All three v6 intervention classes (SPLICE multi-rank projector, cascade weighted fusion, classifier head refit on WildGuardMix bio) FAIL the pre-registered acceptance gates. F.1 finding worth flagging: v4's "32% WildGuard native bio recall" was measurement framework error — using `response_harm_label` (correct label for query-response classifier), v4 achieves 47% recall, 100% on bio subset, AUROC 0.74. v4 stronger than originally measured. **v4 stays as primary release**; v4_head_refit preserved as secondary artefact for real-LLM-response deployments (G.2 hybrid FPR 68%→4%, but bio recall on synthetic-paired benchmarks collapses). The synthetic data ceiling is now the explicit binding constraint; v7 path requires real human-annotated bio data or larger model/different paradigm.
 
 **Version 1.19 headline (still applies):** **v4 is the only classifier at any scale (184M-8B) with genuine bio-domain selectivity on broad CBRN benchmarks.** On SaladBench-CBRN: v4 catches 98.1% of bio harm (O39, n=52) while flagging only 20.2% of non-bio CBRN (n=2216) — **4.85x bio-selectivity ratio**. Comparable: v3 1.02, WildGuard 7B 1.03, LLaMA-Guard 3 8B 1.07 (all indiscriminate). On ALERT-CBRN: v4 selectivity 3.9x; WildGuard 7B / LG3 8B both *inverted* (0.6x — flag non-bio MORE than bio). v4 matches 7-8B bio recall at 38-43x smaller scale, 6.7-15.6x lower inference cost. First published bio-domain-selective safety classifier in this scale class.
