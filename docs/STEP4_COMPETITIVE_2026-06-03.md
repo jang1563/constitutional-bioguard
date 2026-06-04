@@ -58,14 +58,37 @@ MEMORIZE. Naive public-benchmark comparison is confounded by training-data overl
 for it favors us. Caveat: wildguard_test bio is small (17 harmful), so this is suggestive, not
 conclusive; a larger held-out-from-all-guards bio set would settle it.
 
-## Honest headline
-A 184M bio-specialized encoder is COMPETITIVE with 40x-larger general-purpose guards on bio
-safety, AND generalizes better once benchmark contamination is controlled for: best bio
-prompt-recall at default (FORTRESS-CBRN 0.967); response-harm recall 0.94 on data WildGuard was
-NOT trained on, where WildGuard itself drops to 0.53. The competitors' apparent edge on naive
-public benchmarks is largely SafeRLHF/BeaverTails memorization. Size-efficiency + bio-
-specialization + cleaner generalization is the story. NOT a universal clean sweep, and the
-held-out evidence is small-n.
+## C. RESPONSE-harm OVER-REFUSAL on HELD-OUT-FROM-ALL safe responses (FORTRESS rollouts, 2025)
+fortress_safe_responses (n=360, all label-0 = safe): hirundo-io/fortress-benign-responses (benign
+prompt + helpful answer, 180) + fortress-adversarial-refusals (adversarial prompt + REFUSAL, 180),
+CBRN slice, joined to FORTRESS for risk_domain. FORTRESS post-dates the competitors -> held out
+from ALL guards. Over-refusal (flag rate on safe responses; LOWER is better):
+
+| slice (n) | OURS prompt | OURS response | WildGuard | Llama-Guard |
+|---|---|---|---|---|
+| all (360) | 0.644 | 0.261 | **0.011** | 0.019 |
+| bio (60) | 0.750 | 0.300 | **0.000** | 0.017 |
+| benign_resp (180) | 0.461 | 0.294 | 0.022 | 0.028 |
+| adv_refusal (180) | 0.828 | 0.228 | **0.000** | 0.011 |
+
+**THIS IS THE UNFAVORABLE HALF, and it is the honest one.** On held-out fresh safe responses our
+guards over-refuse 13-30x MORE than the competitors. The prompt head flags 0.828 of refusals to
+adversarial queries (it reacts to the scary QUERY, ignoring that the answer is a refusal); the
+response head over-flags 0.26-0.30 of safe bio answers (density bias persists on diverse responses).
+The competitors are far better CALIBRATED on the benign boundary (0.01-0.02). NOTE: Step 2's
+borderline over-refusal 0.076 was on SELF-GENERATED clean responses -- on held-out diverse safe
+responses the response head is at 0.26-0.30, so 0.076 was an optimistic, set-specific number.
+
+## Honest headline (BALANCED -- both halves)
+Our 184M bio-specialized guards sit at an AGGRESSIVE operating point: HIGHER recall than the
+40x-larger general guards (bio prompt-recall 0.967 vs 0.93/0.59 on held-out FORTRESS; response
+recall 0.94 where WildGuard memorization-free drops to 0.53), but MUCH HIGHER over-refusal on
+held-out safe responses (0.26-0.30 vs the competitors' 0.01-0.02). The competitors are better
+CALIBRATED on the benign boundary; we catch more harm but over-flag more. At a MATCHED operating
+point (Step 3 conformal, or matched-FPR) we are competitive-to-slightly-behind, not dominant.
+The honest, defensible claims: (1) best bio recall at a fraction of the size; (2) a real
+generalization edge on un-memorized harmful data (small-n); (3) a real, persistent over-refusal
+weakness vs competitors that the conformal certificate (Step 3) manages by trading recall.
 
 ## Caveats
 - BENCHMARK CONTAMINATION is the dominant confound (see B2). Naive comparison on SafeRLHF/BeaverTails
