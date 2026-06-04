@@ -160,17 +160,40 @@ benign the prompt head is too saturated to help (marginal AND gain at recall cos
 dual-mode value is NOT universally refuted -- it is real on the distribution where it was
 originally demonstrated (the bridge experiment, n=176 expert legit-bio).
 
-## E. What remains genuinely defensible (CORRECTED honest claim)
+### SOSBench-bio (Step 0 RESOLVED): n=500 reverses the FORTRESS "best" ranking
+SOSBench/SOSBench (arXiv 2505.21605): 3000 regulation-grounded harmful prompts, 500 biology.
+Leakage-clean (0 overlap with our training). 95% Clopper-Pearson CIs:
+| model | recall | 95% CI |
+|---|---|---|
+| WildGuard-7B | **0.912** | [0.884, 0.935] |
+| Llama-Guard-3-8B | 0.794 | [0.756, 0.829] |
+| OURS prompt 184M | 0.752 | [0.712, 0.789] |
+| Qwen3Guard-8B | 0.600 | [0.556, 0.643] |
+| ShieldGemma-9b | 0.300 | [0.260, 0.342] |
+
+FORTRESS (n=30): ours 0.967 "best". SOSBench (n=500): ours 0.752 = 3RD, behind WildGuard (0.912)
+and Llama-Guard (0.794). CIs do NOT overlap WildGuard. The "best bio prompt-recall" claim from
+FORTRESS was a SMALL-N ARTIFACT -- exactly what the integrity review predicted. The prompt head
+is overfit to FORTRESS-style adversarial jailbreaks (its training distribution); on regulation-
+grounded diverse bio scenarios (SOSBench, OOD) its saturation (AUPRC 0.121) shows as poor recall.
+WildGuard-7B is the actual best bio-prompt classifier by a wide margin.
+
+CORRECTED CLAIM: our prompt head is NOT "best" or "tied for best" on bio prompt-harm; it is 3rd
+behind WildGuard and Llama-Guard on the larger, more diverse SOSBench-bio (n=500) and is better
+characterized as a high-recall gate on its training distribution only.
+
+## E. What remains genuinely defensible (FINAL corrected claim, post-SOSBench)
 A 184M two-head configurable bio guard that is IN THE SAME BAND as 8-9B guards on bio response-
 harm (AUROC 0.952; recall tied with WildGuard, beaten by Qwen at matched significance), at ~40x
-smaller. The PROMPT HEAD is a high-recall pre-generation gate (recall 0.983 on bio_clean_eval)
-but NOT a calibrated classifier (AUPRC 0.121 vs teacher 0.605 -- saturation, not compression).
-The RESPONSE HEAD (v8bh) is well-calibrated and the workhorse. Within-distribution density-
-debiasing is demonstrated (FORTRESS 0.288->0.016 held-out); distribution-specific, not general.
-Response-head conformal certificate valid on calibration distribution. No "best" or "dominant"
-claim is defensible at current sample sizes; no causal "memorization" claim about competitors.
-Novelty: small-footprint two-encoder configurable-policy bio-specialized guard (cite WildGuard
-as prior single-model dual/tri-mode guard).
+smaller. The RESPONSE HEAD (v8bh) is the main value: well-calibrated (AUROC 0.952), competitive
+with 8-9B guards on response-harm recall (0.921), with within-distribution density-debiasing
+(FORTRESS held-out 0.288->0.016). The PROMPT HEAD is a distribution-specific pre-generation gate:
+strong on its training distribution (FORTRESS recall 0.967) but weaker on OOD bio (SOSBench-bio
+0.752, 3rd behind WildGuard 0.912 and Llama-Guard 0.794). AUPRC 0.121 vs teacher 0.605 =
+saturated, not a calibrated classifier. No "best bio prompt-recall" claim is defensible --
+SOSBench-bio (n=500) refutes it. Conformal cert on calibration distribution. AND policy adds
+real value on clean legit-bio (15x over-ref reduction). Novelty: small-footprint two-encoder
+configurable-policy bio-specialized guard (cite WildGuard as prior tri-mode).
 
 ## Sources
 WildGuard 2406.18495 · FORTRESS 2506.14922 · OR-Bench 2405.20947 · Contrast Sets 2004.02709 ·

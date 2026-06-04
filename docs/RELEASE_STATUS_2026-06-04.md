@@ -52,20 +52,16 @@ leakage is CLEAN, but SEVERAL HEADLINE FRAMINGS were OVERCLAIMED and are correct
 - Must cite WildGuard as prior dual/tri-mode guard; reframe novelty as small-footprint two-encoder policy.
 The HONEST headline below is the corrected, defensible version.
 
-## Headline (FINAL CORRECTED, post-integrity-review + corrected metrics)
-A 184M two-head bio guard IN THE SAME BAND as 8-9B guards on response-harm (AUROC 0.952; recall
-tied with WildGuard p=0.248, significantly beaten by Qwen3Guard p=0.027) at ~40x smaller.
-DUAL-MODE orthogonality IS preserved on clean expert legit-bio (AND policy over-ref 0.005 vs
-v8bh-alone 0.075 on n=201 -- 15x better), but is marginal on diverse noisy benign (0.147 vs
-0.185, -2.7pt recall cost). The "response_only is now best" framing was incomplete; AND policy
-adds real value where the heads' FPs are orthogonal. The
-PROMPT HEAD is a high-recall pre-gen gate but NOT a calibrated classifier (AUPRC 0.121 vs teacher
-0.605 -- CLAIM 1 "footprint solved" is FALSE; it is a saturated recall-first gate). The RESPONSE
-HEAD (v8bh) is the workhorse, well-calibrated, with within-distribution debiasing + conformal
-certificate. FORTRESS-bio prompt recall 0.967 is tied with WildGuard/Qwen (p=0.219, n=30, CIs
-overlap). No "best" / "dominant" / "they memorize" claims are defensible. Honest positioning:
-competitive-bio-guard-at-a-fraction-of-the-size, with all metrics paired + CI'd + per-source.
-See INTEGRITY_REVIEW_2026-06-04.md for the full audit.
+## Headline (FINAL, post-SOSBench n=500)
+A 184M two-head bio guard whose RESPONSE HEAD (v8bh) is in the same band as 8-9B guards on
+bio response-harm (AUROC 0.952; recall 0.921, tied with WildGuard, behind Qwen 0.956) at ~40x
+smaller. AND policy adds 15x over-ref reduction on clean legit-bio via orthogonal FPs.
+The PROMPT HEAD is a distribution-specific pre-gen gate (FORTRESS recall 0.967, but SOSBench-bio
+n=500 recall 0.752 = 3rd behind WildGuard 0.912 and Llama-Guard 0.794 -- the FORTRESS "best"
+was a small-n artifact). AUPRC 0.121 = saturated gate, not calibrated classifier.
+Honest positioning: the RESPONSE HEAD is the main value (competitive at 40x smaller + debiasable
++ certifiable); the prompt head is a supplementary recall gate on its training distribution.
+See INTEGRITY_REVIEW_2026-06-04.md.
 
 ## (superseded) earlier headline
 Our 184M bio-specialized guards are competitive-to-best against four 8-9B guards (WildGuard-7B,
