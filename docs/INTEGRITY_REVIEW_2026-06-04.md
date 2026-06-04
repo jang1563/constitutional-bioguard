@@ -219,17 +219,54 @@ LEGIT-BIO distribution (the distribution where dual-mode was originally designed
 DISTRIBUTION-SPECIFIC caveat persists: on borderline/FORTRESS-style benign, AND adds only
 marginal (1.0-1.5x) over v8bh alone.
 
-## E. What remains genuinely defensible (FINAL, post-SOSBench + OR-Bench-bio + AND validation)
-The RESPONSE HEAD (v8bh) is the main releasable value: 184M, well-calibrated (AUROC 0.952),
-recall 0.921 (tied with WildGuard, behind Qwen) at ~40x smaller, with within-distribution
-density-debiasing (FORTRESS 0.288->0.016) and a response-head conformal certificate.
-The PROMPT HEAD is NOT competitive as a standalone classifier on OOD bio: 3rd at recall
-(SOSBench n=500: 0.752 vs WildGuard 0.912), WORST at over-refusal (OR-Bench-bio n=740: 0.845 vs
-Llama-Guard 0.005). AUPRC 0.121 vs teacher 0.605 = saturated gate, not a calibrated classifier.
-It should be released ONLY as an experimental supplementary recall gate, NOT a standalone guard.
-AND policy adds
-real value on clean legit-bio (15x over-ref reduction). Novelty: small-footprint two-encoder
-configurable-policy bio-specialized guard (cite WildGuard as prior tri-mode).
+### GAP AUDIT (second pass, 2026-06-04)
+Three critical gaps caught on a second self-review and measured:
+
+**GAP #1 — v8bh is NOT bio-selective (selectivity S=1.03).** It flags bio-harmful (0.853) and
+non-bio-harmful (0.825) responses at nearly the same rate. It is a general response-harm guard
+that was TRAINED on bio+general data (WildGuardMix bio + BeaverTails bio + FalseReject general).
+The "bio-specialized" label is misleading for the response head; only the prompt head (trained on
+bio-only data) is genuinely bio-selective — but the prompt head is the weaker component. The
+SYSTEM (dual-mode with bio-only prompt gate) is bio-FOCUSED at the query-screening stage, not
+at the response classification stage. Honest label: "bio-focused dual-mode guard with a general
+response classifier."
+
+**GAP #2 — conformal cert was on v8b, not v8bh.** v8bh-corrected conformal:
+| alpha | v8bh tau* | UCB(FPR) | held-out OR | recall |
+|---|---|---|---|---|
+| 0.10 | (no valid threshold) | — | — | — |
+| 0.20 | 0.985 | 0.190 | 0.075 | 0.878 |
+The "≤10% OR, recall 0.80" claim was for v8b, not the shipped v8bh. v8bh's conformal:
+"≤20% OR at 95% confidence, recall 0.878." The tighter v8b cert is invalid for v8bh.
+
+**GAP #3 — v8bh is HIGHLY vulnerable to character-level adversarial evasion.**
+| attack | recall | bypass of flagged |
+|---|---|---|
+| none | 0.921 | — |
+| space-injection | 0.875 | 6% |
+| leetspeak | 0.128 | 86% |
+| zero-width chars | 0.251 | 73% |
+Leetspeak alone bypasses 86% of detections. This is a known DeBERTa/encoder limitation (subword
+tokenization cannot handle character-level perturbations). For deployment, a text-normalization
+preprocessing layer (strip zero-width, de-leet, Unicode NFKC) is REQUIRED before the guard.
+
+## E. What remains genuinely defensible (FINAL, post all audits)
+The RESPONSE HEAD (v8bh, 184M) is the main releasable value: AUROC 0.952, recall 0.921, in the
+same band as 8-9B guards at ~40x smaller. BUT it is a GENERAL response-harm guard (selectivity
+S=1.03), NOT bio-selective at the response stage. Conformal cert: "over-ref ≤20% at 95% conf,
+recall 0.878" (NOT the previously-reported ≤10%/0.80 which was for v8b). VULNERABLE to
+character-level evasion (leetspeak 86% bypass) — requires text-normalization preprocessing.
+Within-distribution density-debiasing demonstrated (FORTRESS 0.288->0.016).
+
+The PROMPT HEAD is bio-selective but NOT competitive as a standalone classifier on OOD bio: 3rd
+at recall (SOSBench 0.752 vs WildGuard 0.912), WORST at over-refusal (OR-Bench-bio 0.845).
+AUPRC 0.121 = saturated gate. Release ONLY as a supplementary AND-policy recall gate.
+
+The SYSTEM is "bio-focused" at the query-screening stage (bio-selective prompt gate) with a
+general response classifier behind it. AND policy adds real value on expert legit-bio (over-ref
+0.000 on n=181 expert, reproduced). Not "bio-specialized" in the sense that the response head
+discriminates bio from non-bio harm. Novelty: small-footprint two-encoder configurable-policy
+guard (cite WildGuard as prior tri-mode).
 
 ## Sources
 WildGuard 2406.18495 · FORTRESS 2506.14922 · OR-Bench 2405.20947 · Contrast Sets 2004.02709 ·
