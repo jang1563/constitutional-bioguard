@@ -40,7 +40,28 @@ artifact, scripts/dual_mode_guard.py):
    (-11pt recall, cross-distribution regression). No free universal fix; recipe = debias the served
    distributions + conformal operating point (Step 3). Mechanism proven on held-out data.
 
-## Headline (FINAL, 5-guard + v8bh debiased)
+## INTEGRITY REVIEW (2026-06-04) -- read before citing any claim
+A self-audit + literature audit (INTEGRITY_REVIEW_2026-06-04.md) found the numbers are sound and
+leakage is CLEAN, but SEVERAL HEADLINE FRAMINGS were OVERCLAIMED and are corrected there:
+- "we generalize, they memorize" (n=17): NOT defensible -- ALL guards degrade on novel prompts;
+  drop the causal narrative.
+- Native-threshold "best/2nd-best": misleading -- at MATCHED FPR ours is competitive-to-behind on
+  the contaminated set; pair every over-refusal with recall (OR-Bench safety/over-ref rho=0.878).
+- ShieldGemma undersold (AUROC 0.893), Qwen over-ref inflated by my Controversial=flagged (true 0.005).
+- n=30 bio "best" needs CIs/McNemar; density-debias 0.016 is WITHIN-DISTRIBUTION only.
+- Must cite WildGuard as prior dual/tri-mode guard; reframe novelty as small-footprint two-encoder policy.
+The HONEST headline below is the corrected, defensible version.
+
+## Headline (CORRECTED, post-integrity-review)
+A 184M two-head configurable bio guard COMPETITIVE with four 8-9B guards on bio response-harm
+(threshold-free AUROC 0.952, on par with or above them; recall in the same band) at ~40x smaller,
+with a within-distribution density-debiasing recipe and a response-head over-refusal certificate.
+NOT "best/dominant": at matched operating points it does not clearly beat the binary competitors on
+the (contamination-affected) response set, and the bio prompt-recall edge rests on n=30. Defensible
+as: competitive-bio-guard-at-a-fraction-of-the-size, reported with paired metrics + CIs + per-source
+decontamination + a non-causal generalization narrative.
+
+## (superseded) earlier headline
 Our 184M bio-specialized guards are competitive-to-best against four 8-9B guards (WildGuard-7B,
 Llama-Guard-3-8B, ShieldGemma-9b, Qwen3Guard-8B): BEST bio prompt-recall (0.967, held out from
 all), 2nd response recall (0.921, behind only Qwen3Guard 0.956), and -- after density debiasing
