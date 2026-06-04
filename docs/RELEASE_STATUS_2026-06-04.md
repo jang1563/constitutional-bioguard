@@ -34,6 +34,12 @@ artifact, scripts/dual_mode_guard.py):
    AGGRESSIVE (higher recall, higher over-refusal). At a matched operating point we are
    competitive-to-slightly-behind, NOT dominant.
 
+7. STEP 4b -- the over-refusal weakness is REDUCIBLE, not fundamental. Density-bias debiasing with
+   dense-but-safe hard negatives: TARGETED (FORTRESS-only, v8bh) cuts held-out FORTRESS over-refusal
+   0.288 -> 0.016 (matches competitors) at -2.4pt recall; BROAD over-augmentation (v8b2) over-corrects
+   (-11pt recall, cross-distribution regression). No free universal fix; recipe = debias the served
+   distributions + conformal operating point (Step 3). Mechanism proven on held-out data.
+
 ## Headline
 Our 184M bio-specialized dual-mode pair sits at an aggressive operating point: higher bio recall
 than 40x-larger general guards (best on held-out FORTRESS), a real generalization edge on
