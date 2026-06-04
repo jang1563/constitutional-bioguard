@@ -62,7 +62,7 @@ extra_gated_fields:
 > **Note (2026-06):** the HF repo `jang1563/constitutional-bioguard-response` now ships the
 > **density-debiased v8bh** checkpoint. This package documents the v8b lineage; for the
 > integrity-corrected v8bh figures (recall 0.921, over-refusal 0.194, AUROC 0.952,
-> Pareto-dominated by Qwen3Guard-0.6B) see `MODEL_CARD.md` and the HF model card.
+> Pareto-dominated by Qwen3Guard-0.6B) see [MODEL_CARD.md](../docs/MODEL_CARD.md) and the HF model card.
 
 A small encoder (DeBERTa-v3-base, ~184M params) that reads a `query [SEP] response`
 pair and decides whether the **response** delivers harmful biological content.
