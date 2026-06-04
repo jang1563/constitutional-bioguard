@@ -20,7 +20,7 @@ metrics:
 - f1
 - auprc
 model-index:
-- name: bioguard-deberta-v2
+- name: constitutional-bioguard-response
   results:
   - task:
       type: text-classification
@@ -42,7 +42,7 @@ model-index:
       value: 0.021
       name: Over-refusal on real legitimate bio research (n=531)
 extra_gated_prompt: >-
-  bioguard-deberta-v2 is a defensive bio-safety research artifact, released for
+  constitutional-bioguard-response is a defensive bio-safety research artifact, released for
   non-commercial research only. By requesting access you agree to the
   responsible-use terms in the model card: use it solely for defensive evaluation
   and moderation research; do not use it as a reward, discriminator, or filter to
@@ -57,7 +57,12 @@ extra_gated_fields:
   I agree to the responsible-use terms (defensive evaluation only): checkbox
 ---
 
-# bioguard-deberta-v2: a bio response-harm classifier
+# constitutional-bioguard-response: a bio response-harm classifier
+
+> **Note (2026-06):** the HF repo `jang1563/constitutional-bioguard-response` now ships the
+> **density-debiased v8bh** checkpoint. This package documents the v8b lineage; for the
+> integrity-corrected v8bh figures (recall 0.921, over-refusal 0.194, AUROC 0.952,
+> Pareto-dominated by Qwen3Guard-0.6B) see `MODEL_CARD.md` and the HF model card.
 
 A small encoder (DeBERTa-v3-base, ~184M params) that reads a `query [SEP] response`
 pair and decides whether the **response** delivers harmful biological content.
@@ -100,8 +105,8 @@ Constitutional Classifiers is cited as a methodological influence, not a basis).
 from transformers import AutoTokenizer, AutoModelForSequenceClassification
 import torch
 
-tok = AutoTokenizer.from_pretrained("jang1563/bioguard-deberta-v2")
-model = AutoModelForSequenceClassification.from_pretrained("jang1563/bioguard-deberta-v2").eval()
+tok = AutoTokenizer.from_pretrained("jang1563/constitutional-bioguard-response")
+model = AutoModelForSequenceClassification.from_pretrained("jang1563/constitutional-bioguard-response").eval()
 
 # apply the shipped input normalization first (preprocessing.py is in this repo;
 # it reproduces the reported char-injection robustness)
@@ -217,4 +222,4 @@ successor (arXiv:2601.04603); WildGuard (Han et al., arXiv:2406.18495). Training
 data: WildGuardMix, BeaverTails (Ji et al., arXiv:2307.04657), FalseReject
 (Zhang et al., arXiv:2505.08054).
 
-Cite this model by its repository id `jang1563/bioguard-deberta-v2`.
+Cite this model by its repository id `jang1563/constitutional-bioguard-response`.
