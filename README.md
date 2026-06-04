@@ -2,9 +2,9 @@
 
 [![License: MIT](https://img.shields.io/badge/License-MIT-green.svg)](LICENSE)
 [![Python 3.10+](https://img.shields.io/badge/python-3.10%2B-blue)](pyproject.toml)
-[![HF Model](https://img.shields.io/badge/%F0%9F%A4%97%20Hugging%20Face-v4-yellow)](https://huggingface.co/jang1563/constitutional-bioguard-v4)
+[![HF Model](https://img.shields.io/badge/%F0%9F%A4%97%20Hugging%20Face-deberta--v1-yellow)](https://huggingface.co/jang1563/constitutional-bioguard-deberta-v1)
 
-> **TL;DR.** Research prototype biological dual-use content classifier built using Anthropic's [Constitutional Classifiers](https://arxiv.org/abs/2501.18837) methodology. A 56-rule biosafety constitution across 7 NSABB categories drives synthetic data generation and DeBERTa-v3-base fine-tuning. **v4 response-diverse is the recommended release checkpoint**: it breaks v3's compliance-template shortcut, reaches 2.1% FPR on truly held-out OR-Bench-Hard-1K, 0% XSTest FPR, 32% WildGuard native bio recall, and 0.45 BioThreat-Eval F1 at 184M parameters. **v5 was tested but not released**: PairCFR fixed one artificial hybrid-response Goodhart case but collapsed key bio recall. The project is a transparent case study in shortcut diagnosis, data-centric remediation, leakage auditing, and honest non-release decisions. It is not a production-equivalent safeguard.
+> **TL;DR.** Research prototype biological content classifier built using Anthropic's [Constitutional Classifiers](https://arxiv.org/abs/2501.18837) methodology. Iterated through 10 checkpoints (v1-v8bh) diagnosing shortcuts, recall collapse, and Goodhart effects. The latest dual-mode system (response head + prompt head, 2x184M DeBERTa-v3) is in the same recall band as 7-9B guards but is **Pareto-dominated by the openly-available Qwen3Guard-0.6B** and is **not bio-selective** (selectivity S=1.03). A rigorous self-audit (`docs/CASE_STUDY_eval_self_red_team.md`) reversed several headline claims, producing a reusable 8-point evaluation checklist. The project is a transparent case study in iterative diagnosis, self-red-teaming, and honest non-release decisions. It is not a production-equivalent safeguard.
 
 > **Portfolio context.** This DeBERTa-v3 prototype is trained on the [ConstitutionRules](https://github.com/jang1563/bio-constitution-rules) 56-rule constitution and evaluated alongside [OverRefusal](https://github.com/jang1563/bio-overrefusal-v0.1) (FPR finding) and [AmbiguityCasebook](https://github.com/jang1563/ambiguity-casebook) (DURC boundary).
 
@@ -18,8 +18,32 @@
 | Model | `jang1563/constitutional-bioguard-v4` private Hugging Face preview |
 | Constitution | 56 rules / 7 NSABB categories (`constitution/biosafety_constitution.yaml`) |
 | External validation | v4/v5 gate metrics and leakage audit reported in `data/metrics/` and `docs/TECHNICAL_REPORT.md` |
+| Dual-mode eval | Self-audited; see `docs/INTEGRITY_REVIEW_2026-06-04.md` |
 | Independent review | Not yet externally audited |
 | Responsible-use scope | [`SAFETY.md`](SAFETY.md) |
+
+### Model lineage (which is which)
+
+This project iterated through multiple versions. Each taught something; most
+were not released. The naming is internal experiment notation, not a product
+versioning scheme. In prose below, models are referred to by ROLE ("the response
+head", "the prompt head") rather than version numbers.
+
+| Internal name | Role | Size | What happened | Status |
+|---|---|---|---|---|
+| v1 (A_full) | response classifier | 184M | Synthetic-only; learned adversarial-framing shortcut | Deprecated |
+| v2 | response classifier | 184M | SAFE augmentation collapsed bio recall to ~0% | Diagnostic |
+| v3 | response classifier | 184M | Compliance-template shortcut; OR-Bench leakage | Diagnostic |
+| **v4 response-diverse** | **response classifier** | 184M | Shortcut-fixed; recommended single-head checkpoint | **Released (private preview)** |
+| v5 PairCFR | response classifier | 184M | Fixed hybrid FPR but collapsed bio recall | Not released |
+| v7.C-aug2 | prompt classifier (teacher) | 8B | Llama-3.1+QLoRA generative; bio prompt-harm | Internal (teacher only) |
+| v8b | response classifier | 184M | Reuse-only data (WildGuardMix+BeaverTails bio) | Superseded by v8bh |
+| **v8bh** | **response head (debiased)** | 184M | v8b + FORTRESS dense-safe hard negatives | **Current response head** |
+| prompt head (distilled) | **prompt head** | 184M | Distilled from v7.C-aug2; saturated (AUPRC 0.121) | Experimental gate only |
+| **DualModeGuard** | **dual-mode system** | 2x184M | response head + prompt head + configurable policy | Research artifact |
+
+The Inference Quickstart targets the **public `deberta-v1`**. The v4 and dual-mode
+results below report different checkpoints; each section states which.
 
 ### Latest Run Snapshot (2026-05-25)
 
@@ -70,6 +94,44 @@ v5 fixes the artificial hybrid-response failure but loses too much bio recall,
 so it is documented as an honest negative result rather than released. The next
 useful experiment is a lower PairCFR weight (`lambda=0.1` or `0.15`) or a
 cascade-first v6 design.
+
+### Dual-mode evaluation (2026-06-04)
+
+After v4/v5, the project explored a dual-mode design: a response head (v8bh,
+184M) + a prompt head (184M, distilled from an 8B teacher). A self-audit
+(`docs/INTEGRITY_REVIEW_2026-06-04.md`) then stress-tested every claim. Key findings:
+
+**Response head (v8bh) vs 6 guards on bio response-harm (n=554, 343 harm / 211 benign):**
+
+| model | size | recall | over-refusal |
+|---|---|---|---|
+| Qwen3Guard-0.6B | 0.6B | 0.933 | 0.142 |
+| response head (v8bh) | 184M | 0.921 | 0.194 |
+| WildGuard-7B | 7B | 0.904 | 0.100 |
+| Granite-Guardian-2B | 2B | 0.880 | 0.123 |
+
+The response head is in the same band as larger guards but is Pareto-dominated
+by Qwen3Guard-0.6B (higher recall AND lower over-refusal at 3x the size).
+WildGuard is statistically tied (McNemar p=0.248). AUROC = 0.952.
+
+**Prompt head on SOSBench-bio (n=500 harmful):** recall 0.752 (3rd of 6 guards;
+WildGuard 0.912, Granite-2B 0.990). AUPRC 0.121 vs teacher 0.605 = saturated,
+not a calibrated classifier. Useful only as a pre-generation recall gate.
+
+**Dual-mode AND policy:** on expert legit-bio (n=181 + safe responses), AND
+achieves over-refusal 0.000 by clearing the response head's residual FPs via
+orthogonal prompt-head errors. However, competitors also achieve 0.000-0.006 on
+the same set, so this is not a differentiator.
+
+**Self-audit results that changed claims** (see `docs/CASE_STUDY_eval_self_red_team.md`):
+- "Footprint solved" was false (AUPRC 0.121 vs teacher 0.605)
+- "Best bio recall" was a small-n artifact (FORTRESS n=30 vs SOSBench n=500)
+- The response head is NOT bio-selective (selectivity S = 1.03)
+- Leetspeak bypasses 86% of detections; text normalization restores it to 4%
+- Conformal certificate: over-refusal <= 20% at 95% confidence, recall 0.878
+
+Full details: `docs/MODEL_CARD.md`, `docs/INTEGRITY_REVIEW_2026-06-04.md`,
+`docs/POSTMORTEM_2026-06-04.md`.
 
 ### Historical Baselines
 
@@ -180,13 +242,13 @@ pytest tests/ -v
 
 ### Inference-Only Quickstart
 
-Pull the trained classifier from Hugging Face and run a single batch. No Anthropic API key needed; no training pipeline needed. The v4 checkpoint is currently a private preview, so the Hugging Face account running this snippet must have access.
+Pull the trained classifier from Hugging Face and run a single batch. No Anthropic API key needed; no training pipeline needed. This snippet uses the **public `deberta-v1`** checkpoint; the response-diverse `v4` preview is private (request access) — see the Model versions table above.
 
 ```python
 from transformers import AutoTokenizer, AutoModelForSequenceClassification
 import torch
 
-model_id = "jang1563/constitutional-bioguard-v4"
+model_id = "jang1563/constitutional-bioguard-deberta-v1"
 tokenizer = AutoTokenizer.from_pretrained(model_id)
 model = AutoModelForSequenceClassification.from_pretrained(model_id).eval()
 
@@ -246,7 +308,8 @@ python scripts/v5_eval_all_gates.py
 ```
 
 On Cayuga, use the matching SLURM wrappers in `scripts/cayuga_v4_*.slurm` and
-`scripts/cayuga_v5_*.slurm`.
+`scripts/cayuga_v5_*.slurm`. SLURM scripts contain absolute paths to the
+author's HPC environment; adjust `PYTHON` and `PYTHONPATH` for your setup.
 
 **Step 3: Post-pipeline workflow**
 
