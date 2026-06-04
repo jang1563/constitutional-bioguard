@@ -23,6 +23,19 @@ do not rely on the body headlines; read, in order: [MODEL_CARD.md](MODEL_CARD.md
 [INTEGRITY_REVIEW_2026-06-04.md](INTEGRITY_REVIEW_2026-06-04.md). This report is retained as the full
 primary-evidence trail; the changelog blocks below are historical.
 
+## Contents
+
+- [Abstract](#abstract)
+- [1. Introduction](#1-introduction)
+- [2. System Description](#2-system-description)
+- [3. Experiments and Results](#3-experiments-and-results)
+- [4. Discussion](#4-discussion)
+- [5. Critical Self-Assessment](#5-critical-self-assessment)
+- [6. Corrective Experiments](#6-corrective-experiments)
+- [7. Relation to CC++ and Broader Implications](#7-relation-to-cc-and-broader-implications)
+- [8. Artifacts](#8-artifacts)
+- [References](#references)
+
 ---
 
 ### Changelog (research arc, v1–v6 — historical; see Executive summary above for the final verdict)
