@@ -25,16 +25,21 @@ artifact, scripts/dual_mode_guard.py):
    set); or (default) = jailbreak-safe. Response head is the workhorse.
 5. STEP 3 -- CERTIFIED over-refusal. LTT + Clopper-Pearson gives a distribution-free bound:
    over-refusal <= 10% at 95% confidence, recall 0.80 (and a full alpha/recall table).
-6. STEP 4 -- COMPETITIVE + a contamination finding. FORTRESS-CBRN: our bio recall 0.967 beats
-   WildGuard-7B 0.926 and Llama-Guard-3-8B 0.593. Response-harm: naive public-benchmark comparison
-   is CONFOUNDED by training contamination (competitors score 0.97 on SafeRLHF they likely trained
-   on); on the wildguard_test slice held out from WildGuard, WildGuard recall COLLAPSES to 0.53
-   while our decontaminated 184M holds 0.94 -- we generalize, they partly memorize. (held-out n small.)
+6. STEP 4 -- COMPETITIVE, with BOTH halves measured honestly. (a) RECALL: FORTRESS-CBRN bio recall
+   0.967 beats WildGuard-7B 0.926 / Llama-Guard-3-8B 0.593 (held out from all); and naive response
+   comparison is contaminated -- on the wildguard_test slice held out from WildGuard, WildGuard
+   recall collapses to 0.53 while our decontaminated 184M holds 0.94 (we generalize, they memorize;
+   small-n). (b) OVER-REFUSAL: on held-out fresh safe responses (FORTRESS rollouts) our guards
+   over-refuse 0.26-0.30 vs the competitors' 0.01-0.02 -- they are far better calibrated; we are
+   AGGRESSIVE (higher recall, higher over-refusal). At a matched operating point we are
+   competitive-to-slightly-behind, NOT dominant.
 
 ## Headline
-A 184M bio-specialized dual-mode encoder pair matches/beats 40x-larger general guards on bio
-safety, with a certified over-refusal bound and a clean unified artifact. Strongest where it
-counts (bio recall; generalization on un-memorized data); honest about the gaps below.
+Our 184M bio-specialized dual-mode pair sits at an aggressive operating point: higher bio recall
+than 40x-larger general guards (best on held-out FORTRESS), a real generalization edge on
+un-memorized harmful data, BUT a real over-refusal weakness vs the competitors on held-out safe
+responses. Certified over-refusal bound (Step 3) is the lever to manage that weakness, trading
+recall. Honest claim: best-bio-recall-per-parameter + certifiable, not universal dominance.
 
 ## Open items
 - DATA: a larger bio response set held out from ALL guards' training would firm up the
