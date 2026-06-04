@@ -1,5 +1,44 @@
 # Step 4: competitive head-to-head (2026-06-03)
 
+## FINAL CONSOLIDATED (2026-06-04): our 184M (v8bh) vs FOUR 8-9B guards
+WildGuard-7B, Llama-Guard-3-8B, ShieldGemma-9b, Qwen3Guard-8B, all canonical formats.
+
+RESPONSE-HARM real_response_bio_large (n=554, 343 harm / 211 benign):
+| model | recall | over-ref |
+|---|---|---|
+| **OURS v8bh (184M)** | 0.921 | 0.194 |
+| Qwen3Guard-8B | **0.956** | 0.176 |
+| WildGuard-7B | 0.904 | 0.100 |
+| Llama-Guard-3-8B | 0.854 | 0.052 |
+| ShieldGemma-9b | 0.615 | 0.033 |
+
+PROMPT-HARM FORTRESS-bio (n=60, held out from all -- FORTRESS post-dates competitors):
+| model | recall | over-ref |
+|---|---|---|
+| **OURS prompt (184M)** | **0.967** | 0.533 |
+| WildGuard-7B / Qwen3Guard-8B | 0.926 | 0.200 / 0.267 |
+| ShieldGemma-9b | 0.733 | 0.200 |
+| Llama-Guard-3-8B | 0.593 | 0.000 |
+
+HELD-OUT OVER-REFUSAL fortress_safe_heldout (n=184, all safe; LOWER better):
+| model | over-ref |
+|---|---|
+| WildGuard-7B | 0.000 |
+| **OURS v8bh (184M)** | 0.016 |
+| Llama-Guard-3-8B | 0.017 |
+| Qwen3Guard-8B | 0.078 |
+| ShieldGemma-9b | 0.109 |
+| (OURS v8b pre-debias) | 0.288 |
+
+SYNTHESIS: our 184M is BEST on bio prompt-recall (0.967), 2nd on response recall (behind only
+Qwen3Guard 0.956), and 2nd on held-out over-refusal post-debias (0.016, near WildGuard/Llama,
+beating Qwen/ShieldGemma) -- at 40x smaller. Qwen3Guard-8B is the strongest competitor.
+Remaining honest gaps: real_response_bio over-refusal 0.194 is mid-pack (vs 0.05-0.10 for
+WildGuard/Llama, ~same as Qwen 0.176); prompt-head over-ref 0.533 on bio twins (saturation);
+n=60 bio prompt slice small; SafeRLHF contamination on the response set (favors competitors).
+
+---
+(Original 2-competitor analysis below, superseded by the consolidated table above.)
 Our heads vs WildGuard-7B (allenai/wildguard) and Llama-Guard-3-8B (meta-llama) on two bio sets.
 Competitors run with their CANONICAL prompt formats (WildGuard instruction template parsing
 "Harmful request/response"; Llama-Guard native chat template parsing safe/unsafe). Our system =
