@@ -42,6 +42,32 @@ real_response_bio_large (n=554, fully held-out, recall + over-ref):
   Broad over-refusal reduction therefore needs DIVERSE safe-response hard negatives covering the
   deployment distributions; FORTRESS alone is a proof-of-concept, not a universal fix.
 
+## BROAD debiasing attempt (v8b2) -- over-corrects
+Added 1234 DIVERSE dense-safe negatives (700 SafeRLHF-train-safe + 516 BeaverTails-train-safe + 18
+FORTRESS, all bio, len>=300, decontaminated vs eval) to cover the real_response_bio distributions
+FORTRESS-only missed. Held-out result vs v8b:
+| set | metric | v8b | v8b2 |
+|---|---|---|---|
+| real_response_bio (554) | recall | 0.945 | 0.834 |
+| real_response_bio | over-refusal | 0.185 | 0.114 |
+|   - beavertails slice | over-refusal | 0.389 | 0.194 |
+|   - saferlhf slice | over-refusal | 0.122 | 0.033 |
+| FORTRESS held-out (184) | over-refusal | 0.288 | 0.370 |
+
+It DID cut over-refusal on the targeted real distributions (beavertails 0.39->0.19, saferlhf
+0.12->0.03), BUT recall dropped 11pt (0.945->0.834) and FORTRESS over-refusal REGRESSED (0.29->0.37).
+Piling on dense-safe negatives shifts the model toward UNDER-flagging (a global operating-point
+move, not better discrimination) and helps some distributions while hurting others. v8bh
+(FORTRESS-targeted) was the cleaner trade (recall 0.921 kept, FORTRESS 0.016).
+
+## (B) verdict: over-refusal is REDUCIBLE but not a free universal fix
+- TARGETED dense-safe negatives cleanly fix a chosen distribution at small recall cost (v8bh:
+  FORTRESS 0.29->0.02, recall -2.4pt). Mechanism proven, generalizes within distribution.
+- BROAD over-augmentation over-corrects (v8b2: -11pt recall, cross-distribution regression). The
+  recall/over-refusal tradeoff reasserts itself; there is no universal calibration fix.
+- DEPLOYMENT RECIPE: debias for the distributions you actually serve + set the operating point with
+  the Step-3 conformal certificate. Not "one retrain fixes all over-refusal."
+
 ## Implication for the program
 The Step-4 "we over-refuse, competitors are calibrated" gap is closeable: a production response
 head retrained with a diverse dense-but-safe corpus (FORTRESS + wildguard/beavertails/saferlhf
