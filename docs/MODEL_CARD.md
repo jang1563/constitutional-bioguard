@@ -4,9 +4,8 @@
 (bio-selectivity S = 1.03). The name reflects the project's origin, not a validated selectivity
 claim. See Limitation 1.
 
-An honest model card. Unlike most guard releases, this documents exactly where the model LOSES,
-its robustness profile, contamination caveats, and a size-peer comparison. The value of this
-release is the transparency, not the performance.
+This card documents where this model is dominated or weak, its robustness profile, contamination
+caveats, and a size-peer comparison, alongside its performance.
 
 ## What it is
 Two 184M DeBERTa-v3 encoders combined by a configurable policy (DualModeGuard):
@@ -18,8 +17,8 @@ Two 184M DeBERTa-v3 encoders combined by a configurable policy (DualModeGuard):
 ## Intended use
 - Post-generation response-harm screening where a small (184M) model is needed, with text
   normalization preprocessing, accepting GENERAL (not bio-specific) harm coverage.
-- The prompt head + AND policy: a supplementary low-over-refusal gate on CLEAN expert legit-bio
-  research queries.
+- The prompt head + AND policy: a supplementary gate on expert legit-bio research queries (AND
+  over-refusal 0.000 on n=181, though competitors also achieve 0.000-0.006 on the same set).
 
 ## Out of scope / do NOT use for
 - As a bio-SELECTIVE classifier (it is not; see Limitation 1).
@@ -76,9 +75,8 @@ PROMPT-harm, SOSBench-bio (n=500 harmful):
 
 ## Training data
 Response head: WildGuardMix bio (a GENERAL safety-training mixture filtered to bio items, which is
-why the head is general rather than bio-selective) + BeaverTails bio (harmful) + FalseReject +
-non-bio negatives
-(benign), + FORTRESS dense-safe hard negatives (v8bh debiasing). Prompt head: distilled from an
+why the head is general rather than bio-selective) + BeaverTails bio (harmful) + FalseReject
+non-bio negatives (benign) + FORTRESS dense-safe hard negatives (v8bh debiasing). Prompt head: distilled from an
 8B Llama-3.1+QLoRA generative teacher on a bio prompt pool + generated bio-borderline-benign.
 All evaluations decontaminated by query-hash against this training (audit_leakage.py: 0 overlap).
 
@@ -97,21 +95,20 @@ corrected silent failures in this work; each is documented with the specific num
 fp16, which NaNs the disentangled attention. Logged train_loss was finite (0.044) but all eval
 was zero/NaN. Root-caused by isolating fresh encoders in fp32 (fine) vs the Trainer's fp16 path
 (NaN). Fix: `dtype=torch.float32` in from_pretrained. Every prior NaN/all-zero traced to this
-single cause. This bug would have shipped an inert model with normal-looking training logs.
+single cause.
 
 **2. AUPRC refutes the footprint claim.** recall@0.5 = 0.983 (student) vs 0.900 (teacher) looked
 like success. AUPRC = 0.121 vs 0.605 — the student is saturated, not discriminating. A
-single-threshold metric hid an 80% capability loss. This audit changed CLAIM 1 from "footprint
+single-threshold metric hid an 80% relative drop in ranking quality (AUPRC). This audit changed CLAIM 1 from "footprint
 solved" to "footprint failed at AUPRC."
 
 **3. Operating-point mismatch inflated competitive ranking.** Native-threshold comparison placed
-ours 2nd on response-recall (0.921). Matched-FPR analysis showed ours loses to WildGuard (0.878
-vs 0.904 @ FPR 0.10) and Qwen (0.921 vs 0.956 @ FPR 0.176). Additionally, treating Qwen's
+ours 2nd on response-recall (0.921). At matched FPR (threshold tuned to competitor's over-refusal), ours loses to WildGuard (0.878 vs
+0.904 @ FPR 0.10). Qwen native recall 0.956 vs ours native 0.921 (McNemar p=0.027). Additionally, treating Qwen's
 "Controversial" as flagged inflated its over-refusal 0.005 -> 0.076 (unfair to competitor).
 
 **4. Size-peer class eliminates the niche.** Qwen3Guard-0.6B Pareto-dominates ours (recall 0.933
-vs 0.921 AND over-ref 0.142 vs 0.194). Not measured until the second audit pass; without it, the
-"competitive at 40x smaller" claim would have stood unchallenged.
+vs 0.921 AND over-ref 0.142 vs 0.194). This comparison was added in a second audit pass.
 
 **5. Conformal certificate was on the wrong model.** The "over-ref <= 10%, recall 0.80" bound was
 computed on v8b, not the shipped v8bh. v8bh's valid bound: over-ref <= 20%, recall 0.878 only.
@@ -121,7 +118,7 @@ should be reported (not buried), and the integrity log lives in the repository.
 
 ## Risk-Forward Use
 
-This work is intended to support safety-evaluation methodology, not to be a deployed guard:
+Components that may be useful independent of the model:
 
 - **Safeguard teams** can use the 7-lesson evaluation checklist (CASE_STUDY) as a template for
   auditing their own classifiers: AUPRC not recall, contamination per-source, CIs, matched
@@ -135,7 +132,7 @@ This work is intended to support safety-evaluation methodology, not to be a depl
 ## Responsible Release
 
 This model is released as a **research artifact and methodology case study**, not as a recommended
-production guard. The honest recommendation (use Qwen3Guard-0.6B) is in the card itself. The
+production guard. The
 release surface is limited to model weights, evaluation code, and documentation; no harmful
 training examples, generated harmful content, or operational instructions are included.
 
