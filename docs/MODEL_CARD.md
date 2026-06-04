@@ -80,8 +80,60 @@ if you specifically need a 184M-class encoder, accept general (non-bio) coverage
 transparent, reproducible evaluation. The intended audience is researchers studying small-guard
 evaluation, not production deployers seeking the best classifier.
 
+## Evaluation Integrity -- audits that changed the results
+
+A safety classifier card is only as honest as the audits behind it. Five self-audits found and
+corrected silent failures in this work; each is documented with the specific numbers that moved.
+
+**1. fp16-default-load NaN (the trainer bug).** transformers 5.9.0 silently loads DeBERTa-v3 in
+fp16, which NaNs the disentangled attention. Logged train_loss was finite (0.044) but all eval
+was zero/NaN. Root-caused by isolating fresh encoders in fp32 (fine) vs the Trainer's fp16 path
+(NaN). Fix: `dtype=torch.float32` in from_pretrained. Every prior NaN/all-zero traced to this
+single cause. This bug would have shipped an inert model with normal-looking training logs.
+
+**2. AUPRC refutes the footprint claim.** recall@0.5 = 0.983 (student) vs 0.900 (teacher) looked
+like success. AUPRC = 0.121 vs 0.605 — the student is saturated, not discriminating. A
+single-threshold metric hid an 80% capability loss. This audit changed CLAIM 1 from "footprint
+solved" to "footprint failed at AUPRC."
+
+**3. Operating-point mismatch inflated competitive ranking.** Native-threshold comparison placed
+ours 2nd on response-recall (0.921). Matched-FPR analysis showed ours loses to WildGuard (0.878
+vs 0.904 @ FPR 0.10) and Qwen (0.921 vs 0.956 @ FPR 0.176). Additionally, treating Qwen's
+"Controversial" as flagged inflated its over-refusal 0.005 -> 0.076 (unfair to competitor).
+
+**4. Size-peer class eliminates the niche.** Qwen3Guard-0.6B Pareto-dominates ours (recall 0.933
+vs 0.921 AND over-ref 0.142 vs 0.194). Not measured until the second audit pass; without it, the
+"competitive at 40x smaller" claim would have stood unchallenged.
+
+**5. Conformal certificate was on the wrong model.** The "over-ref <= 10%, recall 0.80" bound was
+computed on v8b, not the shipped v8bh. v8bh's valid bound: over-ref <= 20%, recall 0.878 only.
+
+**Practice:** a silently-wrong score is worse than a loud error. Results that move under audit
+should be reported (not buried), and the integrity log lives in the repository.
+
+## Risk-Forward Use
+
+This work is intended to support safety-evaluation methodology, not to be a deployed guard:
+
+- **Safeguard teams** can use the 7-lesson evaluation checklist (CASE_STUDY) as a template for
+  auditing their own classifiers: AUPRC not recall, contamination per-source, CIs, matched
+  operating points, bio-selectivity checks, size-peer benchmarks, char-robustness probes.
+- **Guard developers** can reuse the density-debiasing recipe (within-distribution hard negatives)
+  and the text-normalization preprocessor as components, independent of this model.
+- **Benchmark designers** can cite the contamination finding (SafeRLHF/BeaverTails overlap inflates
+  competitors) and the n=30->n=500 ranking reversal as evidence that guard leaderboards need
+  per-source and adequately-powered evaluation.
+
+## Responsible Release
+
+This model is released as a **research artifact and methodology case study**, not as a recommended
+production guard. The honest recommendation (use Qwen3Guard-0.6B) is in the card itself. The
+release surface is limited to model weights, evaluation code, and documentation; no harmful
+training examples, generated harmful content, or operational instructions are included.
+
 ## Evaluation methodology
-Leakage-clean (query-hash decontamination), 95% Clopper-Pearson CIs, McNemar paired tests,
-matched-operating-point and AUROC comparisons, per-source contamination breakdowns, size-peer
-benchmarking, character-robustness probing. See CASE_STUDY_eval_self_red_team.md and
-INTEGRITY_REVIEW_2026-06-04.md.
+Leakage-clean (query-hash decontamination, audit_leakage.py: 0 overlap on 5 checks), 95%
+Clopper-Pearson CIs, McNemar paired tests, matched-operating-point and AUROC comparisons,
+per-source contamination breakdowns, size-peer benchmarking, character-robustness probing,
+bio-selectivity ratio, AUPRC. See CASE_STUDY_eval_self_red_team.md, INTEGRITY_REVIEW_2026-06-04.md,
+and POSTMORTEM_2026-06-04.md.
