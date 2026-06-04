@@ -52,16 +52,16 @@ leakage is CLEAN, but SEVERAL HEADLINE FRAMINGS were OVERCLAIMED and are correct
 - Must cite WildGuard as prior dual/tri-mode guard; reframe novelty as small-footprint two-encoder policy.
 The HONEST headline below is the corrected, defensible version.
 
-## Headline (FINAL, post-SOSBench n=500)
-A 184M two-head bio guard whose RESPONSE HEAD (v8bh) is in the same band as 8-9B guards on
-bio response-harm (AUROC 0.952; recall 0.921, tied with WildGuard, behind Qwen 0.956) at ~40x
-smaller. AND policy adds 15x over-ref reduction on clean legit-bio via orthogonal FPs.
-The PROMPT HEAD is a distribution-specific pre-gen gate (FORTRESS recall 0.967, but SOSBench-bio
-n=500 recall 0.752 = 3rd behind WildGuard 0.912 and Llama-Guard 0.794 -- the FORTRESS "best"
-was a small-n artifact). AUPRC 0.121 = saturated gate, not calibrated classifier.
-Honest positioning: the RESPONSE HEAD is the main value (competitive at 40x smaller + debiasable
-+ certifiable); the prompt head is a supplementary recall gate on its training distribution.
-See INTEGRITY_REVIEW_2026-06-04.md.
+## Headline (FINAL, post-SOSBench + OR-Bench-bio)
+RESPONSE HEAD (v8bh, 184M) is the releasable value: AUROC 0.952, recall 0.921 (tied with
+WildGuard, behind Qwen) at ~40x smaller, with within-distribution density-debiasing and a
+response-head conformal certificate. PROMPT HEAD is NOT competitive on OOD bio: 3rd at recall
+(SOSBench n=500: 0.752 vs WildGuard 0.912) and WORST at over-refusal (OR-Bench-bio n=740:
+0.845 vs Llama-Guard 0.005, ~170x). AUPRC 0.121 vs teacher 0.605 = saturated gate. AND policy
+adds 15x over-ref reduction on clean legit-bio via still-orthogonal FPs.
+Honest positioning: ship v8bh as a competitive small-footprint bio response-harm classifier;
+ship the prompt head ONLY as an experimental supplementary recall gate for AND-policy use.
+See INTEGRITY_REVIEW_2026-06-04.md for full audit.
 
 ## (superseded) earlier headline
 Our 184M bio-specialized guards are competitive-to-best against four 8-9B guards (WildGuard-7B,
