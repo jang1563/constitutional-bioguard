@@ -10,12 +10,17 @@ import numpy as np
 sys.path.insert(0, str(Path(__file__).parent))
 from dual_mode_guard import DualModeGuard, ROOT
 
-DATA = ROOT / "data" / "external" / "real_response_bio.jsonl"
-COMP = [("wildguard", "results/competitor_wildguard_real_response_bio.json"),
-        ("llama-guard-3-8b", "results/competitor_llama-guard-3-8b_real_response_bio.json")]
+import argparse
+COMP_MODELS = ["wildguard", "llama-guard-3-8b", "shieldgemma-9b", "qwen3guard-8b"]
 
 
 def main():
+    ap = argparse.ArgumentParser()
+    ap.add_argument("--data", default=str(ROOT / "data" / "external" / "real_response_bio.jsonl"))
+    args = ap.parse_args()
+    DATA = Path(args.data)
+    stem = DATA.stem
+    COMP = [(m, f"results/competitor_{m}_{stem}.json") for m in COMP_MODELS]
     rows = [json.loads(l) for l in open(DATA, encoding="utf-8") if l.strip()]
     Q = [r["query"] for r in rows]
     R = [r.get("response") or "" for r in rows]
@@ -44,6 +49,8 @@ def main():
     r0, o0 = rec_or(p_resp, 0.5)
     print(f"{'OURS response_only @0.5':<26}{r0:>9.3f}{o0:>10.3f}{0.5:>7.2f}")
     for cname, fname in COMP:
+        if not (ROOT / fname).exists():
+            continue
         d = json.load(open(ROOT / fname))
         preds = np.array([0 if x is None else x for x in d["preds"]])
         valid = np.array([x is not None for x in d["preds"]])

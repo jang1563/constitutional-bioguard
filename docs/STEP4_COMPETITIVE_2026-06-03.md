@@ -36,18 +36,47 @@ MATCHED low FPR (~0.08) our 184M BEATS Llama-Guard-3-8B (0.645 vs 0.623) and is 
 WildGuard-7B (0.645 vs 0.721). At its default it has far higher recall (0.919 vs 0.72/0.62) at
 moderate FPR.
 
+## B2. RESPONSE-harm on a LARGER leakage-clean set (real_response_bio_large, n=554) + CONTAMINATION
+Enlarged the response set 4x (wildguard_test + BeaverTails 330k/30k test + PKU-SafeRLHF test, bio
+filter), DECONTAMINATED vs v8b's actual train+val by query-hash (341 leaked items removed -- the
+leakage was real). Result: 554 (343 harm / 211 benign), leakage-clean FOR US.
+
+Full-set @matched-OR, we LOSE: ours 0.843 vs WildGuard 0.904 (@or 0.10); 0.828 vs Llama-Guard
+0.854 (@or 0.052). BUT this is a CONTAMINATION ARTIFACT -- the set is 382 SafeRLHF, which the
+competitors appear to have TRAINED on. Per-source default-@0.5 recall reveals it:
+
+| source (n / harm) | OURS @0.5 | WildGuard | Llama-Guard |
+|---|---|---|---|
+| wildguard_test [held out from WildGuard] (69/17) | **0.941** | **0.529** | 0.706 |
+| beavertails (103/67) | **0.881** | 0.716 | 0.537 |
+| saferlhf [competitor-trained?] (382/259) | 0.961 | **0.973** | 0.942 |
+
+**THE KEY FINDING:** competitors look strong only where they likely memorized (SafeRLHF: 0.97/0.94).
+On the slice HELD OUT from WildGuard's training (wildguard_test), WildGuard recall COLLAPSES to
+0.529 while our decontaminated 184M holds 0.941 -- our model GENERALIZES, the competitors partly
+MEMORIZE. Naive public-benchmark comparison is confounded by training-data overlap; controlling
+for it favors us. Caveat: wildguard_test bio is small (17 harmful), so this is suggestive, not
+conclusive; a larger held-out-from-all-guards bio set would settle it.
+
 ## Honest headline
 A 184M bio-specialized encoder is COMPETITIVE with 40x-larger general-purpose guards on bio
-safety: best bio prompt-recall at default; on response-harm it beats Llama-Guard-3-8B at matched
-FPR and trails WildGuard-7B slightly, while being tunable across the ROC. NOT a clean sweep --
-the size-efficiency + bio-specialization is the story, not universal dominance.
+safety, AND generalizes better once benchmark contamination is controlled for: best bio
+prompt-recall at default (FORTRESS-CBRN 0.967); response-harm recall 0.94 on data WildGuard was
+NOT trained on, where WildGuard itself drops to 0.53. The competitors' apparent edge on naive
+public benchmarks is largely SafeRLHF/BeaverTails memorization. Size-efficiency + bio-
+specialization + cleaner generalization is the story. NOT a universal clean sweep, and the
+held-out evidence is small-n.
 
 ## Caveats
-- n=137 response set is SMALL: ~5-item (0.08) swings are noise; the WildGuard/ours gap is within it.
+- BENCHMARK CONTAMINATION is the dominant confound (see B2). Naive comparison on SafeRLHF/BeaverTails
+  flatters the competitors (likely in their training); only the wildguard_test held-out slice is a
+  clean WildGuard comparison, and it is small-n (17 harmful). v8b is decontaminated vs its OWN train.
 - The prompt head's matched-FPR weakness (saturation) is real -- it is a recall-first gate, and
   its over-refusal is handled by the dual-mode response gate (Step 2), not by thresholding it.
 - FORTRESS-CBRN benign twins are deliberately borderline (over-refusal looks high for everyone).
-- Larger response-bearing bio sets + ShieldGemma/Qwen3Guard would strengthen the claim.
+- ShieldGemma is GATED -- JK's HF account is not on the authorized list; needs JK to accept the
+  license at hf.co/google/shieldgemma-* before it can run. Qwen3Guard not yet attempted.
+- A larger bio response set held out from ALL guards' training would settle the generalization claim.
 
 ## Artifacts
 scripts/run_competitor.py (WildGuard/Llama-Guard runner, --target request|response),
