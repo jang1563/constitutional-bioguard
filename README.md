@@ -308,7 +308,8 @@ python scripts/v5_eval_all_gates.py
 ```
 
 On Cayuga, use the matching SLURM wrappers in `scripts/cayuga_v4_*.slurm` and
-`scripts/cayuga_v5_*.slurm`.
+`scripts/cayuga_v5_*.slurm`. SLURM scripts contain absolute paths to the
+author's HPC environment; adjust `PYTHON` and `PYTHONPATH` for your setup.
 
 **Step 3: Post-pipeline workflow**
 
