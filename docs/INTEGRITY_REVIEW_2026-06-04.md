@@ -199,7 +199,27 @@ SOSBench (3rd at recall): the prompt head is worst-or-near-worst on BOTH axes vs
 competitors. As a standalone classifier it is NOT competitive; it functions only as a
 recall-first AND-policy partner for the response head on its training distribution.
 
-## E. What remains genuinely defensible (FINAL, post-SOSBench + OR-Bench-bio)
+### AND POLICY VALIDATION on the larger expert legit-bio set (n=181, with safe responses)
+Re-tested dual-mode AND with safe assistant responses on the 181 expert legit-bio queries
+(tier 1-4 from bio_overrefusal_queries, Claude Sonnet generated safe responses, same recipe
+as the Step 2 borderline test). Over-refusal (LOWER better, 95% CI):
+
+| set (n) | prompt_only | response_only | AND | vs v8bh |
+|---|---|---|---|---|
+| **expert legit + safe (n=181)** | 0.022 [0.006,0.056] | 0.022 | **0.000** [0.000,0.020] | **all 4 FPs cleared** |
+| borderline + safe (n=79) | 0.532 [0.42,0.65] | 0.025 | 0.025 | 1.0x (no add) |
+| FORTRESS safe held-out (n=184) | 0.674 | 0.016 | 0.011 | 1.5x |
+| expert n=201 (no resp) | 0.025 | -- | -- | -- |
+
+**AND value CONFIRMED on the larger expert distribution**: the prompt head clears 100% (4/4) of
+v8bh's remaining FPs on n=181 expert legit-bio (95% CI [0.000, 0.020]). The original bridge
+finding (n=176, "26/26 cleared") is REPRODUCED on a separately-generated 181-item expert eval ->
+NOT a small-sample / bridge-set artifact. AND policy adds clear, defensible value on the EXPERT
+LEGIT-BIO distribution (the distribution where dual-mode was originally designed for).
+DISTRIBUTION-SPECIFIC caveat persists: on borderline/FORTRESS-style benign, AND adds only
+marginal (1.0-1.5x) over v8bh alone.
+
+## E. What remains genuinely defensible (FINAL, post-SOSBench + OR-Bench-bio + AND validation)
 The RESPONSE HEAD (v8bh) is the main releasable value: 184M, well-calibrated (AUROC 0.952),
 recall 0.921 (tied with WildGuard, behind Qwen) at ~40x smaller, with within-distribution
 density-debiasing (FORTRESS 0.288->0.016) and a response-head conformal certificate.
