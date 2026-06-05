@@ -3,6 +3,16 @@
 A map of this directory. Most files are the working research record; only a handful are the
 curated, authoritative read. **If you are reviewing this project, read the first group and stop.**
 
+> **New here?** Start at the [root README](../README.md) for the 30-second overview and the
+> size-peer Pareto figure. Released models live on Hugging Face:
+> [response head](https://huggingface.co/jang1563/constitutional-bioguard-response) ·
+> [prompt head](https://huggingface.co/jang1563/constitutional-bioguard-prompt) ·
+> [deberta-v1 (legacy)](https://huggingface.co/jang1563/constitutional-bioguard-deberta-v1).
+>
+> **5-minute reviewer path:** [MODEL_CARD.md](MODEL_CARD.md) (what shipped + honest performance) →
+> [CASE_STUDY_eval_self_red_team.md](CASE_STUDY_eval_self_red_team.md) (the 8-point lessons) →
+> skim [INTEGRITY_REVIEW_2026-06-04.md](INTEGRITY_REVIEW_2026-06-04.md). Everything else is provenance.
+
 ## Start here (authoritative)
 
 | Doc | What it is |
