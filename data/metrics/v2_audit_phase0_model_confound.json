@@ -1,0 +1,596 @@
+{
+  "report": "v2 Audit Phase 0 — Model identity confound analysis (addendum)",
+  "date": "2026-05-28",
+  "parent_report": "data/metrics/v2_audit_phase0_report.json",
+  "motivation": "Phase 0 audit identified source-field as a 96.1% predictor of label. This addendum tests whether model identity (the generator model captured in field \"model\") is an even stronger confound. The user explicitly raised: \"I changed models mid-collection — some models passed (legitimate response) and some did not (refusal/block). Was that considered?\"",
+  "method": "For each record in v2 (n=23,330), map legitimacy_tier→binary_label and group by model field. Compute (a) P(label|model) purity, (b) within-source × model label distribution to detect sources where the same source but different models produce systematically different labels.",
+  "critical_user_clarification_2026_05_28": {
+    "fact": "Model switches in session data were DEFENSIVE FALLBACKS, not random sampling. When the primary model (opus-4-7) refused/blocked, the user manually escalated/de-escalated to opus-4-6 or sonnet-4-6 to continue the work.",
+    "implication": "Lower-model records are SELECTION-BIASED toward harder prompts: a prompt only appears under sonnet-4-6 if it had already tripped opus-4-7's filter. The 76% session_block rate observed for sonnet-4-6 inside session_claude_code is therefore NOT a property of sonnet-4-6 — it reflects the fact that prompts routed to sonnet-4-6 were pre-filtered for difficulty.",
+    "reframing": "The model field is best interpreted as a noisy proxy for prompt-hardness tier, NOT as the generator's intrinsic refusal calibration. Model-stratification fixes (LOMO, per-model FPR) partially help, but the root issue is that prompt-hardness is leaked through model identity in OOD_FPR — and the train split (mostly opus-4-7 baseline) is on a different prompt-hardness distribution than the OOD_FPR fallback-model bucket."
+  },
+  "headline_findings": {
+    "F1_model_predicts_label": {
+      "finding": "Model identity alone predicts binary label with 88.0% accuracy (model→majority-label).",
+      "metric_correct": 20527,
+      "metric_total": 23330,
+      "metric_accuracy": 0.8799,
+      "interpretation": "Comparable shortcut to source-field (96.1%) and protein-keyword (93.5%). Any classifier with implicit access to model-style fingerprints (verbosity, vocabulary, hedging cues, response format) can exploit this."
+    },
+    "F2_three_regimes": {
+      "pure_legitimate_models": [
+        {
+          "model": "claude-opus-4-7",
+          "n": 10947,
+          "legit_pct": 97.4
+        },
+        {
+          "model": "claude-sonnet-4-5-20250929",
+          "n": 1405,
+          "legit_pct": 97.3
+        },
+        {
+          "model": "claude-sonnet-4-5",
+          "n": 263,
+          "legit_pct": 100.0
+        }
+      ],
+      "pure_negative_models": [
+        {
+          "model": "gemini-2.5-flash",
+          "n": 50,
+          "neg_pct": 100.0
+        },
+        {
+          "model": "gpt-4o-2024-11-20",
+          "n": 50,
+          "neg_pct": 100.0
+        },
+        {
+          "model": "benchmark",
+          "n": 8716,
+          "neg_pct": 80.4
+        }
+      ],
+      "refusal_heavy_models": [
+        {
+          "model": "gpt-5.x",
+          "n": 62,
+          "session_block_pct": 54.8
+        },
+        {
+          "model": "claude-opus-4-6",
+          "n": 147,
+          "session_block_pct": 35.4
+        },
+        {
+          "model": "claude-sonnet-4-6",
+          "n": 453,
+          "session_block_pct": 13.0
+        }
+      ],
+      "interpretation": "Labels are stratified along model lines: opus-4-7/sonnet-4-5 contribute the legitimate pool (FRT/OverRefusal generation), benchmark/gemini/gpt-4o contribute negatives, and opus-4-6/gpt-5.x/sonnet-4-6 contribute session-block (over-refusal) examples. A classifier sees almost no example of any given model in a different role.",
+      "post_clarification_caveat": "The 'refusal-heavy' designation for opus-4-6/sonnet-4-6 is partially an artifact: per the user clarification, these models received prompts ONLY after opus-4-7 had already refused them. Their high refusal rate is therefore a downstream consequence of fallback routing, not a model-intrinsic property."
+    },
+    "F3_session_claude_code_model_skew": {
+      "finding": "Within session_claude_code (n=639), the same source has dramatically different label distributions per model.",
+      "per_model": {
+        "claude-opus-4-7": {
+          "session_block": 154,
+          "legitimate": 260
+        },
+        "claude-sonnet-4-6": {
+          "legitimate": 19,
+          "session_block": 59
+        },
+        "claude-opus-4-6": {
+          "legitimate": 95,
+          "session_block": 52
+        }
+      },
+      "concrete_pct": {
+        "claude-opus-4-7": {
+          "n": 414,
+          "session_block_pct": 37.0
+        },
+        "claude-opus-4-6": {
+          "n": 147,
+          "session_block_pct": 35.4
+        },
+        "claude-sonnet-4-6": {
+          "n": 78,
+          "session_block_pct": 76.0
+        }
+      },
+      "interpretation": "sonnet-4-6 refused 2× more often than opus-4-7 during data collection. OOD_FPR eval that aggregates these treats \"over-refusal\" as a single phenomenon, but the source mixes a 76% refusal-rate model with a 37% refusal-rate model. Classifier FPR on this split confounds \"did the classifier reproduce X model's refusal\" with \"was the prompt over-refusal-worthy\"."
+    },
+    "F4_split_membership_model_imbalance": {
+      "finding": "Train/val and OOD splits draw from disjoint model populations.",
+      "per_split_models": {
+        "train_val_only": [
+          "claude-opus-4-7 (10,320)",
+          "benchmark (8,716)",
+          "claude-sonnet-4-5-20250929 (1,405)",
+          "claude-haiku-4-5 (927)",
+          "claude-sonnet-4-5 (263)",
+          "seed (137)"
+        ],
+        "ood_fpr_only": [
+          "claude-opus-4-6 (147)",
+          "expert (122)",
+          "gpt-5.x (62)"
+        ],
+        "ood_fnr_only": [
+          "gemini-2.5-flash (50)",
+          "gpt-4o-2024-11-20 (50)"
+        ],
+        "crosses_train_and_eval": [
+          "claude-opus-4-7 (627 in ood_fpr)",
+          "claude-sonnet-4-6 (330 in ood_fpr, 50 in ood_fnr)",
+          "claude-haiku-4-5 (50 in ood_fnr)"
+        ]
+      },
+      "interpretation": "opus-4-6, gpt-5.x, gemini, gpt-4o never appear in train. OOD evaluation on these models conflates two effects: (a) distribution shift in prompts, and (b) distribution shift in generator-model style. Cannot disentangle without holding a model out from a single source."
+    }
+  },
+  "severity_assessment": "CRITICAL — equivalent to or exceeding C3 (source=label) finding. Should be added to phase 0 report as C5.",
+  "per_model_purity": [
+    {
+      "model": "claude-opus-4-7",
+      "n": 10947,
+      "label_pct": {
+        "legitimate": 97.4,
+        "negative": 0.2,
+        "ambiguous": 1.1,
+        "session_block": 1.4
+      },
+      "majority_label": "legitimate",
+      "purity_pct": 97.4,
+      "split_distribution": {
+        "train_val": 10320,
+        "ood_fpr": 627
+      }
+    },
+    {
+      "model": "benchmark",
+      "n": 8716,
+      "label_pct": {
+        "legitimate": 19.6,
+        "negative": 80.4,
+        "ambiguous": 0.0,
+        "session_block": 0.0
+      },
+      "majority_label": "negative",
+      "purity_pct": 80.4,
+      "split_distribution": {
+        "train_val": 8716
+      }
+    },
+    {
+      "model": "claude-sonnet-4-5-20250929",
+      "n": 1405,
+      "label_pct": {
+        "legitimate": 97.3,
+        "negative": 0.9,
+        "ambiguous": 1.8,
+        "session_block": 0.0
+      },
+      "majority_label": "legitimate",
+      "purity_pct": 97.3,
+      "split_distribution": {
+        "train_val": 1405
+      }
+    },
+    {
+      "model": "claude-haiku-4-5-20251001",
+      "n": 977,
+      "label_pct": {
+        "legitimate": 61.6,
+        "negative": 38.4,
+        "ambiguous": 0.0,
+        "session_block": 0.0
+      },
+      "majority_label": "legitimate",
+      "purity_pct": 61.6,
+      "split_distribution": {
+        "train_val": 927,
+        "ood_fnr": 50
+      }
+    },
+    {
+      "model": "claude-sonnet-4-6",
+      "n": 453,
+      "label_pct": {
+        "legitimate": 43.3,
+        "negative": 13.7,
+        "ambiguous": 30.0,
+        "session_block": 13.0
+      },
+      "majority_label": "legitimate",
+      "purity_pct": 43.3,
+      "split_distribution": {
+        "train_val": 73,
+        "ood_fpr": 330,
+        "ood_fnr": 50
+      }
+    },
+    {
+      "model": "claude-sonnet-4-5",
+      "n": 263,
+      "label_pct": {
+        "legitimate": 100.0,
+        "negative": 0.0,
+        "ambiguous": 0.0,
+        "session_block": 0.0
+      },
+      "majority_label": "legitimate",
+      "purity_pct": 100.0,
+      "split_distribution": {
+        "train_val": 263
+      }
+    },
+    {
+      "model": "claude-opus-4-6",
+      "n": 147,
+      "label_pct": {
+        "legitimate": 64.6,
+        "negative": 0.0,
+        "ambiguous": 0.0,
+        "session_block": 35.4
+      },
+      "majority_label": "legitimate",
+      "purity_pct": 64.6,
+      "split_distribution": {
+        "ood_fpr": 147
+      }
+    },
+    {
+      "model": "seed",
+      "n": 137,
+      "label_pct": {
+        "legitimate": 65.7,
+        "negative": 34.3,
+        "ambiguous": 0.0,
+        "session_block": 0.0
+      },
+      "majority_label": "legitimate",
+      "purity_pct": 65.7,
+      "split_distribution": {
+        "train_val": 137
+      }
+    },
+    {
+      "model": "expert",
+      "n": 122,
+      "label_pct": {
+        "legitimate": 91.0,
+        "negative": 3.3,
+        "ambiguous": 5.7,
+        "session_block": 0.0
+      },
+      "majority_label": "legitimate",
+      "purity_pct": 91.0,
+      "split_distribution": {
+        "ood_fpr": 122
+      }
+    },
+    {
+      "model": "gpt-5.x",
+      "n": 62,
+      "label_pct": {
+        "legitimate": 45.2,
+        "negative": 0.0,
+        "ambiguous": 0.0,
+        "session_block": 54.8
+      },
+      "majority_label": "session_block",
+      "purity_pct": 54.8,
+      "split_distribution": {
+        "ood_fpr": 62
+      }
+    },
+    {
+      "model": "gemini-2.5-flash",
+      "n": 50,
+      "label_pct": {
+        "legitimate": 0.0,
+        "negative": 100.0,
+        "ambiguous": 0.0,
+        "session_block": 0.0
+      },
+      "majority_label": "negative",
+      "purity_pct": 100.0,
+      "split_distribution": {
+        "ood_fnr": 50
+      }
+    },
+    {
+      "model": "gpt-4o-2024-11-20",
+      "n": 50,
+      "label_pct": {
+        "legitimate": 0.0,
+        "negative": 100.0,
+        "ambiguous": 0.0,
+        "session_block": 0.0
+      },
+      "majority_label": "negative",
+      "purity_pct": 100.0,
+      "split_distribution": {
+        "ood_fnr": 50
+      }
+    },
+    {
+      "model": "gpt-4o-mini",
+      "n": 1,
+      "label_pct": {
+        "legitimate": 100.0,
+        "negative": 0.0,
+        "ambiguous": 0.0,
+        "session_block": 0.0
+      },
+      "majority_label": "legitimate",
+      "purity_pct": 100.0,
+      "split_distribution": {
+        "train_val": 1
+      }
+    }
+  ],
+  "within_source_model_variance": [
+    {
+      "source": "session_claude_code",
+      "n_models": 3,
+      "per_model": [
+        {
+          "model": "claude-opus-4-7",
+          "n": 414,
+          "label_pct": {
+            "legitimate": 62.8,
+            "negative": 0.0,
+            "ambiguous": 0.0,
+            "session_block": 37.2
+          }
+        },
+        {
+          "model": "claude-sonnet-4-6",
+          "n": 78,
+          "label_pct": {
+            "legitimate": 24.4,
+            "negative": 0.0,
+            "ambiguous": 0.0,
+            "session_block": 75.6
+          }
+        },
+        {
+          "model": "claude-opus-4-6",
+          "n": 147,
+          "label_pct": {
+            "legitimate": 64.6,
+            "negative": 0.0,
+            "ambiguous": 0.0,
+            "session_block": 35.4
+          }
+        }
+      ],
+      "label_pct_spread": {
+        "legitimate": 40.2,
+        "negative": 0.0,
+        "ambiguous": 0.0,
+        "session_block": 40.2
+      },
+      "max_spread_pct": 40.2,
+      "flag_high_spread": true
+    },
+    {
+      "source": "overrefusal_api_context_cond",
+      "n_models": 2,
+      "per_model": [
+        {
+          "model": "claude-sonnet-4-6",
+          "n": 252,
+          "label_pct": {
+            "legitimate": 56.3,
+            "negative": 0.0,
+            "ambiguous": 43.7,
+            "session_block": 0.0
+          }
+        },
+        {
+          "model": "claude-opus-4-7",
+          "n": 213,
+          "label_pct": {
+            "legitimate": 60.6,
+            "negative": 0.0,
+            "ambiguous": 39.4,
+            "session_block": 0.0
+          }
+        }
+      ],
+      "label_pct_spread": {
+        "legitimate": 4.3,
+        "negative": 0.0,
+        "ambiguous": 4.3,
+        "session_block": 0.0
+      },
+      "max_spread_pct": 4.3,
+      "flag_high_spread": false
+    },
+    {
+      "source": "overrefusal_api",
+      "n_models": 3,
+      "per_model": [
+        {
+          "model": "claude-sonnet-4-6",
+          "n": 73,
+          "label_pct": {
+            "legitimate": 47.9,
+            "negative": 16.4,
+            "ambiguous": 35.6,
+            "session_block": 0.0
+          }
+        },
+        {
+          "model": "claude-opus-4-7",
+          "n": 96,
+          "label_pct": {
+            "legitimate": 50.0,
+            "negative": 17.7,
+            "ambiguous": 32.3,
+            "session_block": 0.0
+          }
+        },
+        {
+          "model": "claude-sonnet-4-5-20250929",
+          "n": 74,
+          "label_pct": {
+            "legitimate": 48.6,
+            "negative": 17.6,
+            "ambiguous": 33.8,
+            "session_block": 0.0
+          }
+        }
+      ],
+      "label_pct_spread": {
+        "legitimate": 2.1,
+        "negative": 1.3,
+        "ambiguous": 3.3,
+        "session_block": 0.0
+      },
+      "max_spread_pct": 3.3,
+      "flag_high_spread": false
+    },
+    {
+      "source": "constitution_rules_phase8",
+      "n_models": 2,
+      "per_model": [
+        {
+          "model": "claude-haiku-4-5-20251001",
+          "n": 926,
+          "label_pct": {
+            "legitimate": 65.0,
+            "negative": 35.0,
+            "ambiguous": 0.0,
+            "session_block": 0.0
+          }
+        },
+        {
+          "model": "seed",
+          "n": 137,
+          "label_pct": {
+            "legitimate": 65.7,
+            "negative": 34.3,
+            "ambiguous": 0.0,
+            "session_block": 0.0
+          }
+        }
+      ],
+      "label_pct_spread": {
+        "legitimate": 0.7,
+        "negative": 0.7,
+        "ambiguous": 0.0,
+        "session_block": 0.0
+      },
+      "max_spread_pct": 0.7,
+      "flag_high_spread": false
+    },
+    {
+      "source": "constitution_rules_fnr",
+      "n_models": 4,
+      "per_model": [
+        {
+          "model": "claude-haiku-4-5-20251001",
+          "n": 50,
+          "label_pct": {
+            "legitimate": 0.0,
+            "negative": 100.0,
+            "ambiguous": 0.0,
+            "session_block": 0.0
+          }
+        },
+        {
+          "model": "claude-sonnet-4-6",
+          "n": 50,
+          "label_pct": {
+            "legitimate": 0.0,
+            "negative": 100.0,
+            "ambiguous": 0.0,
+            "session_block": 0.0
+          }
+        },
+        {
+          "model": "gemini-2.5-flash",
+          "n": 50,
+          "label_pct": {
+            "legitimate": 0.0,
+            "negative": 100.0,
+            "ambiguous": 0.0,
+            "session_block": 0.0
+          }
+        },
+        {
+          "model": "gpt-4o-2024-11-20",
+          "n": 50,
+          "label_pct": {
+            "legitimate": 0.0,
+            "negative": 100.0,
+            "ambiguous": 0.0,
+            "session_block": 0.0
+          }
+        }
+      ],
+      "label_pct_spread": {
+        "legitimate": 0.0,
+        "negative": 0.0,
+        "ambiguous": 0.0,
+        "session_block": 0.0
+      },
+      "max_spread_pct": 0.0,
+      "flag_high_spread": false
+    },
+    {
+      "source": "frt_p2_kill_chain",
+      "n_models": 2,
+      "per_model": [
+        {
+          "model": "claude-sonnet-4-5-20250929",
+          "n": 1106,
+          "label_pct": {
+            "legitimate": 100.0,
+            "negative": 0.0,
+            "ambiguous": 0.0,
+            "session_block": 0.0
+          }
+        },
+        {
+          "model": "claude-opus-4-7",
+          "n": 10224,
+          "label_pct": {
+            "legitimate": 100.0,
+            "negative": 0.0,
+            "ambiguous": 0.0,
+            "session_block": 0.0
+          }
+        }
+      ],
+      "label_pct_spread": {
+        "legitimate": 0.0,
+        "negative": 0.0,
+        "ambiguous": 0.0,
+        "session_block": 0.0
+      },
+      "max_spread_pct": 0.0,
+      "flag_high_spread": false
+    }
+  ],
+  "recommended_fixes_v2_post_clarification": [
+    "FIX-6a (REVISED): Reconstruct fallback-tier metadata. For session_claude_code records, recover original session logs to mark each prompt's fallback depth (tier-1 = blocked on first attempt with opus-4-7; tier-2 = also blocked after switching down). Use fallback-tier as the metric stratifier; this directly addresses the selection bias.",
+    "FIX-6b: Per-model FPR/FNR reporting remains useful as a SECONDARY view, even though the model field is confounded with prompt-hardness — readers should be able to verify the per-model breakdown.",
+    "FIX-6c: LOMO fold has reduced value because removing one model removes a specific hardness tier rather than testing genuine model generalization. Implement only after FIX-6a.",
+    "FIX-6d: For matched-triple eval, REQUIRE single-model generation per bundle. Triples that mix models confound tier ranking with model identity (and indirectly with hardness).",
+    "FIX-6e: Audit response-text fingerprints (response length, hedging vocabulary) for residual model-style leakage independent of prompt content. Consider a response-stripped (query-only) evaluation mode as a robustness check.",
+    "FIX-6f: Datasheet documentation — Explicitly state: (i) the cascading-fallback collection process, (ii) that the model field encodes a prompt-hardness selection effect rather than a model-behavior measurement, (iii) that 'model' should not be used as an input feature by downstream training."
+  ],
+  "user_answers_2026_05_28": {
+    "Q1_was_model_mixing_intentional": "NO — model switches were reactive: when opus-4-7 blocked, the user manually switched to a lower model to continue working. This is the fallback-routing mechanism that creates the hardness-tier confound.",
+    "Q3_clarification_pending": "Q3 (how to weight different models' refusals in FPR) was the wrong framing. Given the selection effect, the correct framing is: 'aggregate FPR is not meaningful without fallback-tier stratification.' Awaiting user decision on whether to reconstruct fallback tiers from raw session logs."
+  }
+}

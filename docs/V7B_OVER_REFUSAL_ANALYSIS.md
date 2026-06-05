@@ -116,7 +116,7 @@ input → v7.A (BioClinical ModernBERT-large, 396M, FPR 0.046)
 - CBRN recall preserved on confident negatives where v7.A correctly flags; elevated on borderline where v7.B's CoT helps
 
 **Implementation**:
-- `scripts/cascade_v7a_v7b.py` — router class wrapping both models
+- `scripts/experiments/cascade_v7a_v7b.py` — router class wrapping both models
 - Calibrate routing band on held-out OR-Bench-Hard subset (target: 5–15% escalation rate)
 - Eval on full benchmark suite + report cascade vs individual model metrics
 - Stage-2 runs v7.B in `/no_think` (flag `--v7b-no-think`, see §2.4); `/think` kept as a baseline variant for the contribution comparison
@@ -246,11 +246,11 @@ All Phase-1 acceptance gates (§3 Phase 1) re-measured on the **existing v7.B ad
 
 The earlier "F1 0.552" reading was a **parser confound**, not a real number: ~26% of verdicts concluded colloquially ("Safe." rather than the trained "Response harm: unharmful") and the regex silently dropped them to unknown→0. After the colloquial fix the true F1 is 0.548. (0.552 was coincidentally close because most dropped colloquials were safe items.)
 
-**Parser ceiling (offline re-parse, `scripts/reparse_ceiling_wildguard.py`)**: an action-aware reader that resolves every saved `raw_output` to a verdict yields ceiling F1 **0.549** (recall 0.495) — i.e. **no parser change crosses 0.55**. The gap is in the model's verdicts, not the reader: 108 clean *structured* "unharmful" misses dominate the false-negatives. → gate #4 failure is a **real recall gap**, not a code fix.
+**Parser ceiling (offline re-parse, `scripts/experiments/reparse_ceiling_wildguard.py`)**: an action-aware reader that resolves every saved `raw_output` to a verdict yields ceiling F1 **0.549** (recall 0.495) — i.e. **no parser change crosses 0.55**. The gap is in the model's verdicts, not the reader: 108 clean *structured* "unharmful" misses dominate the false-negatives. → gate #4 failure is a **real recall gap**, not a code fix.
 
 > A buggy `violat\w*` cue was tried and removed during this analysis: it matched the negated SAFE phrase "No … categories are violated" and fabricated 10 false positives. Documented in the script.
 
-**ALERT-CBRN /no_think (n=4198, all label=1, `scripts/analyze_alert_misses.py`)**: headline recall **0.646** (1486 misses), parser clean (unknown 0.07%). Misses are confident structured "unharmful" (1484/1486), not parser drops. Per-category recall shows the headline is **curation-inflated**:
+**ALERT-CBRN /no_think (n=4198, all label=1, `scripts/experiments/analyze_alert_misses.py`)**: headline recall **0.646** (1486 misses), parser clean (unknown 0.07%). Misses are confident structured "unharmful" (1484/1486), not parser drops. Per-category recall shows the headline is **curation-inflated**:
 
 | alert_category | recall | mission relevance |
 |---|---|---|
@@ -274,13 +274,13 @@ Real **CBRN-weapon** recall (bio+chem+rad, n=590) is **0.480** — *lower* than 
 Before any Phase-2 retrain spends Cayuga compute chasing the failing/near gates (#4 WildGuard, ALERT), this audit checks the gates themselves for leakage, benchmark-construction errors, and Goodhart traps. **Finding: the gates are partly mis-specified — so Phase 2 must fix the eval + training task-spec _before_ adding recall data, or it Goodharts a mis-specified target.**
 
 ### 9.1 Leakage — CLEAN ✓
-`scripts/g1_v7_overlap_audit.py` (new; v7 had no prior leakage audit — g1 existed only for v5/v6). Exact-norm + prefix-64 overlap between training queries (`train.jsonl` + `wildguard_mix_train_bio.jsonl`) and every eval benchmark = **0**. The WildGuard split is disjoint (train_bio = 234 unique queries; 0 exact overlap with wildguard_test). Phase-1 gates are not contaminated by train/eval overlap.
+`scripts/experiments/g1_v7_overlap_audit.py` (new; v7 had no prior leakage audit — g1 existed only for v5/v6). Exact-norm + prefix-64 overlap between training queries (`train.jsonl` + `wildguard_mix_train_bio.jsonl`) and every eval benchmark = **0**. The WildGuard split is disjoint (train_bio = 234 unique queries; 0 exact overlap with wildguard_test). Phase-1 gates are not contaminated by train/eval overlap.
 
 ### 9.2 No lexical / response-template shortcut in training — CLEAN ✓
 v4_train (n=3062) has **1848 unique responses, 0 COMPLIANCE_TEMPLATE stubs**, max repeat 5. The model is not keying on a canned response string (the v3 failure mode, §6.16.2 of TECHNICAL_REPORT). The shortcut that broke v3 is not present here.
 
 ### 9.3 THREAT — synthetic template CoT with random categories (Goodhart)
-`scripts/build_v7b_cot_data.py::make_cot()` builds the chain-of-thought by `RNG.choice(templates)` with the biosafety category `cat = RNG.choice(UNSAFE_CATS)` **drawn at random**, independent of the item. The model regurgitates these templates near-verbatim at eval (the SAFE template "…categories B1-B5 are not triggered. Safe." appears verbatim in /no_think output). → the "reasoning" is **decorative, not functional**: the B1-B5 category assignment carries no item-specific signal. This confirms root-cause #3 (§2.4) at the data-builder level.
+`scripts/experiments/build_v7b_cot_data.py::make_cot()` builds the chain-of-thought by `RNG.choice(templates)` with the biosafety category `cat = RNG.choice(UNSAFE_CATS)` **drawn at random**, independent of the item. The model regurgitates these templates near-verbatim at eval (the SAFE template "…categories B1-B5 are not triggered. Safe." appears verbatim in /no_think output). → the "reasoning" is **decorative, not functional**: the B1-B5 category assignment carries no item-specific signal. This confirms root-cause #3 (§2.4) at the data-builder level.
 
 ### 9.4 THREAT — prompt_harm ≡ response_harm training collapse
 `build_v7b_cot_data.py::format_output()` sets **both** output fields to the *same* item label, always:

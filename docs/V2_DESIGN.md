@@ -257,7 +257,7 @@ rejected. Re-scoped; see Result below.***
   generation constraint and re-measure external kappa. WS-3 (probe
   ensemble) becomes higher priority since the v1-style external gap is
   confirmed real and not removable by data filtering alone.
-- **Artifacts.** `scripts/run_ab_retraining.py`, `scripts/run_ab_external.py`,
+- **Artifacts.** `scripts/experiments/run_ab_retraining.py`, `scripts/experiments/run_ab_external.py`,
   `results/metrics/ab_retraining_comparison.json`,
   `results/metrics/external_validation_AB_comparison.json`.
 

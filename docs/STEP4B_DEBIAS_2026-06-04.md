@@ -75,6 +75,6 @@ benign + generated safe-bio) should match competitor calibration at small recall
 the over-refusal weakness from a fundamental limitation into a data-coverage task.
 
 ## Artifacts
-scripts/build_v8bh.py (split), eval_v8bh_compare.py, fix_v8bd_types.py. Model: Cayuga
+scripts/experiments/build_v8bh.py (split), eval_v8bh_compare.py, fix_v8bd_types.py. Model: Cayuga
 deberta_bioguard_v8bh (candidate; deberta_bioguard_v8bd is the memorized/discarded all-360 variant).
 Result: results/v8bh_compare.json.

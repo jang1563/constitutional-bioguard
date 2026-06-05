@@ -65,6 +65,6 @@ competitive over-refusal on borderline-bio (<= 0.08) while maintaining recall (>
 architecture, not more data.
 
 ## Artifacts
-scripts/eval_dualmode_step2.py (threshold sweep + query-only dual), eval_dualmode_responses.py
+scripts/experiments/eval_dualmode_step2.py (threshold sweep + query-only dual), eval_dualmode_responses.py
 (true dual with safe responses), gen_safe_responses.py (borderline safe-response generation).
 Results: results/dualmode_step2.json, results/dualmode_responses.json.

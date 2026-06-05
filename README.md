@@ -7,13 +7,13 @@
 [![HF: prompt head](https://img.shields.io/badge/%F0%9F%A4%97-prompt%20head-yellow)](https://huggingface.co/jang1563/constitutional-bioguard-prompt)
 [![HF: deberta-v1 (legacy)](https://img.shields.io/badge/%F0%9F%A4%97-deberta--v1-lightgrey)](https://huggingface.co/jang1563/constitutional-bioguard-deberta-v1)
 
-> **TL;DR.** A transparent case study in how to *evaluate* a safety classifier honestly. This project builds a dual-mode biological content guard (response + prompt heads, 2×184M DeBERTa-v3) using Anthropic's [Constitutional Classifiers](https://arxiv.org/abs/2501.18837) methodology, then puts it through leakage-clean splits, size-peer benchmarking, per-source contamination control, and **five self-audits — each of which reversed a prior headline claim.** The honest result is a *negative* one, reported as plainly as a positive would be: the response head reaches the recall band of 7–9B guards (recall 0.921, AUROC 0.952) but is **Pareto-dominated by the openly-available Qwen3Guard-0.6B** and is **not bio-selective** (selectivity S = 1.03). The durable contribution is the reusable evaluation discipline, not the model. It is a research artifact, not a production safeguard.
+> **TL;DR.** A leakage-clean **evaluation harness for biosafety guard models**, and an honest case study of turning it on a classifier I built myself. The transferable headline is about *evaluation, not the model*: **on bio prompt-harm the #1-ranked guard at n=30 falls to #3 at n=500** (Clopper-Pearson CIs non-overlapping, McNemar) — so the small-n "best recall" rankings common in this space are statistically underpowered, and the guard that fell was mine. The classifier itself (dual-mode DeBERTa-v3, 2×184M, built with Anthropic's [Constitutional Classifiers](https://arxiv.org/abs/2501.18837) method) is competitive but honestly outperformed on both axes by a *smaller* open model and is not bio-selective — owned once here, quantified below, and surfaced by [five self-audits](docs/CASE_STUDY_eval_self_red_team.md) that each reversed a prior claim. A research artifact, not a production safeguard.
 
 **In 30 seconds**
 
-- **What** — a bio response/prompt guard: constitution → synthetic + reuse-only data → DeBERTa-v3, combined by a configurable dual-mode policy.
-- **Headline** — a competitive recall band, but honestly Pareto-dominated by a *smaller* open model. The negative result is the point, not a footnote.
-- **Why read on** — the evaluation harness and the five self-audits that caught the over-claims are the transferable contribution (a reusable [8-point checklist](docs/CASE_STUDY_eval_self_red_team.md)).
+- **What** — a bio response/prompt guard (constitution → synthetic + reuse-only data → DeBERTa-v3, configurable dual-mode policy) **and the harness built to evaluate it honestly**: leakage-clean splits, size-peer benchmarking, per-source contamination control.
+- **Headline finding** — bio-guard leaderboards are *sample-size-fragile*: scaling the bio prompt-harm test set from n=30 to n=500 reverses the ranking (CIs non-overlapping), so reported "best recall" claims at n≤50/class need a power analysis, not just a point estimate.
+- **Why read on** — a reusable [8-point evaluation checklist](docs/CASE_STUDY_eval_self_red_team.md) and an audit trail where five self-audits each reversed a prior conclusion — including downgrading my own model's "best bio recall."
 
 ![Size-peer comparison of guard models: recall vs over-refusal on bio response-harm (n=554). The 184M response head sits in the recall band of 7-9B guards but is Pareto-dominated by the smaller, openly-available Qwen3Guard-0.6B.](results/figures/size_peer_pareto.png)
 
@@ -74,7 +74,7 @@ results below report different checkpoints; each section states which.
 ### Current status (2026-06-04)
 
 - **Shipped:** a dual-mode guard — response head (**v8bh**, 184M) + prompt head (184M) — public and gated on Hugging Face. [`docs/MODEL_CARD.md`](docs/MODEL_CARD.md) is the authoritative card.
-- **Honest headline:** the response head is in the same recall band as 7–9B guards (recall 0.921, AUROC 0.952) but is **Pareto-dominated by the openly-available Qwen3Guard-0.6B** (0.933 recall / 0.142 over-refusal at ~3x the size) and is **not bio-selective** (S = 1.03 — a general response-harm guard). The prompt head is a saturated recall gate (AUPRC 0.121), not a standalone classifier.
+- **Honest headline:** on the large-n evaluation the response head sits in the 7–9B recall band (recall 0.921 at its *native* threshold — **at a matched over-refusal it trails WildGuard, 0.878 vs 0.904**; AUROC 0.952), yet is outperformed on *both* axes by the smaller, openly-available Qwen3Guard-0.6B (numbers in the figure and Results table) and is **not bio-selective** (S = 1.03 — a general response-harm guard). The prompt head is a saturated recall gate (AUPRC 0.121), not a standalone classifier.
 - **The contribution is the methodology, not the model:** leakage-clean splits, AUPRC over single-threshold recall, matched operating points, per-source contamination control, size-peer benchmarking, character-robustness probes, and five self-audits that each reversed a prior conclusion ([`docs/CASE_STUDY_eval_self_red_team.md`](docs/CASE_STUDY_eval_self_red_team.md)).
 - **Earlier checkpoints (v1–v5)** are diagnostic milestones, not the recommendation — see *Research arc* under Results.
 
@@ -102,6 +102,9 @@ distilled from an 8B teacher). A self-audit
 The response head is in the same band as larger guards but is Pareto-dominated
 by Qwen3Guard-0.6B (higher recall AND lower over-refusal at 3x the size).
 WildGuard is statistically tied (McNemar p=0.248). AUROC = 0.952.
+These are **native** operating points (each guard at its default threshold); at a
+*matched* over-refusal (FPR 0.10) the response head's recall is 0.878 vs WildGuard's
+0.904 — so 0.921 is the response head's most favorable framing, not a matched-FPR win.
 
 **Prompt head on SOSBench-bio (n=500 harmful):** recall 0.752 (3rd of 6 guards;
 WildGuard 0.912, Granite-2B 0.990). AUPRC 0.121 vs teacher 0.605 = saturated,
@@ -377,12 +380,15 @@ constitutional_bioguard/
 ├── models/                           # Trained checkpoints (gitignored)
 ├── results/                          # Metrics + figures
 ├── configs/                          # Training configs (YAML)
-├── scripts/
-│   ├── run_pipeline.py               # CLI orchestrator
-│   ├── validate_constitution.py      # Constitution coverage checker
-│   ├── train_v4_response_diverse.py  # Recommended v4 training
-│   ├── train_v5.py                   # v5 PairCFR non-release experiment
-│   └── export_to_hf.py               # Hugging Face Hub upload
+├── scripts/                          # entry points only (see Makefile + Quick Start)
+│   ├── run_pipeline.py               #   CLI orchestrator
+│   ├── run_full_pipeline.sh          #   end-to-end baseline pipeline
+│   ├── validate_constitution.py      #   constitution coverage checker
+│   ├── create_v4_splits.py           #   (+ train_v4_response_diverse.py)
+│   ├── create_v5_splits.py           #   (+ train_v5_baseline.py / train_v5.py / v5_eval_all_gates.py)
+│   ├── plot_size_peer_pareto.py      #   size-peer Pareto figure
+│   ├── monitor_pipeline.py           #   pipeline progress watcher
+│   └── experiments/                  #   research trail (v1→v8 builds, probes, audits, SLURM) — not entry points
 └── tests/
 ```
 

@@ -1,10 +1,10 @@
 # Model variant experiment configurations
 # Usage:
-#   python scripts/run_variant_experiment.py --variant deberta-large
-#   python scripts/run_variant_experiment.py --variant mdeberta
-#   python scripts/run_variant_experiment.py --variant biomedbert
-#   python scripts/run_variant_experiment.py --variant biolinkbert
-#   python scripts/run_variant_experiment.py --all
+#   python scripts/experiments/run_variant_experiment.py --variant deberta-large
+#   python scripts/experiments/run_variant_experiment.py --variant mdeberta
+#   python scripts/experiments/run_variant_experiment.py --variant biomedbert
+#   python scripts/experiments/run_variant_experiment.py --variant biolinkbert
+#   python scripts/experiments/run_variant_experiment.py --all
 
 variants:
   deberta-base:

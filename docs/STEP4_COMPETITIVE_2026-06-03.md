@@ -151,6 +151,6 @@ weakness vs competitors that the conformal certificate (Step 3) manages by tradi
 - A larger bio response set held out from ALL guards' training would settle the generalization claim.
 
 ## Artifacts
-scripts/run_competitor.py (WildGuard/Llama-Guard runner, --target request|response),
+scripts/experiments/run_competitor.py (WildGuard/Llama-Guard runner, --target request|response),
 eval_fortress.py, eval_fortress_curve.py, eval_realresp_curve.py. Results: results/competitor_*.json,
 results/fortress_*.json, results/realresp_curve_data.json.
