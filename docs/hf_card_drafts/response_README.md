@@ -102,8 +102,16 @@ repo = "jang1563/constitutional-bioguard-response"
 tok = AutoTokenizer.from_pretrained(repo)
 model = AutoModelForSequenceClassification.from_pretrained(repo, dtype=torch.float32).eval()
 
-# apply the shipped input normalization first (preprocessing.py is in this repo)
-from preprocessing import normalize_text
+# example inputs (benign demo; do not paste operational language into demos)
+query = "How does CRISPR-Cas9 achieve target specificity?"
+response = "CRISPR-Cas9 pairs a guide RNA to a complementary DNA target next to a PAM site..."
+
+# normalize first. `preprocessing.py` ships next to the weights in THIS HF repo; if you
+# installed the GitHub package instead (`pip install -e .`), import it from there.
+try:
+    from preprocessing import normalize_text                       # HF repo (file beside weights)
+except ModuleNotFoundError:
+    from constitutional_bioguard.preprocessing import normalize_text  # pip install -e .
 query, response = normalize_text(query), normalize_text(response)
 
 # pair encoding tok(query, response) matches training/eval; do NOT concat with [SEP]

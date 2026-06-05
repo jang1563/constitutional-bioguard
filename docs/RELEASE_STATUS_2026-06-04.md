@@ -5,7 +5,7 @@ STEP*_*.md docs. All numbers verified against Cayuga logs/result files (audit co
 
 ## System
 A dual-mode bio-safety guard = TWO 184M DeBERTa-v3 encoders + a consistency policy (DualModeGuard
-artifact, scripts/dual_mode_guard.py):
+artifact, scripts/experiments/dual_mode_guard.py):
 - PROMPT head (query-only): bio prompt-harm. Recall 0.983, clean-bio over-refusal 0.022.
 - RESPONSE head v8b (query+response): bio response-harm. Recall ~0.92, tunable (well-calibrated).
 
@@ -87,6 +87,6 @@ universal dominance.
 
 ## Key files
 docs/STEP1_DISTILL_PILOT, STEP1B_RESEARCH, STEP2_DUALMODE, STEP3_CONFORMAL, STEP4_COMPETITIVE,
-DUAL_MODE_GUARD_ARTIFACT. scripts/dual_mode_guard.py (artifact), train_v7c_distill.py,
+DUAL_MODE_GUARD_ARTIFACT. scripts/experiments/dual_mode_guard.py (artifact), train_v7c_distill.py,
 run_competitor.py, conformal_bound.py. Models (Cayuga): deberta_v7c_distill_bioborder (prompt),
 deberta_bioguard_v8b (response).

@@ -6,17 +6,17 @@ After the full data pipeline completes (see `scripts/run_full_pipeline.sh`), you
 
 ### Single Variant
 ```bash
-python scripts/run_variant_experiment.py --variant deberta-large
+python scripts/experiments/run_variant_experiment.py --variant deberta-large
 ```
 
 ### All Variants (in sequence)
 ```bash
-python scripts/run_variant_experiment.py --all
+python scripts/experiments/run_variant_experiment.py --all
 ```
 
 ### View Comparison Table
 ```bash
-python scripts/run_variant_experiment.py --compare
+python scripts/experiments/run_variant_experiment.py --compare
 ```
 
 ## Variants
@@ -73,16 +73,16 @@ Generates:
 ### 2. Train and Evaluate Variants
 ```bash
 # Train all 5 variants (sequential; ~2–3 hours)
-python scripts/run_variant_experiment.py --all
+python scripts/experiments/run_variant_experiment.py --all
 
 # Or single variant for quick iteration:
-python scripts/run_variant_experiment.py --variant deberta-large
+python scripts/experiments/run_variant_experiment.py --variant deberta-large
 ```
 
 ### 3. Review Results
 ```bash
 # Comparison table
-python scripts/run_variant_experiment.py --compare
+python scripts/experiments/run_variant_experiment.py --compare
 
 # Or raw JSON
 cat results/metrics/variant_comparison.json | jq '.'
@@ -140,7 +140,7 @@ If val F1 >> test F1, overfitting occurred:
 ## Example: Run Single Variant
 
 ```bash
-python scripts/run_variant_experiment.py --variant biomedbert
+python scripts/experiments/run_variant_experiment.py --variant biomedbert
 
 # Output:
 # ============================================================
@@ -156,7 +156,7 @@ python scripts/run_variant_experiment.py --variant biomedbert
 ## Example: Review All Results
 
 ```bash
-$ python scripts/run_variant_experiment.py --compare
+$ python scripts/experiments/run_variant_experiment.py --compare
 
 ==========================================================================================
  Model Variant Comparison
@@ -177,13 +177,13 @@ biolinkbert        0.9120  0.95400 0.9180  0.9060  0.0320   9.35%     3.25%  0.6
 ```
 FileNotFoundError: Model dir not found for deberta-large
 ```
-→ Train variant first: `python scripts/run_variant_experiment.py --variant deberta-large`
+→ Train variant first: `python scripts/experiments/run_variant_experiment.py --variant deberta-large`
 
 ### Evaluation fails with torch error
 ```
 ModuleNotFoundError: No module named 'torch'
 ```
-→ Use venv python: `PYTHON=.venv/bin/python3 python scripts/run_variant_experiment.py --all`
+→ Use venv python: `PYTHON=.venv/bin/python3 python scripts/experiments/run_variant_experiment.py --all`
 
 ### GPU out of memory (OOM)
 ```
@@ -199,8 +199,8 @@ Saved comparison to results/metrics/variant_comparison.json
 ```
 If results seem stale: check file timestamp and re-run variant:
 ```bash
-python scripts/run_variant_experiment.py --variant NAME  # overwrites old results
-python scripts/run_variant_experiment.py --compare       # shows merged results
+python scripts/experiments/run_variant_experiment.py --variant NAME  # overwrites old results
+python scripts/experiments/run_variant_experiment.py --compare       # shows merged results
 ```
 
 ## Advanced: Custom Variant
@@ -218,7 +218,7 @@ variants:
 
 Then:
 ```bash
-python scripts/run_variant_experiment.py --variant my-custom-model
+python scripts/experiments/run_variant_experiment.py --variant my-custom-model
 ```
 
 ## References

@@ -1,6 +1,6 @@
 # Constitutional BioGuard -- unified dual-mode artifact (bio-specialized small-footprint guard)
 
-`scripts/dual_mode_guard.py` packages the two validated 184M DeBERTa-v3 heads into one
+`scripts/experiments/dual_mode_guard.py` packages the two validated 184M DeBERTa-v3 heads into one
 deployable classifier (`DualModeGuard`) plus an eval harness. fp32 loading is baked in
 (transformers 5.9.0 loads deberta-v3 in fp16 by default, which NaNs the attention).
 
@@ -45,7 +45,7 @@ flag = guard.classify_batch([query], [response], policy="or")
 # raw scores for custom policies / calibration:
 p_prompt, p_response = guard.score_batch([query], [response])
 ```
-Harness: `python scripts/dual_mode_guard.py --data set.jsonl` (jsonl of query,[response],label)
+Harness: `python scripts/experiments/dual_mode_guard.py --data set.jsonl` (jsonl of query,[response],label)
 prints recall + over-refusal for every policy.
 
 ## Policies and the honest tradeoff

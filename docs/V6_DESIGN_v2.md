@@ -260,7 +260,7 @@ BeaverTails train - paper split
 
 **Pre-training G.1 audit script:**
 ```python
-# scripts/g1_v6_overlap_audit.py
+# scripts/experiments/g1_v6_overlap_audit.py
 # Verifies 0% overlap between v6 calibration/probe sources and all locked eval sets
 # Run BEFORE any SPLICE fit or cascade calibration
 ```
