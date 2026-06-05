@@ -4,7 +4,29 @@
 [![Python 3.10+](https://img.shields.io/badge/python-3.10%2B-blue)](pyproject.toml)
 [![HF Model](https://img.shields.io/badge/%F0%9F%A4%97%20Hugging%20Face-deberta--v1-yellow)](https://huggingface.co/jang1563/constitutional-bioguard-deberta-v1)
 
-> **TL;DR.** Research prototype biological content classifier built using Anthropic's [Constitutional Classifiers](https://arxiv.org/abs/2501.18837) methodology. Iterated through 10 checkpoints (v1-v8bh) diagnosing shortcuts, recall collapse, and Goodhart effects. The latest dual-mode system (response head + prompt head, 2x184M DeBERTa-v3) is in the same recall band as 7-9B guards but is **Pareto-dominated by the openly-available Qwen3Guard-0.6B** and is **not bio-selective** (selectivity S=1.03). A rigorous self-audit (`docs/CASE_STUDY_eval_self_red_team.md`) reversed several headline claims, producing a reusable 8-point evaluation checklist. The project is a transparent case study in iterative diagnosis, self-red-teaming, and honest non-release decisions. It is not a production-equivalent safeguard.
+> **TL;DR.** A transparent case study in how to *evaluate* a safety classifier honestly. This project builds a dual-mode biological content guard (response + prompt heads, 2×184M DeBERTa-v3) using Anthropic's [Constitutional Classifiers](https://arxiv.org/abs/2501.18837) methodology, then puts it through leakage-clean splits, size-peer benchmarking, per-source contamination control, and **five self-audits — each of which reversed a prior headline claim.** The honest result is a *negative* one, reported as plainly as a positive would be: the response head reaches the recall band of 7–9B guards (recall 0.921, AUROC 0.952) but is **Pareto-dominated by the openly-available Qwen3Guard-0.6B** and is **not bio-selective** (selectivity S = 1.03). The durable contribution is the reusable evaluation discipline, not the model. It is a research artifact, not a production safeguard.
+
+**In 30 seconds**
+
+- **What** — a bio response/prompt guard: constitution → synthetic + reuse-only data → DeBERTa-v3, combined by a configurable dual-mode policy.
+- **Headline** — a competitive recall band, but honestly Pareto-dominated by a *smaller* open model. The negative result is the point, not a footnote.
+- **Why read on** — the evaluation harness and the five self-audits that caught the over-claims are the transferable contribution (a reusable [8-point checklist](docs/CASE_STUDY_eval_self_red_team.md)).
+
+![Size-peer comparison of guard models: recall vs over-refusal on bio response-harm (n=554). The 184M response head sits in the recall band of 7-9B guards but is Pareto-dominated by the smaller, openly-available Qwen3Guard-0.6B.](results/figures/size_peer_pareto.png)
+
+*Recall vs over-refusal on real bio responses (n=554), all guards scored on the same items; bubble area ∝ parameters. The response head (crimson) is off the Pareto frontier — Qwen3Guard-0.6B has higher recall **and** lower over-refusal at a fraction of typical guard size. Reproduce with `python scripts/plot_size_peer_pareto.py`.*
+
+<details>
+<summary><b>Key terms in plain English</b></summary>
+
+- **Over-refusal (FPR)** — how often the guard wrongly flags *legitimate* biology research as harmful. Lower is better.
+- **Recall** — of genuinely harmful responses, the fraction the guard catches. Higher is better.
+- **Pareto-dominated** — another model beats this one on *both* axes at once (higher recall AND lower over-refusal), so there is no operating point where this one is the best choice.
+- **Bio-selectivity (S)** — does the guard flag *bio* harm more than general harm? S ≈ 1.0 means "no" — it is a general harm guard, not a bio specialist.
+- **AUPRC vs AUROC** — threshold-free quality scores; AUPRC is the honest one when the harmful class is rare. High single-threshold recall with low AUPRC means "flags almost everything" (saturated), not "discriminates well".
+- **Leakage-clean** — every evaluation item is verified absent from training (by hash), so scores are not inflated by memorization.
+
+</details>
 
 > **Start here (reviewers).** The curated read is three docs, in order: [`docs/MODEL_CARD.md`](docs/MODEL_CARD.md) (what shipped + honest performance), [`docs/CASE_STUDY_eval_self_red_team.md`](docs/CASE_STUDY_eval_self_red_team.md) (the 8-point evaluation lessons), and [`docs/INTEGRITY_REVIEW_2026-06-04.md`](docs/INTEGRITY_REVIEW_2026-06-04.md) (the full audit trail). Everything else in `docs/` is the supporting research record — see [`docs/README.md`](docs/README.md) for a full map.
 
