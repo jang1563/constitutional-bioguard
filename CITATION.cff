@@ -9,10 +9,10 @@ authors:
     affiliation: "Weill Cornell Medicine"
     email: jak4013@med.cornell.edu
 version: "0.2.0"
-date-released: "2026-05-25"
+date-released: "2026-06-04"
 license: MIT
 repository-code: "https://github.com/jang1563/constitutional-bioguard"
-url: "https://huggingface.co/jang1563/constitutional-bioguard-v4"
+url: "https://huggingface.co/jang1563/constitutional-bioguard-deberta-v1"
 keywords:
   - ai-safety
   - biosafety
@@ -22,12 +22,15 @@ keywords:
   - deberta
   - content-moderation
 abstract: >-
-  A research prototype biological dual-use content classifier built using
-  Anthropic's Constitutional Classifiers methodology. Defines a 56-rule
-  biosafety constitution across 7 NSABB categories, generates synthetic
-  training and corrective augmentation data, and fine-tunes DeBERTa-v3-base
-  for binary safe/unsafe classification. The v4 response-diverse checkpoint
-  is the recommended release checkpoint after a leakage audit and v5 non-release
-  decision; it reaches 2.1% FPR on OR-Bench-Hard-1K, 0% XSTest FPR, 32%
-  WildGuard native bio recall, and 0.45 BioThreat-Eval F1. Intended as a
-  research artifact, not a production safeguard.
+  A research-prototype biological content classifier built using Anthropic's
+  Constitutional Classifiers methodology. It defines a 56-rule biosafety
+  constitution across 7 NSABB categories, generates synthetic and reuse-only
+  training data, and fine-tunes DeBERTa-v3-base classifiers, culminating in a
+  dual-mode guard (a v8bh response head plus an experimental prompt head). The
+  project's durable contribution is its evaluation discipline: leakage-clean
+  splits, size-peer benchmarking, per-source contamination control, and five
+  documented self-audits that each reversed a prior conclusion. The honest
+  result is a negative one: the response head sits in the recall band of 7-9B
+  guards but is Pareto-dominated by the openly-available Qwen3Guard-0.6B and is
+  not bio-selective (selectivity S=1.03). Released as a research artifact and
+  methodology case study, not a production safeguard.
