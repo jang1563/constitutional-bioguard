@@ -1,8 +1,11 @@
 # Constitutional BioGuard
 
-[![License: MIT](https://img.shields.io/badge/License-MIT-green.svg)](LICENSE)
+[![CI](https://github.com/jang1563/constitutional-bioguard/actions/workflows/ci.yml/badge.svg)](https://github.com/jang1563/constitutional-bioguard/actions/workflows/ci.yml)
+[![License: code MIT](https://img.shields.io/badge/code-MIT-green.svg)](LICENSE)
 [![Python 3.10+](https://img.shields.io/badge/python-3.10%2B-blue)](pyproject.toml)
-[![HF Model](https://img.shields.io/badge/%F0%9F%A4%97%20Hugging%20Face-deberta--v1-yellow)](https://huggingface.co/jang1563/constitutional-bioguard-deberta-v1)
+[![HF: response head](https://img.shields.io/badge/%F0%9F%A4%97-response%20head-yellow)](https://huggingface.co/jang1563/constitutional-bioguard-response)
+[![HF: prompt head](https://img.shields.io/badge/%F0%9F%A4%97-prompt%20head-yellow)](https://huggingface.co/jang1563/constitutional-bioguard-prompt)
+[![HF: deberta-v1 (legacy)](https://img.shields.io/badge/%F0%9F%A4%97-deberta--v1-lightgrey)](https://huggingface.co/jang1563/constitutional-bioguard-deberta-v1)
 
 > **TL;DR.** A transparent case study in how to *evaluate* a safety classifier honestly. This project builds a dual-mode biological content guard (response + prompt heads, 2×184M DeBERTa-v3) using Anthropic's [Constitutional Classifiers](https://arxiv.org/abs/2501.18837) methodology, then puts it through leakage-clean splits, size-peer benchmarking, per-source contamination control, and **five self-audits — each of which reversed a prior headline claim.** The honest result is a *negative* one, reported as plainly as a positive would be: the response head reaches the recall band of 7–9B guards (recall 0.921, AUROC 0.952) but is **Pareto-dominated by the openly-available Qwen3Guard-0.6B** and is **not bio-selective** (selectivity S = 1.03). The durable contribution is the reusable evaluation discipline, not the model. It is a research artifact, not a production safeguard.
 
@@ -176,6 +179,8 @@ This tool is designed to **detect** potentially dangerous biological content, no
 
 Do not use this project to develop evasion strategies for biosafety systems, to identify gaps in existing safety tools for malicious purposes, or in contexts where a false negative could enable serious harm without appropriate human oversight. The 9.79% mean adversarial ASR means the classifier is not a complete defense on its own.
 
+See [`SAFETY.md`](SAFETY.md) for the public responsible-use scope, what is withheld, and how to report concerns; and [`docs/REPOSITORY_QUALITY_CHECKLIST.md`](docs/REPOSITORY_QUALITY_CHECKLIST.md) for the release-readiness checklist used before GitHub/Hugging Face updates.
+
 ## Architecture
 
 ```
@@ -232,31 +237,41 @@ pytest tests/ -v
 
 ### Inference-Only Quickstart
 
-Pull the trained classifier from Hugging Face and run a single batch. No Anthropic API key needed; no training pipeline needed. This snippet uses the **public `deberta-v1`** checkpoint; the response-diverse `v4` preview is private (request access) — see the Model versions table above.
+Pull a released head from Hugging Face and run inference. No Anthropic API key, no
+training pipeline. The current deliverable is the **response head**
+(`constitutional-bioguard-response`, gated — request access on the model page first,
+then `huggingface-cli login`). The legacy public `deberta-v1` follows for reference.
 
 ```python
 from transformers import AutoTokenizer, AutoModelForSequenceClassification
 import torch
+from constitutional_bioguard.preprocessing import normalize_text  # adversarial-robustness layer
 
-model_id = "jang1563/constitutional-bioguard-deberta-v1"
-tokenizer = AutoTokenizer.from_pretrained(model_id)
-model = AutoModelForSequenceClassification.from_pretrained(model_id).eval()
+repo = "jang1563/constitutional-bioguard-response"
+tok = AutoTokenizer.from_pretrained(repo)
+# float32 is required: DeBERTa-v3's disentangled attention NaNs under fp16
+model = AutoModelForSequenceClassification.from_pretrained(repo, dtype=torch.float32).eval()
 
-# Inputs are "[CLS] query [SEP] response [SEP]". For real test cases see
-# `tests/fixtures/`; do not paste operational language into demo code.
-texts = [
-    "How does CRISPR-Cas9 work? [SEP] CRISPR uses guide RNA to target specific DNA sequences...",
-    "<NSABB-flagged dual-use query placeholder> [SEP] <model response>",
-]
+query = "How does CRISPR-Cas9 work?"
+response = "CRISPR uses guide RNA to target specific DNA sequences..."
+query, response = normalize_text(query), normalize_text(response)
 
+# pair encoding tok(query, response) matches training/eval -- do NOT pre-concatenate with [SEP]
+inp = tok(query, response, truncation=True, max_length=512, return_tensors="pt")
 with torch.no_grad():
-    enc = tokenizer(texts, padding=True, truncation=True, return_tensors="pt")
-    logits = model(**enc).logits
-    probs = torch.softmax(logits, dim=-1)
-for text, p in zip(texts, probs):
-    label = "UNSAFE" if p[1] >= 0.5 else "SAFE"
-    print(f"{label} (p={p[1]:.3f}): {text[:60]}...")
+    p_harmful = model(**inp).logits.softmax(-1)[0, 1].item()  # class 1 = UNSAFE
+print(f"{'UNSAFE' if p_harmful >= 0.5 else 'SAFE'} (p={p_harmful:.3f})")
 ```
+
+> **Legacy `deberta-v1`** (public/MIT, the cited checkpoint) was trained on a literal
+> `query [SEP] response` *string*, so it is tokenized differently — pass one joined
+> string, not a pair:
+> ```python
+> model_id = "jang1563/constitutional-bioguard-deberta-v1"
+> text = normalize_text("How does CRISPR-Cas9 work? [SEP] CRISPR uses guide RNA...")
+> inputs = tok(text, return_tensors="pt", truncation=True, max_length=512)
+> ```
+> For real test cases see `tests/fixtures/`; do not paste operational language into demo code.
 
 ### Full Pipeline: Data Regeneration
 
@@ -411,11 +426,6 @@ That discipline is the main intended contribution of this repository.
 ## Cross-Project Integration
 
 This classifier can serve as an output safety filter in downstream agent stacks, providing local content classification with no per-query API cost. Keep integration-specific code in the downstream application so this repository remains a focused classifier artifact.
-
-## Responsible Use Scope
-
-See [`SAFETY.md`](SAFETY.md) for the public responsible-use scope, what is withheld, and how to report concerns.
-See [`docs/REPOSITORY_QUALITY_CHECKLIST.md`](docs/REPOSITORY_QUALITY_CHECKLIST.md) for the release-readiness checklist used before GitHub/Hugging Face updates.
 
 ## Citation
 

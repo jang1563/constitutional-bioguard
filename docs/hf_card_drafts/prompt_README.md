@@ -15,6 +15,25 @@ tags:
 - constitutional-classifiers
 - dual-use
 - experimental
+metrics:
+- recall
+- auprc
+model-index:
+- name: constitutional-bioguard-prompt
+  results:
+  - task:
+      type: text-classification
+      name: Bio prompt-harm detection
+    dataset:
+      type: custom
+      name: SOSBench-bio (n=500 harmful)
+    metrics:
+    - type: recall
+      value: 0.752
+      name: Recall (95% CI 0.71-0.79; 5th of 6 guards)
+    - type: auprc
+      value: 0.121
+      name: AUPRC (saturated vs 8B teacher 0.605 -- recall gate, not a calibrated classifier)
 extra_gated_prompt: >-
   constitutional-bioguard-prompt is a defensive bio-safety research artifact (the
   EXPERIMENTAL prompt head of a dual-mode system), released for non-commercial
