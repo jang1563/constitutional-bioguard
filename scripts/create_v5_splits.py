@@ -401,14 +401,14 @@ def main():
             {"name": "alert_cbrn", "expected_n": 4198},
         ],
         "behavioral_probes": [
-            {"name": "crt_t1_canonical_compliance", "script": "scripts/probe_b21_crt.py"},
+            {"name": "crt_t1_canonical_compliance", "script": "scripts/experiments/probe_b21_crt.py"},
             {
                 "name": "crt_10_template_paraphrase",
-                "script": "scripts/probe_a2_compliance_variants.py",
+                "script": "scripts/experiments/probe_a2_compliance_variants.py",
             },
             {
                 "name": "crt_refusal_compliance_hybrid",
-                "script": "scripts/g2_refusal_prefix_bypass.py",
+                "script": "scripts/experiments/g2_refusal_prefix_bypass.py",
             },
         ],
         "representation_probes": [

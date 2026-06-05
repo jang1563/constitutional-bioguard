@@ -19,7 +19,7 @@ list); this document describes the pipeline, sources, and hyperparameters.
 - Label scheme: binary response-harm. label=1 iff the RESPONSE is harmful
   (WildGuardMix `response_harm == harmful`; BeaverTails `is_safe == False`).
 - Input format: `query [SEP] response`, truncated to 512 tokens.
-- Build: `scripts/build_v8_data.py` (writes `data/processed/v8b_{train,val}.jsonl`
+- Build: `scripts/experiments/build_v8_data.py` (writes `data/processed/v8b_{train,val}.jsonl`
   and `v8b_class_weights.json`). Leakage audit: training queries are byte-disjoint
   from every evaluation set.
 
@@ -30,7 +30,7 @@ list); this document describes the pipeline, sources, and hyperparameters.
   cosine scheduler, warmup ratio 0.1, weight decay 0.01; optimizer adamw_torch.
 - Class weighting on (auto SAFE = total/(2*neg); UNSAFE manual); `class_weights: true`.
 - Seed 42; early stopping patience 2; best checkpoint by validation F1.
-- Train: `scripts/train_v8_bioguard.py --data-prefix v8b --output-name deberta_bioguard_v8b`.
+- Train: `scripts/experiments/train_v8_bioguard.py --data-prefix v8b --output-name deberta_bioguard_v8b`.
 
 ## Shipped preprocessing (part of the model)
 

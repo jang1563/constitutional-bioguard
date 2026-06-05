@@ -123,8 +123,8 @@ unlikely to fix lexical overfitting without the domain data.
 ## EXECUTED: option (A) bio-borderline GENERATION (JK-approved 2026-06-03)
 Generated bio-borderline-benign prompts two ways (both hard_label=0, decontaminated vs all eval
 sets, 0 exact + 0 8-gram overlaps): (1) a TEMPLATE generator (33 dangerous-sounding topics x 10
-legit frames x 11 question templates -> 1200 sampled, scripts/gen_bio_borderline.py); (2) an
-LLM-REWRITE generator (Claude Sonnet, 60 seeds x 12 -> 551, scripts/gen_bio_borderline_llm.py,
+legit frames x 11 question templates -> 1200 sampled, scripts/experiments/gen_bio_borderline.py); (2) an
+LLM-REWRITE generator (Claude Sonnet, 60 seeds x 12 -> 551, scripts/experiments/gen_bio_borderline_llm.py,
 more natural/diverse). Trained the 184M student on bio pool + each.
 
 RESULT on the 79 genuinely-biological borderline (realbio_eval): original 0.671 -> +template

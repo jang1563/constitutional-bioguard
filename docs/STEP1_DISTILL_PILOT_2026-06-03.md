@@ -75,7 +75,7 @@ composition**, not capacity. To ship the small student as the prompt head:
    over-refusal is what #1 addresses.
 
 ## Artifacts
-- `scripts/train_v7c_distill.py` (--soft for HarmAug soft-CE), `scripts/eval_distill_student.py`,
-  `scripts/split_cyber_bio.py`. Results: `results/v7c_distill_pilot.json`,
+- `scripts/experiments/train_v7c_distill.py` (--soft for HarmAug soft-CE), `scripts/experiments/eval_distill_student.py`,
+  `scripts/experiments/split_cyber_bio.py`. Results: `results/v7c_distill_pilot.json`,
   `results/distill_student_orefusal_breakdown.json`. Student weights:
   Cayuga `models/deberta_v7c_distill/final` (NOT a release checkpoint; pilot only).

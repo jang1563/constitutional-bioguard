@@ -1,0 +1,16 @@
+{
+  "_comment": "Authoritative source for the size-peer Pareto figure. Edit numbers HERE, then regenerate the figure with `python scripts/plot_size_peer_pareto.py`. Kept in sync with docs/MODEL_CARD.md and docs/INTEGRITY_REVIEW_2026-06-04.md (CLAIM 3).",
+  "benchmark": "real bio response-harm, n=554 (343 harm / 211 benign), all guards scored on the SAME items",
+  "operating_point": "native (each guard at its default decision rule; Qwen 'Controversial' treated as NOT flagged)",
+  "source": "docs/INTEGRITY_REVIEW_2026-06-04.md (CLAIM 3) / docs/MODEL_CARD.md Performance table",
+  "ours": "response head (v8bh)",
+  "dominator": "Qwen3Guard-0.6B",
+  "guards": [
+    {"name": "Qwen3Guard-0.6B",       "params_b": 0.6,   "recall": 0.933, "over_refusal": 0.142},
+    {"name": "response head (v8bh)",  "params_b": 0.184, "recall": 0.921, "over_refusal": 0.194},
+    {"name": "WildGuard-7B",          "params_b": 7.0,   "recall": 0.904, "over_refusal": 0.100},
+    {"name": "Granite-Guardian-2B",   "params_b": 2.0,   "recall": 0.880, "over_refusal": 0.123},
+    {"name": "Llama-Guard-3-8B",      "params_b": 8.0,   "recall": 0.851, "over_refusal": 0.052},
+    {"name": "ShieldGemma-9B",        "params_b": 9.0,   "recall": 0.615, "over_refusal": 0.033}
+  ]
+}

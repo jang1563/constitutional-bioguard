@@ -11,20 +11,20 @@ gated weights; see RELEASE_CHECKLIST withhold list).
 
 | Metric | Value | Producing script |
 |--------|-------|------------------|
-| AUROC | 0.970 | `scripts/r2_calibrate_v8b.py` |
-| AUPRC | 0.938 | `scripts/r2_calibrate_v8b.py` |
-| Real bio-response recall | 0.919 (57/62; Wilson 95% CI 0.825-0.965; directional) | `scripts/eval_v8_realresponse_bio.py` |
-| General response-harm (WildGuard-native, n=1709) | recall 0.694 / F1 0.667 / FPR 0.077 | `scripts/eval_v8_gates.py` |
+| AUROC | 0.970 | `scripts/experiments/r2_calibrate_v8b.py` |
+| AUPRC | 0.938 | `scripts/experiments/r2_calibrate_v8b.py` |
+| Real bio-response recall | 0.919 (57/62; Wilson 95% CI 0.825-0.965; directional) | `scripts/experiments/eval_v8_realresponse_bio.py` |
+| General response-harm (WildGuard-native, n=1709) | recall 0.694 / F1 0.667 / FPR 0.077 | `scripts/experiments/eval_v8_gates.py` |
 
 ## Over-refusal on real legitimate bio research
 
 | Set | n | FPR | Producing script |
 |-----|---|-----|------------------|
-| All real legit bio | 531 | 0.021 | `scripts/eval_v8_overrefusal_realsessions.py` |
+| All real legit bio | 531 | 0.021 | `scripts/experiments/eval_v8_overrefusal_realsessions.py` |
 | Author's own assistant sessions | 134 | 0.060 | same |
 | Substantive-response subset | 68 | 0.015 | same |
 
-## Calibration and operating point (`scripts/r2_calibrate_v8b.py`)
+## Calibration and operating point (`scripts/experiments/r2_calibrate_v8b.py`)
 
 - Temperature scaling T=0.239 (held-out cal split): ECE 0.137 -> 0.042; Brier 0.053 -> 0.035.
 - Operating point: default threshold 0.5 -> recall 0.919 at 2.1% over-refusal
@@ -32,7 +32,7 @@ gated weights; see RELEASE_CHECKLIST withhold list).
 
 ## Adversarial robustness
 
-Char-injection ESR after the shipped `normalize_text` (`scripts/eval_v8b_robust_charinjection.py`):
+Char-injection ESR after the shipped `normalize_text` (`scripts/experiments/eval_v8b_robust_charinjection.py`):
 
 | Attack | ESR |
 |--------|-----|
@@ -43,29 +43,29 @@ Char-injection ESR after the shipped `normalize_text` (`scripts/eval_v8b_robust_
 
 | Attack | Metric | Producing script |
 |--------|--------|------------------|
-| Adversarial word perturbation | ESR 0.123 (greedy char-swap) | `scripts/eval_v8b_robust_advword.py` |
-| Multi-turn naive reconstruction | per-turn recall 0.964 vs windowed 1.0 | `scripts/eval_v8b_multiturn_reconstruction.py` |
-| Benign-framing obfuscation | worst ESR 0.140 (fiction/roleplay/educational wraps) | `scripts/eval_v8b_robust_framing.py` |
-| Full LLM paraphrase (Qwen2.5-7B) | ESR 0.070 (0 refusals); paraphrased reconstruction gap 0.0 | `scripts/eval_v8b_robust_llm_paraphrase.py` |
-| Lexical (bio-keyword) ablation | ~1% prediction change | `scripts/probe_v8b_shortcut.py` |
+| Adversarial word perturbation | ESR 0.123 (greedy char-swap) | `scripts/experiments/eval_v8b_robust_advword.py` |
+| Multi-turn naive reconstruction | per-turn recall 0.964 vs windowed 1.0 | `scripts/experiments/eval_v8b_multiturn_reconstruction.py` |
+| Benign-framing obfuscation | worst ESR 0.140 (fiction/roleplay/educational wraps) | `scripts/experiments/eval_v8b_robust_framing.py` |
+| Full LLM paraphrase (Qwen2.5-7B) | ESR 0.070 (0 refusals); paraphrased reconstruction gap 0.0 | `scripts/experiments/eval_v8b_robust_llm_paraphrase.py` |
+| Lexical (bio-keyword) ablation | ~1% prediction change | `scripts/experiments/probe_v8b_shortcut.py` |
 
 ## Scope boundary
 
 On stub-response benchmarks (SaladBench O39, ALERT-CBRN, SimpleSafety-bio) v8b
 flags ~0 by design: they attach a constant template response and test prompt harm,
-which a response-harm classifier correctly ignores (`scripts/eval_v8_gates.py`).
+which a response-harm classifier correctly ignores (`scripts/experiments/eval_v8_gates.py`).
 
 ## Reproduce
 
 ```bash
 # real-response bio recall (and the leakage-clean benchmark build)
-python scripts/eval_v8_realresponse_bio.py
+python scripts/experiments/eval_v8_realresponse_bio.py
 # real over-refusal money metric
-python scripts/eval_v8_overrefusal_realsessions.py
+python scripts/experiments/eval_v8_overrefusal_realsessions.py
 # calibration + operating point + AUROC/AUPRC
-python scripts/r2_calibrate_v8b.py
+python scripts/experiments/r2_calibrate_v8b.py
 # robustness suite
-python scripts/eval_v8b_robust_charinjection.py
-python scripts/eval_v8b_robust_advword.py
-python scripts/eval_v8b_multiturn_reconstruction.py
+python scripts/experiments/eval_v8b_robust_charinjection.py
+python scripts/experiments/eval_v8b_robust_advword.py
+python scripts/experiments/eval_v8b_multiturn_reconstruction.py
 ```

@@ -48,3 +48,22 @@ docs/HANDOFF_*.md
 docs/SESSION_*.md
 docs/V5_FOLLOWUP_*.md
 docs/V5_NEXT_*.md
+
+# Caches & tooling state
+.pytest_cache/
+.ruff_cache/
+.mypy_cache/
+.claude/
+
+# Run logs (any depth)
+logs/
+**/logs/
+
+# Local audit data artifacts — raw probes / diagnostics / internal review notes, NOT for publication
+data/audit/*.jsonl
+data/audit/*.json
+data/audit/*.md
+# Loose raw-data dumps at data/ root (incl. harmful-prompt probes) — not for publication
+data/*.jsonl
+# data/raw summaries are regenerable artifacts (raw .jsonl already ignored above)
+data/raw/*.json

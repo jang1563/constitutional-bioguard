@@ -62,9 +62,9 @@ This inserts the real `[SEP]` token and enables smarter truncation
 | `evaluation/evaluate_classifier.py` | `predict_batch()` accepts `queries`/`responses` kwargs |
 | `evaluation/external_validation.py` | `format_for_classifier()` returns `(query, response)` tuple |
 | `evaluation/overrefusal_test.py` | Store and pass pairs |
-| `scripts/serve.py` | `ClassifyRequest.to_pair()` + `_classify()` pair path |
-| `scripts/evaluate_wmdp.py` | Pass `(question, choice)` as pair |
-| `scripts/export_to_hf.py` | Usage example updated |
+| `scripts/experiments/serve.py` | `ClassifyRequest.to_pair()` + `_classify()` pair path |
+| `scripts/experiments/evaluate_wmdp.py` | Pass `(question, choice)` as pair |
+| `scripts/experiments/export_to_hf.py` | Usage example updated |
 
 ### References
 
