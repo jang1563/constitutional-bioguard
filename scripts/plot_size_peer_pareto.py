@@ -11,12 +11,16 @@ Run: python scripts/plot_size_peer_pareto.py
 Out: results/figures/size_peer_pareto.png
 """
 from pathlib import Path
+import json
 import matplotlib
 matplotlib.use("Agg")
 import matplotlib.pyplot as plt
 
-# (name, params_billion, recall, over_refusal)  -- source: docs/MODEL_CARD.md, n=554
-DATA = [
+# Authoritative numbers live in results/metrics/size_peer.json (committed). Edit them
+# THERE, then regenerate — so this figure can never silently drift from the model card.
+# The embedded list is only a fallback if that file is missing.
+_METRICS = Path(__file__).resolve().parent.parent / "results" / "metrics" / "size_peer.json"
+_FALLBACK = [  # (name, params_billion, recall, over_refusal) -- source: docs/MODEL_CARD.md, n=554
     ("Qwen3Guard-0.6B", 0.6, 0.933, 0.142),
     ("response head (v8bh)", 0.184, 0.921, 0.194),
     ("WildGuard-7B", 7.0, 0.904, 0.100),
@@ -24,8 +28,19 @@ DATA = [
     ("Llama-Guard-3-8B", 8.0, 0.851, 0.052),
     ("ShieldGemma-9B", 9.0, 0.615, 0.033),
 ]
-OURS = "response head (v8bh)"
-DOMINATOR = "Qwen3Guard-0.6B"
+
+
+def _load_data():
+    """Load (DATA, OURS, DOMINATOR) from the committed metrics file; fall back if absent."""
+    if _METRICS.exists():
+        d = json.loads(_METRICS.read_text())
+        data = [(g["name"], g["params_b"], g["recall"], g["over_refusal"]) for g in d["guards"]]
+        return data, d.get("ours", "response head (v8bh)"), d.get("dominator", "Qwen3Guard-0.6B")
+    print(f"WARNING: {_METRICS} not found -- using embedded fallback numbers")
+    return _FALLBACK, "response head (v8bh)", "Qwen3Guard-0.6B"
+
+
+DATA, OURS, DOMINATOR = _load_data()
 
 
 def pareto_frontier(pts):

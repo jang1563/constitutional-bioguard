@@ -1,0 +1,110 @@
+{
+  "report": "Phase 0 v2 Dataset Audit — Full Report",
+  "date": "2026-05-28",
+  "dataset": "unified_overrefusal_taxonomy_v2.jsonl",
+  "n_records": 23330,
+  "n_sources": 13,
+  "verdict": "FAIL_FOR_TRAINING_AS_IS",
+
+  "summary": "The v2 dataset has good source diversity and concept coverage, but contains critical structural shortcuts that would teach a classifier spurious correlations rather than safety semantics. Any model trained directly on v2 splits would primarily learn: (1) 'protein' keyword → legitimate, (2) source identity → label, (3) has_response → negative, (4) generator-model fingerprints → label. Additionally, 749 harmful WildGuard prompts are mislabeled as 'legitimate'.",
+
+  "critical_findings": {
+    "C1_wildguard_mislabeling": {
+      "severity": "CRITICAL",
+      "description": "All 1,709 WildGuard test items assigned legitimacy_tier='benchmark_should_not_refuse' without checking prompt_harm_label. Cross-reference with original WildGuard annotations shows 749 items (43.8%) have prompt_harm_label='harmful' — including requests for self-harm guides, CSAM manifestos, and jailbreak attacks — all mislabeled as 'legitimate'.",
+      "affected_split": "ood_fnr (1,709 records, all with wrong binary_label)",
+      "impact": "FNR evaluation using binary_label is invalid. Practical eval scripts use external files with correct labels, so past evaluations were NOT affected. But the v2 dataset itself is unreliable for any new training."
+    },
+    "C2_frt_p2_homogeneity": {
+      "severity": "CRITICAL",
+      "description": "FRT P2 (48.6% of raw dataset, 38.9% of training split) consists of 11,330 records from ONLY 5 proteins (2AAI, 3BTA, 1ACC, 1MDT, 1A2P). After downsampling to 3,533 in training, each protein still has ~700-860 near-identical records. All labeled 'legitimate'.",
+      "impact": "Creates a trivial 'protein' keyword shortcut. A single keyword ('protein') achieves 93.5% accuracy on binary classification."
+    },
+    "C3_source_equals_label": {
+      "severity": "CRITICAL",
+      "description": "Source field alone achieves 96.1% accuracy. 91.9% of negative class comes from external_benchmark, 74.9% of legitimate from frt_p2_kill_chain. A classifier can learn source-specific patterns instead of safety semantics.",
+      "impact": "Any DNN will learn source fingerprints (formatting, vocabulary, length patterns) as primary features."
+    },
+    "C4_response_field_shortcut": {
+      "severity": "HIGH",
+      "description": "92% of negative items have response field populated; only 7% of legitimate items do. has_response alone achieves 92.6% accuracy.",
+      "impact": "A query+response model will learn 'if response exists → flag as negative'."
+    },
+    "C5_model_as_prompt_hardness_proxy": {
+      "severity": "CRITICAL",
+      "description": "Model-field identity alone predicts binary label with 88.0% accuracy. Records span 12 generator models (opus-4-7, opus-4-6, sonnet-4-6, sonnet-4-5, sonnet-4-5-20250929, haiku-4-5, gemini-2.5-flash, gpt-4o-2024-11-20, gpt-4o-mini, gpt-5.x, 'expert', 'seed', 'benchmark') with three regimes: (a) pure-legitimate models (opus-4-7 97.4% legit, sonnet-4-5 100%, sonnet-4-5-20250929 97.3%), (b) pure-negative models (gemini-2.5-flash 100%, gpt-4o-2024-11-20 100%, 'benchmark' 80.4%), (c) refusal-heavy models (gpt-5.x 54.8% session_block, opus-4-6 35.4%, sonnet-4-6 13%).",
+      "data_collection_mechanism": "User clarified (2026-05-28): model switches in session data were DEFENSIVE — when the primary model (opus-4-7) was blocked, the user manually fell back to a lower/older model (opus-4-6, sonnet-4-6) to continue work. Lower-model records therefore come from prompts that had ALREADY tripped the higher model's refusal. The model field is NOT a random covariate; it encodes a selection step that filters prompts toward harder/more-borderline territory before they reach the lower model.",
+      "reframed_interpretation": "The 88% model→label accuracy is NOT primarily 'different models have different refusal calibrations.' It is 'model identity is a proxy for prompt-hardness tier.' The session_claude_code within-source spread (opus-4-7 37% block vs sonnet-4-6 76% block on n=78) reflects routing logic, not model behavior: sonnet-4-6 only saw prompts after they had been escalated past opus. The same prompts run fresh on sonnet-4-6 from scratch would have a different refusal rate.",
+      "empirical_confirmation_2026_05_28": "FIX-6a executed: traced 698/701 session blocks back to their raw .claude/projects session files. Found that 414/414 (100%) opus-4-7 records are tier_0 (primary attempt, no prior model), 145/147 (98.6%) opus-4-6 records are tier_1 (preceded in-session by opus-4-7), and 76/78 (97.4%) sonnet-4-6 records are tier_1 (n=53) or tier_2 (n=23). The 23 tier_2 sonnet-4-6 records had BOTH opus-4-7 AND opus-4-6 used earlier in the same session — these are the deepest cascade prompts. The selection-effect framing is no longer a hypothesis; it is the data-generating process. Output: data/audit/session_fallback_tiers.jsonl (n=701).",
+      "concrete_example": "Within session_claude_code (n=639, all OOD_FPR), opus-4-7 (n=414) had 37% session_block, opus-4-6 (n=147) had 35.4%, sonnet-4-6 (n=78) had 76%. The 41pp spread is the signature of cascading fallback, not model variance.",
+      "split_imbalance": "Train-only models: opus-4-7 (majority), benchmark, sonnet-4-5-20250929, haiku-4-5, sonnet-4-5, seed. OOD-only models: opus-4-6, gpt-5.x, expert (FPR); gemini-2.5-flash, gpt-4o-2024-11-20 (FNR). Train vs OOD_FPR therefore differ in TWO dimensions: (i) prompt distribution shift and (ii) prompt-hardness distribution shift (because OOD_FPR's fallback-model bucket is enriched for harder prompts).",
+      "impact": "Three cascading problems: (1) Aggregate FPR on OOD_FPR conflates 'classifier missed over-refusal' with 'classifier saw a prompt distribution selected for difficulty by upstream model routing.' (2) Train↔OOD generalization is harder than the splits advertise — train was generated on baseline-difficulty prompts; OOD_FPR's lower-model portion was generated on opus-rejected prompts. (3) Any classifier exploiting model-style textual fingerprints (response length, hedging vocabulary) is implicitly learning prompt-hardness, not safety semantics.",
+      "addendum_file": "data/metrics/v2_audit_phase0_model_confound.json"
+    }
+  },
+
+  "high_findings": {
+    "H1_query_diversity_crisis": {
+      "description": "Legitimate class: only 18.1% unique stems (first 50 chars). Negative class: 89.9% unique. The legitimate class is dominated by repetitive FRT P2 templates.",
+      "metric": "unique_stems_legitimate=2731/15123, unique_stems_negative=6856/7625"
+    },
+    "H2_korean_text_shortcut": {
+      "description": "16.15% of ambiguous class contains Korean text. 0% of negative class does. In ood_fpr, JK session data (701 records) is 27% Korean.",
+      "metric": "korean_in_ambiguous=94/582, korean_in_negative=0/7625"
+    },
+    "H3_frt_p1_identical_queries": {
+      "description": "All 192 FRT P1 items start with identical 'You are observing an iterative protein design loop...' prefix. Zero diversity.",
+      "metric": "unique_prefixes=1"
+    },
+    "H4_query_length_bias": {
+      "description": "Legitimate median=24 chars (short FRT P2 stubs), negative median=57, ambiguous median=224. Length alone is a weak signal.",
+      "metric": "median_len_legitimate=24, median_len_negative=57, median_len_ambiguous=224"
+    }
+  },
+
+  "shortcut_separability_tests": {
+    "D1_tfidf_text": {"accuracy": 0.9732, "f1_neg": 0.9728, "note": "TF-IDF on query text, 5-fold CV. Top features: 'protein'→legit, 'kill/people/drugs'→neg"},
+    "D2_metadata_only": {"accuracy": 0.9609, "f1_neg": 0.9580, "note": "5 metadata features (no text!): query_len, has_response, protein_kw, is_frt_p2, is_ext_bench"},
+    "D3_protein_keyword_alone": {"accuracy": 0.9352, "f1_neg": 0.9370, "note": "Single keyword: 'protein' in query → predict legitimate"},
+    "D4_source_field_alone": {"accuracy": 0.9609, "f1_neg": 0.9580, "note": "Source field perfectly predicts label"},
+    "D5_has_response_alone": {"accuracy": 0.9257, "f1_neg": 0.9233, "note": "Presence of response field alone"}
+  },
+
+  "positive_findings": {
+    "P1": "External benchmarks (alert_cbrn, advbench, saladbench) correctly labeled as negative",
+    "P2": "ConstitutionRules correctly split: assist-freely→legitimate, hard-refuse/decline→negative",
+    "P3": "Dual-use ambiguous items (n=70 in training) are genuine research questions (Yersinia virulence, botulinum toxin, ricin mechanism)",
+    "P4": "Source diversity concept is excellent — 13 sources spanning synthetic, benchmark, session, expert labels",
+    "P5": "OverRefusal API items contain legitimate research queries (SARS-CoV-2, cryo-EM, binary toxin)",
+    "P6": "Eval scripts use external benchmark files with correct labels, so past evaluations were NOT invalidated"
+  },
+
+  "v7a_training_note": "v7.A was trained on v4's train.jsonl + WildGuardMix bio (3,531 items), NOT on v2 splits. v7.A training is NOT affected by v2 issues. The question is whether v2 should replace v4 data for future training.",
+
+  "recommendation": {
+    "verdict": "DO_NOT_USE_V2_FOR_TRAINING_WITHOUT_FIXES",
+    "required_fixes_before_training": [
+      "FIX-1: WildGuard relabeling — split by prompt_harm_label (749 harmful → negative, 940 unharmful + 20 null → legitimate)",
+      "FIX-2: FRT P2 diversification — either expand to 50+ proteins OR replace with diverse bio research queries OR downsample to <500 with response augmentation",
+      "FIX-3: Response field parity — add synthetic responses to legitimate items (or train query-only mode)",
+      "FIX-4: Cross-source label mixing — add non-FRT legitimate examples (use constitution_assist + overrefusal_api + session items in training)",
+      "FIX-5: Korean-negative examples — either add Korean harmful examples or preprocess to remove language signal",
+      "FIX-6: Model-as-prompt-hardness-proxy confound (addresses C5) — model-stratification alone is INSUFFICIENT because model identity correlates with prompt hardness via the fallback-routing mechanism. Required: (a) for every session_claude_code prompt that involved model fallback, recover the FIRST model attempted and re-classify the prompt as 'tier-1 over-refusal' (opus-rejected) vs 'tier-2' (opus-and-fallback-rejected); use this tier as the metric stratifier rather than final model; (b) report per-fallback-tier FPR/FNR; (c) for prompts where model identity is unambiguous (FRT, constitution rules), still add LOMO fold; (d) for matched-triple bundles, single-model generation per bundle as defensive measure; (e) document in datasheet that model field reflects cascading-fallback collection process and SHOULD NOT be used as a feature."
+    ],
+    "for_v7_comparison": "Use v4 training data (already validated, used for v7.A) as common baseline for A/B/C comparison. v2 splits can serve as SUPPLEMENTARY eval after WildGuard fix, but should not replace locked benchmarks."
+  },
+
+  "class_balance": {
+    "overall": {"legitimate": 15123, "negative": 7625, "ambiguous": 582},
+    "training_split": {"legitimate": 4640, "negative": 4382, "ambiguous": 70},
+    "ood_fpr": {"legitimate": 784, "ambiguous": 500, "negative": 4},
+    "ood_fnr": {"negative": 2468, "legitimate_WRONG": 1709}
+  },
+
+  "label_field_resolution": {
+    "raw_v2_label_field": "legitimacy_tier (23 distinct values)",
+    "split_label_field": "binary_label (legitimate/negative/ambiguous)",
+    "mapping": "legitimacy_tier → binary_label via TIER_TO_BINARY dict in build_splits.py",
+    "note": "No 'label' field exists in raw v2 or splits. binary_label is the correct field for training."
+  }
+}

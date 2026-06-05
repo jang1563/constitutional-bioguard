@@ -41,7 +41,9 @@ RESPONSE-harm, real bio responses (n=554, 343 harm / 211 benign):
 | ShieldGemma-9B | 9B | 0.615 | 0.033 |
 threshold-free AUROC (this) = 0.952. All models tested on the SAME items (n=554); competitor CIs
 omitted (binary outputs, no score -- CI width ~similar at same n). Recall 0.921 vs WildGuard 0.904:
-McNemar p=0.248 (not statistically different); vs Qwen 0.956: McNemar p=0.027 (Qwen wins).
+McNemar p=0.248 (not statistically different); vs Qwen3Guard-0.6B 0.956 -- the *same* 0.6B model at
+an alternate operating point (its "Controversial" verdict counted as flagged; the table above uses
+its 0.933 point -- see Audit #3) -- McNemar p=0.027 (Qwen wins).
 
 PROMPT-harm, SOSBench-bio (n=500 harmful):
 | model | recall [95% CI] |

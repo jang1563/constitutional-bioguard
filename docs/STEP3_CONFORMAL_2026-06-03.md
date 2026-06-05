@@ -38,4 +38,4 @@ the guard's over-refusal is at most 10%, at recall 0.80."
   calibration set is the right production choice.
 
 ## Artifacts
-scripts/conformal_bound.py (LTT + Clopper-Pearson). Result: results/conformal_bound.json.
+scripts/experiments/conformal_bound.py (LTT + Clopper-Pearson). Result: results/conformal_bound.json.

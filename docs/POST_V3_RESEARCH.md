@@ -12,8 +12,8 @@ What to investigate once v3 lands (regardless of outcome).
    domain held-outs. Save calibrated threshold to v3_provenance.json.
 2. **Latency benchmarking.** Measure inference latency on Cayuga CPU
    (target: serving budget < 50ms per query/response pair).
-3. **ONNX export + serving script.** Update `scripts/export_onnx.py` and
-   `scripts/serve.py` for the v3 model.
+3. **ONNX export + serving script.** Update `scripts/experiments/export_onnx.py` and
+   `scripts/experiments/serve.py` for the v3 model.
 
 ### Phase 2: External baseline comparison (2-3 weeks)
 Compare v3 against published safety classifiers on identical benchmarks:

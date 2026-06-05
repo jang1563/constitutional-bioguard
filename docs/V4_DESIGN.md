@@ -288,9 +288,9 @@ Total estimated cost:
 - [ ] Data: v4_augmentation.jsonl (~3000 items)
 - [ ] Data: per-block split records (B.1-B.4 individually traceable)
 - [ ] Code: scripts/create_v4_splits.py
-- [ ] Code: scripts/train_v4.py
+- [ ] Code: scripts/train_v4_response_diverse.py
 - [ ] Code: optional invariance loss in train_deberta.py
-- [ ] Code: scripts/evaluate_v4_full.py (Phase 1-3 rerun)
+- [ ] Code: scripts/experiments/cayuga_v4_eval.slurm (Phase 1-3 rerun)
 - [ ] SLURM: cayuga_v4_train.slurm + expanse_v4_eval.slurm
 - [ ] Model: models/deberta_bioguard_v4_response_diverse/
 - [ ] Probes: B.2.1, B.2.5, B.2.6 rerun results

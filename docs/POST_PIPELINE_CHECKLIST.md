@@ -101,15 +101,15 @@ Compare with previous run (stored in git history if available).
 Train all 5 model variants (can take 2–3 hours depending on hardware):
 
 ```bash
-python scripts/run_variant_experiment.py --all
+python scripts/experiments/run_variant_experiment.py --all
 ```
 
 Or run individual variants for faster iteration:
 ```bash
-python scripts/run_variant_experiment.py --variant deberta-large   # ~30 min
-python scripts/run_variant_experiment.py --variant biomedbert      # ~30 min
-python scripts/run_variant_experiment.py --variant mdeberta        # ~30 min
-python scripts/run_variant_experiment.py --variant biolinkbert     # ~30 min
+python scripts/experiments/run_variant_experiment.py --variant deberta-large   # ~30 min
+python scripts/experiments/run_variant_experiment.py --variant biomedbert      # ~30 min
+python scripts/experiments/run_variant_experiment.py --variant mdeberta        # ~30 min
+python scripts/experiments/run_variant_experiment.py --variant biolinkbert     # ~30 min
 ```
 
 ### Track Progress
@@ -135,7 +135,7 @@ done
 ## 4. Compare All Variants
 
 ```bash
-python scripts/run_variant_experiment.py --compare
+python scripts/experiments/run_variant_experiment.py --compare
 ```
 
 Example output (**ILLUSTRATIVE FORMAT ONLY — these numbers are fabricated
@@ -201,7 +201,7 @@ Once satisfied with performance:
 
 ```bash
 # Export deberta-large as HuggingFace hub repo
-python scripts/export_to_hf.py --variant deberta-large --repo-id constitutional-bioguard-v2
+python scripts/experiments/export_to_hf.py --variant deberta-large --repo-id constitutional-bioguard-v2
 ```
 
 This:
@@ -334,13 +334,13 @@ EOF
 A: With placeholder responses, separation was artificially good. Real data often has harder boundaries. If F1 dropped >10%, check data quality.
 
 **Q: Variant training crashes with OOM?**
-A: deberta-large on limited GPU. Use CPU: `CUDA_VISIBLE_DEVICES="" python scripts/run_variant_experiment.py --variant deberta-large`
+A: deberta-large on limited GPU. Use CPU: `CUDA_VISIBLE_DEVICES="" python scripts/experiments/run_variant_experiment.py --variant deberta-large`
 
 **Q: Results not showing in comparison table?**
 A: Results are merged into `variant_comparison.json`. Ensure model dir exists: `ls models/variant_*/`
 
 **Q: Want to re-run single variant?**
-A: Script overwrites by variant name: `python scripts/run_variant_experiment.py --variant deberta-large` replaces old result.
+A: Script overwrites by variant name: `python scripts/experiments/run_variant_experiment.py --variant deberta-large` replaces old result.
 
 ---
 

@@ -1317,7 +1317,7 @@ was run on Cayuga (~10 min); LLaMA-Guard 3 was run on SDSC Expanse H100
 
 A reproducibility note: the initial LLaMA-Guard 3 inference returned all-
 zero predictions with AUROC = 0.65 on BioThreat-Eval. Diagnostic
-investigation (scripts/debug_llama_guard.py) revealed that LLaMA-Guard 3's
+investigation (scripts/experiments/debug_llama_guard.py) revealed that LLaMA-Guard 3's
 chat template ends with `<|end_header_id|>`, after which the model's
 deterministic first generated token is `\n\n` (id 271), NOT `safe` or
 `unsafe`. The safe/unsafe token appears at generation position 1. The
@@ -2049,7 +2049,7 @@ non-bio specialist discrimination.
 **Artefacts:**
 - `data/metrics/phase3_probe_b21_crt_v4.json` (CRT, n=100)
 - `data/metrics/phase3_probe_b25_linear_probe_v4.json` (linear probe, n=1400)
-- `scripts/cayuga_v4_probes.slurm`, `scripts/cayuga_v4_probe_b25.slurm`
+- `scripts/experiments/cayuga_v4_probes.slurm`, `scripts/experiments/cayuga_v4_probe_b25.slurm`
 
 ### 6.16.2 A.2: How Specific is v3's Compliance-Template Shortcut?
 
@@ -2149,8 +2149,8 @@ false positives is the practical safety win.
 **Artefacts:**
 - `data/metrics/phase3_probe_a2_compliance_variants_v3.json`
 - `data/metrics/phase3_probe_a2_compliance_variants_v4.json`
-- `scripts/probe_a2_compliance_variants.py`,
-  `scripts/cayuga_a2_compliance_variants.slurm`
+- `scripts/experiments/probe_a2_compliance_variants.py`,
+  `scripts/experiments/cayuga_a2_compliance_variants.slurm`
 
 ### 6.16.3 Phase 3 OOD Bio: Four-Model Comparison
 
@@ -2240,8 +2240,8 @@ under 1 ms / item on average -- negligible.
 
 **Artefacts:**
 - `data/metrics/phase3_probe_a3_latency_memory.json`
-- `scripts/probe_a3_latency_memory.py`,
-  `scripts/cayuga_a3_latency.slurm`
+- `scripts/experiments/probe_a3_latency_memory.py`,
+  `scripts/experiments/cayuga_a3_latency.slurm`
 
 ### 6.16.5 Goodhart Audit: Did v4 Memorise the Test Set? (G.1)
 
@@ -2330,7 +2330,7 @@ and WildGuard native (zero overlap).
 
 **Artefacts:**
 - `data/metrics/v4_goodhart_g1_overlap_audit.json`
-- `scripts/g1_overlap_audit.py`
+- `scripts/experiments/g1_overlap_audit.py`
 
 ### 6.16.6 Goodhart Audit: Refusal-Prefix Bypass (G.2)
 
@@ -2401,8 +2401,8 @@ breaking the v3 shortcut.
 **Artefacts:**
 - `data/metrics/v4_goodhart_g2_refusal_bypass_v3.json`
 - `data/metrics/v4_goodhart_g2_refusal_bypass_v4.json`
-- `scripts/g2_refusal_prefix_bypass.py`,
-  `scripts/cayuga_g2_refusal_bypass.slurm`
+- `scripts/experiments/g2_refusal_prefix_bypass.py`,
+  `scripts/experiments/cayuga_g2_refusal_bypass.slurm`
 
 ### 6.17 v5 (PairCFR + Data Discipline): An Honest Failure That Refines the Story
 
@@ -2776,7 +2776,7 @@ recall while gaining v4's bio precision. v4's 6.7-15.6x latency advantage
 
 **Artefacts:**
 - `data/metrics/stratified_bio_selectivity.json`
-- `scripts/stratify_bio_selectivity.py`
+- `scripts/experiments/stratify_bio_selectivity.py`
 
 ### 6.19 Audit Summary: What Survived, What Did Not
 
@@ -3067,10 +3067,10 @@ trade its surplus aggressiveness back for OOD precision, evaluated against the
 same OR-Bench-Hard / FalseReject gates before any ship decision.
 
 **Artefacts:**
-- `scripts/train_v7c_llama_nocot.py`, `scripts/build_v7c_nocot_data.py`
-- `scripts/eval_baselines_response_harm.py` (response-harm baseline harness;
+- `scripts/experiments/train_v7c_llama_nocot.py`, `scripts/experiments/build_v7c_nocot_data.py`
+- `scripts/experiments/eval_baselines_response_harm.py` (response-harm baseline harness;
   adds a `signal` mode to `external_baselines.WildGuard`)
-- `scripts/paired_test_v7c_baselines.py` (McNemar + paired bootstrap)
+- `scripts/experiments/paired_test_v7c_baselines.py` (McNemar + paired bootstrap)
 - `results/metrics/v7c_plain_eval_*.json`,
   `results/metrics/v7c_baseline_rh_{wildguard_7b,llama_guard_3_8b}_wildguard_native.json`
 

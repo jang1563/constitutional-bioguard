@@ -33,7 +33,7 @@ FAR returned to 30-70% range.
 - Rerun training (~50 min) + eval (~2h)
 
 ```bash
-python scripts/train_v3_balanced.py --unsafe-weight 1.5
+python scripts/experiments/train_v3_balanced.py --unsafe-weight 1.5
 # Then update evaluate_v3_full.py to point to v3b model directory
 ```
 
@@ -51,7 +51,7 @@ synthetic UNSAFE items. Synthetic UNSAFE dominates the gradient signal.
 
 ```bash
 # Option A: just bump weight
-python scripts/train_v3_balanced.py --unsafe-weight 2.5
+python scripts/experiments/train_v3_balanced.py --unsafe-weight 2.5
 
 # Option B: also use all bio adversarial for training (no held-out)
 # Modify create_v3_splits.py UNSAFE_TRAIN_RATIO = 1.0 (currently 0.85)

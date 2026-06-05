@@ -61,9 +61,9 @@ precision/recall trade-off rather than hidden behind a release tag.
 - `scripts/train_v5_baseline.py`
 - `scripts/train_v5.py`
 - `scripts/v5_eval_all_gates.py`
-- `scripts/g1_v5_overlap_audit.py`
-- `scripts/g2_refusal_prefix_bypass.py`
-- `scripts/v5_probe_preregister_v2.py`
+- `scripts/experiments/g1_v5_overlap_audit.py`
+- `scripts/experiments/g2_refusal_prefix_bypass.py`
+- `scripts/experiments/v5_probe_preregister_v2.py`
 - `docs/MODEL_CARD_V4.md`
 - `data/metrics/v5_acceptance_check.json`
 
