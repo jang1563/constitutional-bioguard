@@ -122,6 +122,17 @@ the same set, so this is not a differentiator.
 - Leetspeak bypasses 86% of detections; text normalization restores it to 4%
 - Conformal certificate: over-refusal <= 20% at 95% confidence, recall 0.878
 
+**Transferable finding — a labeled-data gap for the hardest part of the problem.** The response
+head is general-not-bio-selective (S = 1.03) for a *structural* reason, not a tuning miss:
+searching the major public guard benchmarks (WildGuard, SALAD-Bench, ALERT, AdvBench) for
+labeled-harmful examples covering the *ambiguous* dual-use tail — e.g. cell-biology techniques such
+as AAV immune evasion — turns up essentially none; they target explicit CBRN content. The
+bio-labeled data that does exist is general-safety data filtered to bio (BeaverTails,
+WildGuardMix-bio), which is *why* any supervised guard trained on it comes out general rather than
+bio-selective. So the ceiling here is a field-level dataset gap, not just this model — the ambiguous
+dual-use boundary needs purpose-built labeled data or human-in-the-loop adjudication (the motivation
+for the companion [AmbiguityCasebook](https://github.com/jang1563/ambiguity-casebook)).
+
 Full details: `docs/MODEL_CARD.md`, `docs/INTEGRITY_REVIEW_2026-06-04.md`,
 `docs/POSTMORTEM_2026-06-04.md`.
 

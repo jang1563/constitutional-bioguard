@@ -137,6 +137,11 @@ Components that may be useful independent of the model:
 - **Benchmark designers** can cite the contamination finding (SafeRLHF/BeaverTails overlap inflates
   competitors) and the n=30->n=500 ranking reversal as evidence that guard leaderboards need
   per-source and adequately-powered evaluation.
+- **The field** can treat the bio-selectivity gap as a *data* finding: no major public guard
+  benchmark (WildGuard, SALAD-Bench, ALERT, AdvBench) supplies labeled-harmful examples for the
+  *ambiguous* dual-use tail (e.g. cell-biology such as AAV immune evasion). Supervised guards
+  trained on the data that does exist (general-safety filtered to bio) are therefore general, not
+  bio-selective, by construction -- a purpose-built dataset gap, not a per-model tuning miss.
 
 ## Responsible Release
 
