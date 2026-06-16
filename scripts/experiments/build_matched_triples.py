@@ -21,7 +21,7 @@ import json
 import os
 from collections import defaultdict
 
-BASE = '~/Dropbox/Bioinformatics/Claude/Safeguard/constitutional_bioguard'
+BASE = os.path.expanduser('~/Dropbox/Bioinformatics/Claude/Safeguard/constitutional_bioguard')
 OUT_DIR = os.path.join(BASE, 'data/splits')
 
 # =====================================================================
@@ -31,7 +31,7 @@ print("=" * 70)
 print("BUILD MATCHED-TRIPLE EVALUATION BUNDLES")
 print("=" * 70)
 
-or_base = '~/Dropbox/Bioinformatics/Claude/OverRefusal/data'
+or_base = os.path.expanduser('~/Dropbox/Bioinformatics/Claude/OverRefusal/data')
 
 all_queries = []
 for fn in ['seeds_tier1.jsonl', 'seeds_tier2.jsonl', 'seeds_tier3.jsonl',
@@ -107,7 +107,7 @@ print(f"  OverRefusal triplets: {bundle_id}")
 # 2. ConstitutionRules assist-freely / hard-refuse matched pairs
 # =====================================================================
 print("\n[2] Building ConstitutionRules binary-extreme pairs...")
-cr_path = '~/Dropbox/Bioinformatics/Claude/ConstitutionRules/phase8/training_dataset.jsonl'
+cr_path = os.path.expanduser('~/Dropbox/Bioinformatics/Claude/ConstitutionRules/phase8/training_dataset.jsonl')
 
 cr_by_domain = defaultdict(lambda: defaultdict(list))
 with open(cr_path) as f:

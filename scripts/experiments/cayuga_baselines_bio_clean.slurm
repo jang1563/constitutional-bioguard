@@ -19,7 +19,7 @@ set -euo pipefail
 cd "${SLURM_SUBMIT_DIR:-$(pwd)}"
 
 # Direct path to conda env python (module system unavailable in SLURM)
-PYTHON=~/.conda/envs/bioguard/bin/python
+PYTHON=$HOME/.conda/envs/bioguard/bin/python
 export PYTHONUTF8=1
 export PYTHONPATH="${PYTHONPATH:+$PYTHONPATH:}$(pwd)"
 

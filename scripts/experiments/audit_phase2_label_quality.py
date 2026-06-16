@@ -15,7 +15,7 @@ import os
 import random
 from collections import defaultdict, Counter
 
-BASE = '~/Dropbox/Bioinformatics/Claude/Safeguard/constitutional_bioguard'
+BASE = os.path.expanduser('~/Dropbox/Bioinformatics/Claude/Safeguard/constitutional_bioguard')
 INPUT = os.path.join(BASE, 'data/audit/sanitized_v2.jsonl')
 OUT_JSONL = os.path.join(BASE, 'data/audit/label_quality_sample.jsonl')
 OUT_MD = os.path.join(BASE, 'data/audit/label_quality_review.md')

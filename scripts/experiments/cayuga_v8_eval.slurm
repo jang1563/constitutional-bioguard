@@ -16,7 +16,7 @@
 # strict bio subsets + selectivity. Decides "was the bottleneck the data?"
 set -euo pipefail
 cd "${SLURM_SUBMIT_DIR:-$(pwd)}"
-PYTHON=~/.conda/envs/bioguard/bin/python
+PYTHON=$HOME/.conda/envs/bioguard/bin/python
 export PYTHONUTF8=1
 export PYTHONPATH="${PYTHONPATH:+$PYTHONPATH:}$(pwd)"
 export HF_HOME="${HOME}/.cache/huggingface"

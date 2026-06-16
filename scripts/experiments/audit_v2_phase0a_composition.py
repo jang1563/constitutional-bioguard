@@ -13,9 +13,9 @@ from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).parent.parent))
 
-V2_PATH = Path("~/Dropbox/Bioinformatics/Claude/Safeguard/"
+V2_PATH = Path(Path.home(), "Dropbox/Bioinformatics/Claude/Safeguard/"
                "constitutional_bioguard/data/raw/unified_overrefusal_taxonomy_v2.jsonl")
-OUT_PATH = Path("~/Dropbox/Bioinformatics/Claude/Safeguard/"
+OUT_PATH = Path(Path.home(), "Dropbox/Bioinformatics/Claude/Safeguard/"
                 "constitutional_bioguard/data/metrics/v2_audit_phase0a_composition.json")
 
 RNG = random.Random(42)

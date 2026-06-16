@@ -38,7 +38,7 @@ import numpy as np
 from constitutional_bioguard.config import CONFIGS_DIR, METRICS_DIR, MODELS_DIR
 
 # koaug track's held-out money metric (read-only; never copied into this repo)
-OOD_FPR = Path("~/constitutional_bioguard/data/splits/ood_fpr.jsonl")
+OOD_FPR = Path(Path.home(), "constitutional_bioguard/data/splits/ood_fpr.jsonl")
 
 MODEL_DIRS = {"v8c": MODELS_DIR / "deberta_bioguard_v8c",
               "v8b": MODELS_DIR / "deberta_bioguard_v8b",

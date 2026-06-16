@@ -3,8 +3,8 @@
 Audit Phase 1 — Apply redaction policies.
 
 Policies (decided 2026-05-28):
-  - ~/  →  ~/           (GENERALIZE)
-  - jak4013@med.cornell.edu  →  [EMAIL]  (REDACT)
+  - /Users/<user>/  →  ~/           (GENERALIZE)
+  - <maintainer-email>  →  [EMAIL]  (REDACT)
   - All other patterns: KEEP
 
 Input:  data/raw/unified_overrefusal_taxonomy_v2.jsonl
@@ -15,15 +15,15 @@ import json
 import os
 import re
 
-BASE = '~/Dropbox/Bioinformatics/Claude/Safeguard/constitutional_bioguard'
+BASE = os.path.expanduser('~/Dropbox/Bioinformatics/Claude/Safeguard/constitutional_bioguard')
 INPUT = os.path.join(BASE, 'data/raw/unified_overrefusal_taxonomy_v2.jsonl')
 OUT = os.path.join(BASE, 'data/audit/sanitized_v2.jsonl')
 LOG = os.path.join(BASE, 'data/audit/redaction_log.json')
 
 REDACTIONS = [
-    (re.compile(r'~/'), '~/'),
-    (re.compile(r'~\b'), '~'),
-    (re.compile(r'jak4013@med\.cornell\.edu'), '[EMAIL]'),
+    (re.compile(r'/Users/[^/\s]+/'), '~/'),
+    (re.compile(r'/Users/[^/\s]+\b'), '~'),
+    (re.compile(r'[\w.+-]+@med\.cornell\.edu'), '[EMAIL]'),
 ]
 
 TEXT_FIELDS = ['query', 'response', 'assistant_text', 'user_prompt', 'block_message',
@@ -71,16 +71,16 @@ with open(INPUT) as fin, open(OUT, 'w') as fout:
 
 with open(INPUT) as f:
     raw_text = f.read()
-    per_pattern['home_path'] = len(re.findall(r'~', raw_text))
-    per_pattern['email'] = len(re.findall(r'jak4013@med\.cornell\.edu', raw_text))
+    per_pattern['home_path'] = len(re.findall(r'/Users/[^/]+', raw_text))
+    per_pattern['email'] = len(re.findall(r'[\w.+-]+@med\.cornell\.edu', raw_text))
 
 log = {
     'timestamp': '2026-05-28',
     'input': INPUT,
     'output': OUT,
     'policies_applied': [
-        {'pattern': '~/', 'action': 'GENERALIZE', 'replacement': '~/'},
-        {'pattern': 'jak4013@med.cornell.edu', 'action': 'REDACT', 'replacement': '[EMAIL]'},
+        {'pattern': '/Users/<user>/', 'action': 'GENERALIZE', 'replacement': '~/'},
+        {'pattern': '<maintainer>@med.cornell.edu', 'action': 'REDACT', 'replacement': '[EMAIL]'},
     ],
     'policies_kept': [
         'INSTITUTION (Weill Cornell, Mason Lab, cmlab) — KEEP',

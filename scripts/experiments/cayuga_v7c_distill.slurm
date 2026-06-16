@@ -12,7 +12,7 @@
 #SBATCH --time=01:00:00
 set -euo pipefail
 cd "${SLURM_SUBMIT_DIR:-$(pwd)}"
-PYTHON=~/.conda/envs/bioguard/bin/python
+PYTHON=$HOME/.conda/envs/bioguard/bin/python
 export PYTHONUTF8=1 PYTHONUNBUFFERED=1
 export PYTHONPATH="$(pwd)"; export HF_HOME="${HOME}/.cache/huggingface"
 export V7C_ADAPTER_DIR="$(pwd)/models/llama31_8b_bioguard_v7c_aug2/adapter"

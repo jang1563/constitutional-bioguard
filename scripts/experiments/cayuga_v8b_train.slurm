@@ -17,7 +17,7 @@
 #   unsafe-weight 1.5 (data now ~balanced, less need for heavy positive weight).
 set -euo pipefail
 cd "${SLURM_SUBMIT_DIR:-$(pwd)}"
-PYTHON=~/.conda/envs/bioguard/bin/python
+PYTHON=$HOME/.conda/envs/bioguard/bin/python
 export PYTHONUTF8=1
 export PYTHONPATH="${PYTHONPATH:+$PYTHONPATH:}$(pwd)"
 export HF_HOME="${HOME}/.cache/huggingface"

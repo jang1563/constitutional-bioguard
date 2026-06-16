@@ -30,7 +30,7 @@ from sklearn.metrics import average_precision_score, roc_auc_score
 from constitutional_bioguard.config import CONFIGS_DIR, DATA_EXTERNAL, METRICS_DIR, MODELS_DIR
 
 V8B = MODELS_DIR / "deberta_bioguard_v8b"
-OOD_FPR = Path("~/constitutional_bioguard/data/splits/ood_fpr.jsonl")
+OOD_FPR = Path(Path.home(), "constitutional_bioguard/data/splits/ood_fpr.jsonl")
 BIO_KW = [k.lower() for k in json.load(open(CONFIGS_DIR / "bio_keywords_adv.json")).get("keywords", [])]
 
 

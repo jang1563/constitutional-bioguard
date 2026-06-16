@@ -13,7 +13,7 @@ import os
 import re
 from collections import Counter, defaultdict
 
-BASE = '~/Dropbox/Bioinformatics/Claude/Safeguard/constitutional_bioguard'
+BASE = os.path.expanduser('~/Dropbox/Bioinformatics/Claude/Safeguard/constitutional_bioguard')
 AUDIT_DIR = os.path.join(BASE, 'data/audit')
 
 flagged_path = os.path.join(AUDIT_DIR, 'flagged_records.jsonl')
@@ -97,7 +97,7 @@ with open(policy_doc, 'w') as f:
     f.write("Set blanket policies per pattern type, then apply via redaction script.\n\n")
     f.write("Policy options:\n")
     f.write("- **REDACT**: replace matches with `[REDACTED]` token\n")
-    f.write("- **GENERALIZE**: replace with category (e.g., `~/` → `~/`)\n")
+    f.write("- **GENERALIZE**: replace with category (e.g., `/Users/<user>/` → `~/`)\n")
     f.write("- **KEEP**: leave as is (e.g., publicly known project names)\n")
     f.write("- **EXCLUDE_RECORD**: remove the entire record\n\n")
     f.write("---\n\n")

@@ -1,9 +1,9 @@
 #!/bin/bash
 # Step 1b: merge LLM-rewritten bio-borderline-benign into the pool, train, eval.
 set -e
-cd ~/constitutional-bioguard
+cd $HOME/constitutional-bioguard
 export PYTHONUTF8=1 PYTHONUNBUFFERED=1 PYTHONPATH=$(pwd) HF_HOME=$HOME/.cache/huggingface
-PY=~/.conda/envs/bioguard/bin/python
+PY=$HOME/.conda/envs/bioguard/bin/python
 
 echo "=== merge: bio pool + LLM bio-borderline (+ optional template bio-borderline) ==="
 $PY - <<"PY"

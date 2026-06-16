@@ -18,7 +18,7 @@
 #   Same unsafe-weight 1.5 as v8b to isolate the PubMedQA data effect.
 set -euo pipefail
 cd "${SLURM_SUBMIT_DIR:-$(pwd)}"
-PYTHON=~/.conda/envs/bioguard/bin/python
+PYTHON=$HOME/.conda/envs/bioguard/bin/python
 export PYTHONUTF8=1
 export PYTHONPATH="${PYTHONPATH:+$PYTHONPATH:}$(pwd)"
 export HF_HOME="${HOME}/.cache/huggingface"

@@ -28,7 +28,7 @@ from collections import Counter, defaultdict
 
 random.seed(42)
 
-BASE = '~/Dropbox/Bioinformatics/Claude/Safeguard/constitutional_bioguard'
+BASE = os.path.expanduser('~/Dropbox/Bioinformatics/Claude/Safeguard/constitutional_bioguard')
 INPUT = os.path.join(BASE, 'data/raw/unified_overrefusal_taxonomy_v2.jsonl')
 OUT_DIR = os.path.join(BASE, 'data/splits')
 os.makedirs(OUT_DIR, exist_ok=True)
